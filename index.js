@@ -51,6 +51,18 @@ app.post("/register" ,async (req,res)=>{
         })
 })
 
-app.post("/login")
+app.post("/login" , async (req,res)=>{
+
+    let { email , password} = req.body;
+
+    let user = await userModel.findOne({email})
+    if (!user) return res.status(300).send("user needs to be registered")
+
+        bcrypt.compare(password , user.password , (err, result)=>{
+            if (result) return res.status(200).send("you can login")
+            else res.redirect("/login")
+        })
+
+})
  
 app.listen(3000);
