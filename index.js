@@ -64,5 +64,9 @@ app.post("/login" , async (req,res)=>{
         })
 
 })
- 
+  
+app.get("/logout" , (req,res)=>{
+    res.cookie("token" , "")
+    res.render("landing")
+})
 app.listen(3000);
