@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Register Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body >
+
+    <div class="bg-gray-100 flex items-center justify-center min-h-screen">
+        <nav></nav>
+
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md mr-4 ml-4 ">
+            <div class="justify-center items-center flex">
+                <img class="h-12 w-12 mb-4"
+             src="https://upload.wikimedia.org/wikipedia/commons/4/4d/Pinterest.svg" alt="">
+            </div>
+            <h2 class="text-3xl font-semibold text-zinc-700 text-center mb-4 tracking-tight">Welcome to Pinterest</h2>
+    
+            <form action="/login" method="post">
+                
+                <!-- Email -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium">Email</label>
+                    <input type="email" placeholder="Enter your email" name="email"
+                        class="w-full p-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                </div>
+    
+                <!-- Password -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium">Password</label>
+                    <input type="password" placeholder="Create a password" name="password"
+                        class="w-full p-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                </div>
+    
+               
+    
+                <!-- Submit Button -->
+                <div class="flex justify-center items-center">
+                    <button type="submit"
+                    class="w-44 bg-red-600 text-white py-2 rounded-[100px] font-medium hover:bg-red-700 transition mt-2">
+                    continue
+                </button>
+                </div>
+            </form>
+        </div>
+    
+    </div>
+
+   
+</body>
+</html>
