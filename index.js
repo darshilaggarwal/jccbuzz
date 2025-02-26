@@ -17,6 +17,10 @@ app.get("/" , (req,res)=>{
     res.render("landing")
 })
 
+app.get("/profile" ,isLoggedIn ,  (req,res)=>{
+    res.send("hello profile")
+})
+
 app.get("/login" , (req,res)=>{
     res.render("login")
 })
@@ -67,6 +71,20 @@ app.post("/login" , async (req,res)=>{
   
 app.get("/logout" , (req,res)=>{
     res.cookie("token" , "")
-    res.render("landing")
+    res.redirect("/")
+    // res.render("landing")
 })
+
+function isLoggedIn(req , res , next ){
+
+    if (req.cookies.token === "") res.send("you must be logged in")
+        else{
+            let data = jwt.verify(req.cookies.token , "shhhh");
+            req.user = data
+    }
+
+    next();
+
+
+}
 app.listen(3000);
