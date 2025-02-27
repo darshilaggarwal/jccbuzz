@@ -1,0 +1,33 @@
+<%- include('partials/header') %>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="p-4 border-b">
+            <h1 class="text-2xl font-bold text-gray-800">Messages</h1>
+        </div>
+
+        <div class="divide-y">
+            <% chats.forEach(chat => { %>
+                <% const otherUser = chat.participants.find(p => p._id.toString() !== user._id.toString()); %>
+                <a href="/chat/<%= otherUser._id %>" 
+                   class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                    <img src="<%= otherUser.profileImage %>" 
+                         alt="Profile" 
+                         class="w-12 h-12 rounded-full object-cover">
+                    <div class="ml-4">
+                        <h2 class="font-semibold text-gray-800"><%= otherUser.name %></h2>
+                        <p class="text-sm text-gray-500">@<%= otherUser.username %></p>
+                        <% if (chat.messages.length > 0) { %>
+                            <p class="text-sm text-gray-600 mt-1">
+                                <%= chat.messages[chat.messages.length - 1].content %>
+                            </p>
+                        <% } %>
+                    </div>
+                </a>
+            <% }) %>
+        </div>
+    </div>
+</div>
+
+</body>
+</html> 

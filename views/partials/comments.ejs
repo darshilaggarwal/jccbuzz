@@ -1,0 +1,77 @@
+<div class="mt-4 border-t pt-4">
+    <!-- Comment Form -->
+    <form class="mb-4 flex gap-2" onsubmit="addComment(event, '<%= post._id %>')">
+        <input type="text" 
+               placeholder="Write a comment..." 
+               class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+               required>
+        <button type="submit" 
+                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            Comment
+        </button>
+    </form>
+
+    <!-- Comments Section -->
+    <div class="space-y-4 comments-section" data-post-id="<%= post._id %>">
+        <% post.comments.forEach((comment, commentIndex) => { %>
+            <div class="comment-container">
+                <!-- Main Comment -->
+                <div class="flex items-start space-x-3">
+                    <img src="<%= comment.user.profileImage %>" 
+                         alt="Profile" 
+                         class="w-8 h-8 rounded-full object-cover">
+                    <div class="flex-1">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="font-medium"><%= comment.user.name %></div>
+                            <p class="text-gray-700"><%= comment.content %></p>
+                        </div>
+                        <div class="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                            <button onclick="likeComment('<%= comment._id %>')" 
+                                    class="like-btn <%= comment.likes.includes(user._id) ? 'text-red-500' : '' %>">
+                                <i class="fas fa-heart"></i>
+                                <span class="like-count"><%= comment.likes.length %></span>
+                            </button>
+                            <button onclick="showReplyForm(this)">Reply</button>
+                        </div>
+
+                        <!-- Reply Form (Hidden by default) -->
+                        <form class="mt-2 hidden reply-form" onsubmit="addReply(event, '<%= comment._id %>')">
+                            <div class="flex gap-2">
+                                <input type="text" 
+                                       placeholder="Write a reply..." 
+                                       class="flex-1 px-3 py-1 border rounded-lg text-sm"
+                                       required>
+                                <button type="submit" 
+                                        class="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm">
+                                    Reply
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Replies -->
+                        <div class="mt-2 space-y-2 replies-section">
+                            <% comment.replies.forEach((reply, replyIndex) => { %>
+                                <div class="flex items-start space-x-3 ml-6">
+                                    <img src="<%= reply.user.profileImage %>" 
+                                         alt="Profile" 
+                                         class="w-6 h-6 rounded-full object-cover">
+                                    <div class="flex-1">
+                                        <div class="bg-gray-50 p-2 rounded-lg">
+                                            <div class="font-medium text-sm"><%= reply.user.name %></div>
+                                            <p class="text-sm text-gray-700"><%= reply.content %></p>
+                                        </div>
+                                        <button onclick="likeReply('<%= comment._id %>', <%= replyIndex %>)" 
+                                                class="mt-1 text-xs text-gray-500 like-btn <%= reply.likes.includes(user._id) ? 'text-red-500' : '' %>">
+                                            <i class="fas fa-heart"></i>
+                                            <span class="like-count"><%= reply.likes.length %></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</div> 

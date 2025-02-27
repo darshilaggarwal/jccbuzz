@@ -1,0 +1,190 @@
+<%- include('partials/header') %>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <div class="bg-white rounded-lg shadow-md">
+        <!-- Chat Header -->
+        <div class="p-4 border-b flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="/user/<%= otherUser.username %>" class="flex items-center hover:opacity-80">
+                    <img src="<%= otherUser.profileImage %>" 
+                         alt="Profile" 
+                         class="w-10 h-10 rounded-full object-cover">
+                    <div class="ml-3">
+                        <h1 class="font-semibold text-gray-800"><%= otherUser.name %></h1>
+                        <p class="text-sm text-gray-500">
+                            @<%= otherUser.username %>
+                            <span id="onlineStatus" class="ml-2 <%= otherUser.isOnline ? 'text-green-500' : 'text-gray-400' %>">
+                                ● <%= otherUser.isOnline ? 'Online' : 'Offline' %>
+                            </span>
+                            <span id="typingStatus" class="ml-2 text-gray-400 italic hidden">typing...</span>
+                        </p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="messages" class="p-4 space-y-4 h-[500px] overflow-y-auto">
+            <% chat.messages.forEach(message => { %>
+                <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %>">
+                    <div class="flex items-end space-x-2">
+                        <% if (message.sender._id.toString() !== user._id.toString()) { %>
+                            <img src="<%= message.sender.profileImage %>" 
+                                 alt="Profile" 
+                                 class="w-8 h-8 rounded-full object-cover">
+                        <% } %>
+                        <div class="max-w-xs <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800' %> rounded-lg p-3">
+                            <% if (message.isStoryReply) { %>
+                                <div class="text-xs opacity-75 mb-1">
+                                    Replied to your story
+                                </div>
+                            <% } %>
+                            <p><%= message.content %></p>
+                            <p class="text-xs opacity-75 mt-1">
+                                <%= new Date(message.timestamp).toLocaleTimeString() %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Message Input -->
+        <div class="p-4 border-t">
+            <form id="messageForm" class="flex space-x-2">
+                <input type="text" 
+                       id="messageInput"
+                       placeholder="Type a message..." 
+                       class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       required>
+                <button type="submit" 
+                        class="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const userId = '<%= user._id %>';
+const chatId = '<%= chat._id %>';
+const receiverId = '<%= otherUser._id %>';
+let typingTimeout;
+
+const messagesContainer = document.getElementById('messages');
+const messageForm = document.getElementById('messageForm');
+const messageInput = document.getElementById('messageInput');
+const onlineStatus = document.getElementById('onlineStatus');
+const typingStatus = document.getElementById('typingStatus');
+
+function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Authenticate with Socket.IO
+socket.emit('authenticate', userId);
+
+// Listen for online/offline status
+socket.on('userOnline', (onlineUserId) => {
+    if (onlineUserId === receiverId) {
+        onlineStatus.textContent = '● Online';
+        onlineStatus.classList.remove('text-gray-400');
+        onlineStatus.classList.add('text-green-500');
+    }
+});
+
+socket.on('userOffline', (offlineUserId) => {
+    if (offlineUserId === receiverId) {
+        onlineStatus.textContent = '● Offline';
+        onlineStatus.classList.remove('text-green-500');
+        onlineStatus.classList.add('text-gray-400');
+    }
+});
+
+// Listen for new messages
+socket.on('newMessage', (data) => {
+    if (data.chatId === chatId) {
+        appendMessage(data.message, false);
+        scrollToBottom();
+    }
+});
+
+// Listen for typing status
+socket.on('userTyping', (data) => {
+    if (data.chatId === chatId && data.userId === receiverId) {
+        typingStatus.classList.remove('hidden');
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            typingStatus.classList.add('hidden');
+        }, 3000);
+    }
+});
+
+// Handle message input
+let typingTimer;
+messageInput.addEventListener('input', () => {
+    clearTimeout(typingTimer);
+    socket.emit('typing', { receiverId, chatId });
+    
+    typingTimer = setTimeout(() => {
+        socket.emit('stopTyping', { receiverId, chatId });
+    }, 2000);
+});
+
+// Handle message submission
+messageForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const content = messageInput.value.trim();
+    if (!content) return;
+
+    socket.emit('privateMessage', {
+        chatId,
+        content,
+        receiverId
+    });
+
+    // Optimistically add message to chat
+    appendMessage({
+        content,
+        timestamp: new Date(),
+        sender: {
+            _id: userId,
+            profileImage: '<%= user.profileImage %>'
+        }
+    }, true);
+
+    messageInput.value = '';
+    scrollToBottom();
+});
+
+function appendMessage(message, isSender) {
+    const messageHTML = `
+        <div class="flex ${isSender ? 'justify-end' : 'justify-start'}">
+            <div class="flex items-end space-x-2">
+                ${!isSender ? `
+                    <img src="${message.sender.profileImage}" 
+                         alt="Profile" 
+                         class="w-8 h-8 rounded-full object-cover">
+                ` : ''}
+                <div class="max-w-xs ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'} rounded-lg p-3">
+                    <p>${message.content}</p>
+                    <p class="text-xs opacity-75 mt-1">
+                        ${new Date(message.timestamp).toLocaleTimeString()}
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+}
+
+// Initial scroll to bottom
+scrollToBottom();
+</script>
+
+</body>
+</html> 

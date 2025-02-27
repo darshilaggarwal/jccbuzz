@@ -1,0 +1,63 @@
+<%- include('partials/header') %>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="flex items-center space-x-6">
+            <img src="<%= profileUser.profileImage %>" 
+                 alt="Profile" 
+                 class="w-32 h-32 rounded-full object-cover">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800"><%= profileUser.name %></h1>
+                <p class="text-gray-500">@<%= profileUser.username %></p>
+                <p class="mt-2 text-gray-600"><%= profileUser.bio %></p>
+                <div class="mt-4 space-x-2">
+                    <% if (isOwnProfile) { %>
+                        <a href="/edit-profile" 
+                           class="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Edit Profile
+                        </a>
+                    <% } else { %>
+                        <a href="/chat/<%= profileUser._id %>" 
+                           class="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Message
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <h2 class="text-xl font-semibold text-gray-800">Posts</h2>
+        <% profileUser.posts.forEach(post => { %>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center space-x-3 mb-4">
+                    <img src="<%= post.user.profileImage %>" 
+                         alt="Profile" 
+                         class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <h5 class="font-semibold text-gray-800"><%= post.user.name %></h5>
+                        <p class="text-sm text-gray-500">@<%= post.user.username %></p>
+                    </div>
+                </div>
+                <p class="text-gray-700"><%= post.content %></p>
+                <% if (isOwnProfile) { %>
+                    <div class="mt-4 flex justify-end space-x-2">
+                        <a href="/edit/<%= post._id %>" 
+                           class="text-blue-500 hover:text-blue-700">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="/delete/<%= post._id %>" 
+                           class="text-red-500 hover:text-red-700"
+                           onclick="return confirm('Are you sure?')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+</body>
+</html> 

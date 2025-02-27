@@ -1,0 +1,15 @@
+<div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %>">
+    <div class="flex items-end space-x-2">
+        <% if (message.sender._id.toString() !== user._id.toString()) { %>
+            <img src="<%= message.sender.profileImage %>" 
+                 alt="Profile" 
+                 class="w-8 h-8 rounded-full object-cover">
+        <% } %>
+        <div class="max-w-xs <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800' %> rounded-lg p-3">
+            <p><%= message.content %></p>
+            <p class="text-xs opacity-75 mt-1">
+                <%= new Date(message.timestamp).toLocaleTimeString() %>
+            </p>
+        </div>
+    </div>
+</div> 

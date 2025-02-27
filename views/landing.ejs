@@ -7,10 +7,211 @@
 </head>
 <body>
 
-    <h1>hello this is landing page </h1>
-    <a href="./register">register</a>
-    <a href="./login">Login</a>
+<%- include('partials/header') %>
 
-    
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="relative z-10 py-16 md:py-28 lg:py-32">
+                <div class="lg:grid lg:grid-cols-12 lg:gap-8">
+                    <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+                        <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                            <span class="block xl:inline">Share your story with</span>
+                            <span class="block text-blue-600 xl:inline"> Pinspire</span>
+                        </h1>
+                        <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                            Connect with friends, share your moments, and discover amazing stories from people around the world.
+                        </p>
+                        <div class="mt-8 sm:flex sm:justify-center lg:justify-start">
+                            <div class="rounded-md shadow">
+                                <a href="/register" 
+                                   class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10 transform transition duration-200 hover:scale-105">
+                                    Get Started
+                                </a>
+                            </div>
+                            <div class="mt-3 sm:mt-0 sm:ml-3">
+                                <a href="/login" 
+                                   class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg md:px-10 transform transition duration-200 hover:scale-105">
+                                    Sign In
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
+                        <div class="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
+                            <img class="w-full rounded-lg transform transition duration-500 hover:scale-105" 
+                                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80" 
+                                 alt="People sharing content">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Features</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Everything you need to express yourself
+                </p>
+            </div>
+
+            <div class="mt-20">
+                <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                    <!-- Feature 1 -->
+                    <div class="pt-6 transform transition duration-500 hover:scale-105">
+                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8 h-full">
+                            <div class="-mt-6">
+                                <div>
+                                    <span class="inline-flex items-center justify-center p-3 bg-blue-500 rounded-md shadow-lg">
+                                        <i class="fas fa-users text-white text-2xl"></i>
+                                    </span>
+                                </div>
+                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">Connect with Others</h3>
+                                <p class="mt-5 text-base text-gray-500">
+                                    Build meaningful connections with people who share your interests and passions.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="pt-6 transform transition duration-500 hover:scale-105">
+                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8 h-full">
+                            <div class="-mt-6">
+                                <div>
+                                    <span class="inline-flex items-center justify-center p-3 bg-blue-500 rounded-md shadow-lg">
+                                        <i class="fas fa-comment-dots text-white text-2xl"></i>
+                                    </span>
+                                </div>
+                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">Real-time Chat</h3>
+                                <p class="mt-5 text-base text-gray-500">
+                                    Stay connected with instant messaging and see when your friends are online.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="pt-6 transform transition duration-500 hover:scale-105">
+                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8 h-full">
+                            <div class="-mt-6">
+                                <div>
+                                    <span class="inline-flex items-center justify-center p-3 bg-blue-500 rounded-md shadow-lg">
+                                        <i class="fas fa-heart text-white text-2xl"></i>
+                                    </span>
+                                </div>
+                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">Interactive Posts</h3>
+                                <p class="mt-5 text-base text-gray-500">
+                                    Share, like, and comment on posts to engage with your community.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="bg-blue-600">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:py-16 sm:px-6 lg:px-8 lg:py-20">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
+                    Trusted by users worldwide
+                </h2>
+                <p class="mt-3 text-xl text-blue-200 sm:mt-4">
+                    Join our growing community of creators and storytellers
+                </p>
+            </div>
+            <dl class="mt-10 text-center sm:max-w-3xl sm:mx-auto sm:grid sm:grid-cols-3 sm:gap-8">
+                <div class="flex flex-col">
+                    <dt class="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
+                        Active Users
+                    </dt>
+                    <dd class="order-1 text-5xl font-extrabold text-white">
+                        100K+
+                    </dd>
+                </div>
+                <div class="flex flex-col mt-10 sm:mt-0">
+                    <dt class="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
+                        Daily Posts
+                    </dt>
+                    <dd class="order-1 text-5xl font-extrabold text-white">
+                        50K+
+                    </dd>
+                </div>
+                <div class="flex flex-col mt-10 sm:mt-0">
+                    <dt class="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
+                        Countries
+                    </dt>
+                    <dd class="order-1 text-5xl font-extrabold text-white">
+                        150+
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="bg-gray-50">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
+            <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                <span class="block">Ready to dive in?</span>
+                <span class="block text-blue-600">Start your journey today.</span>
+            </h2>
+            <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+                <div class="inline-flex rounded-md shadow">
+                    <a href="/register" 
+                       class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transform transition duration-200 hover:scale-105">
+                        Get started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <i class="fab fa-twitter text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <i class="fab fa-facebook text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <i class="fab fa-instagram text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <i class="fab fa-github text-xl"></i>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2024 Pinspire. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- Add this to your header.ejs or in a <style> tag -->
+<style>
+.bg-grid-pattern {
+    background-image: linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                      linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+</style>
+
 </body>
 </html>

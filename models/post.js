@@ -1,23 +1,37 @@
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb://127.0.0.1:27017/pinspire")
-
-const postSchema = mongoose.Schema({
-
-    user:{
-        type: mongoose.Schema.Types.ObjectId , 
-        ref : "user"
+const postSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true
     },
-
-    date : {
-        type : Date , 
-        default : Date.now()
-    }, 
-
-    content : String 
-
-    
-
+    content: {
+        type: String,
+        required: true
+    },
+    images: [{
+        url: String,
+        aspectRatio: Number
+    }],
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    likes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    comments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment'
+    }],
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+}, {
+    timestamps: true
 });
 
-module.exports = mongoose.model('post', postSchema); 
+module.exports = mongoose.model('Post', postSchema); 

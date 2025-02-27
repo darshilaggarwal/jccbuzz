@@ -1,0 +1,490 @@
+<%- include('partials/header') %>
+
+<style>
+/* Profile picture and story ring styles */
+.profile-container {
+    position: relative;
+    width: 8rem;
+    height: 8rem;
+}
+
+.story-ring {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    padding: 2px;
+    border-radius: 9999px;
+}
+
+.profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 9999px;
+}
+
+.add-story-button {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: #3B82F6;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 9999px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+}
+
+.add-story-button:hover {
+    background-color: #2563EB;
+    transform: scale(1.1);
+}
+</style>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="flex items-center space-x-6">
+            <div class="relative">
+                <!-- Profile Picture Container -->
+                <div class="relative">
+                    <!-- Story Ring (if user has active story) -->
+                    <div class="<%= user.hasActiveStory ? 'bg-gradient-to-tr from-yellow-400 to-fuchsia-600' : '' %> rounded-full p-[2px]">
+                        <div class="bg-white rounded-full p-[2px]">
+                            <img src="<%= user.profileImage || '/images/default-profile.png' %>" 
+                                 alt="Profile" 
+                                 class="w-32 h-32 rounded-full object-cover">
+                        </div>
+                    </div>
+                    
+                    <!-- Add Story Button -->
+                    <button onclick="document.getElementById('storyUpload').click()" 
+                            class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <input type="file" 
+                           id="storyUpload" 
+                           class="hidden" 
+                           accept="image/*,video/*" 
+                           onchange="handleStoryUpload(event)">
+                </div>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800"><%= user.name %></h1>
+                <p class="text-gray-500">@<%= user.username %></p>
+                <p class="mt-2 text-gray-600"><%= user.bio %></p>
+                <div class="mt-4 space-x-2">
+                    <a href="/edit-profile" 
+                       class="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        Edit Profile
+                    </a>
+                    <button onclick="openCreatePostModal()" 
+                            class="inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                        Create Post
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Post Button for Mobile -->
+    <div class="md:hidden fixed bottom-4 right-4">
+        <button onclick="openCreatePostModal()" 
+                class="p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h2 class="text-xl font-semibold">Create New Post</h2>
+                    <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="createPostForm" action="/post" method="post" enctype="multipart/form-data" class="p-4">
+                    <!-- Image Upload Section -->
+                    <div class="mb-4">
+                        <div id="imagePreviewContainer" class="hidden grid grid-cols-2 gap-4 mb-4">
+                            <!-- Image previews will be added here -->
+                        </div>
+                        
+                        <div class="flex items-center justify-center w-full">
+                            <label class="w-full flex flex-col items-center px-4 py-6 bg-white rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
+                                <span class="mt-2 text-base text-gray-500">Click to upload images</span>
+                                <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Title Input -->
+                    <div class="mb-4">
+                        <input type="text" 
+                               name="title" 
+                               placeholder="Add a title..." 
+                               class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               required>
+                    </div>
+
+                    <!-- Caption Input -->
+                    <textarea name="content" 
+                              placeholder="Write a caption..."
+                              class="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                              rows="3"
+                              required></textarea>
+
+                    <button type="submit" 
+                            class="w-full px-6 py-2 bg-blue-500 text-white rounded-lg
+                                   hover:bg-blue-600 transition duration-200">
+                        Share Post
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Cropper Modal -->
+    <div id="cropperModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full p-4">
+                <div class="mb-4 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold">Crop Image</h3>
+                    <button onclick="closeCropperModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <img id="cropperImage" src="" alt="Image to crop">
+                </div>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button onclick="closeCropperModal()" class="px-4 py-2 border rounded-lg">
+                        Cancel
+                    </button>
+                    <button onclick="cropImage()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                        Crop
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story Upload Preview Modal -->
+    <div id="storyPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-lg w-full">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h3 class="text-lg font-semibold">Preview Story</h3>
+                    <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="relative aspect-[9/16] bg-black rounded-lg overflow-hidden">
+                        <!-- Preview container -->
+                        <div id="storyPreviewContainer" class="w-full h-full"></div>
+                    </div>
+                    <div class="mt-4 flex justify-end space-x-2">
+                        <button onclick="closeStoryPreview()" 
+                                class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                            Cancel
+                        </button>
+                        <button onclick="uploadStory()" 
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Share Story
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <h2 class="text-xl font-semibold">Your Posts</h2>
+        <% user.posts.forEach((post) => { %>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <% if (post.images && post.images.length > 0) { %>
+                    <div class="relative mb-4">
+                        <div class="swiper-container">
+                            <div class="swiper-wrapper">
+                                <% post.images.forEach(image => { %>
+                                    <div class="swiper-slide">
+                                        <img src="<%= image.url %>" 
+                                             alt="Post image"
+                                             class="w-full h-64 object-cover rounded-lg">
+                                    </div>
+                                <% }) %>
+                            </div>
+                            <% if (post.images.length > 1) { %>
+                                <div class="swiper-pagination"></div>
+                                <div class="swiper-button-next"></div>
+                                <div class="swiper-button-prev"></div>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+                <h3 class="font-semibold text-lg mb-2"><%= post.title %></h3>
+                <p class="text-gray-700 mb-4"><%= post.content %></p>
+                <div class="flex justify-end space-x-2">
+                    <a href="/edit/<%= post._id %>" 
+                       class="text-blue-500 hover:text-blue-700">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="/delete/<%= post._id %>" 
+                       class="text-red-500 hover:text-red-700"
+                       onclick="return confirm('Are you sure?')">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+<!-- Add Swiper JS for image carousel -->
+<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+<!-- Add these scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const swipers = document.querySelectorAll('.swiper-container');
+    swipers.forEach(container => {
+        new Swiper(container, {
+            pagination: {
+                el: '.swiper-pagination',
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+        });
+    });
+});
+
+let cropper;
+let currentImageIndex;
+const processedImages = [];
+let storyFile = null;
+
+function openCreatePostModal() {
+    document.getElementById('createPostModal').classList.remove('hidden');
+}
+
+function closeCreatePostModal() {
+    document.getElementById('createPostModal').classList.add('hidden');
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+    processedImages.length = 0;
+}
+
+function handleImageSelect(event) {
+    const files = event.target.files;
+    const container = document.getElementById('imagePreviewContainer');
+    container.classList.remove('hidden');
+
+    Array.from(files).forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            showCropperModal(e.target.result, index);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function showCropperModal(imageSrc, index) {
+    const modal = document.getElementById('cropperModal');
+    const image = document.getElementById('cropperImage');
+    
+    modal.classList.remove('hidden');
+    image.src = imageSrc;
+    currentImageIndex = index;
+
+    if (cropper) {
+        cropper.destroy();
+    }
+
+    cropper = new Cropper(image, {
+        aspectRatio: 1,
+        viewMode: 2,
+        autoCropArea: 1
+    });
+}
+
+function closeCropperModal() {
+    document.getElementById('cropperModal').classList.add('hidden');
+    if (cropper) {
+        cropper.destroy();
+    }
+}
+
+function cropImage() {
+    const croppedCanvas = cropper.getCroppedCanvas();
+    const container = document.getElementById('imagePreviewContainer');
+    
+    // Create preview
+    const preview = document.createElement('div');
+    preview.className = 'relative';
+    preview.innerHTML = `
+        <img src="${croppedCanvas.toDataURL()}" class="w-full h-48 object-cover rounded-lg">
+        <button onclick="removeImage(${currentImageIndex})" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(preview);
+    
+    // Store processed image
+    processedImages[currentImageIndex] = croppedCanvas.toDataURL();
+    
+    closeCropperModal();
+}
+
+function removeImage(index) {
+    processedImages[index] = null;
+    const previews = document.getElementById('imagePreviewContainer').children;
+    previews[index].remove();
+}
+
+// Update form submission
+document.getElementById('createPostForm').onsubmit = async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const validImages = processedImages.filter(img => img !== null);
+    
+    // Remove any existing processedImages from formData
+    formData.delete('processedImages');
+    
+    validImages.forEach((dataUrl, index) => {
+        // Convert base64 to blob
+        const blob = dataURLtoBlob(dataUrl);
+        formData.append('processedImages', blob, `image${index}.jpg`);
+    });
+
+    // Add title and content if not already in formData
+    if (!formData.get('title')) {
+        formData.append('title', document.querySelector('input[name="title"]').value);
+    }
+    if (!formData.get('content')) {
+        formData.append('content', document.querySelector('textarea[name="content"]').value);
+    }
+
+    try {
+        const response = await fetch('/post', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            closeCreatePostModal();
+            window.location.reload();
+        } else {
+            const error = await response.text();
+            alert('Error creating post: ' + error);
+        }
+    } catch (error) {
+        console.error('Error creating post:', error);
+        alert('Error creating post. Please try again.');
+    }
+};
+
+function dataURLtoBlob(dataurl) {
+    let arr = dataurl.split(',');
+    let mime = arr[0].match(/:(.*?);/)[1];
+    let bstr = atob(arr[1]);
+    let n = bstr.length;
+    let u8arr = new Uint8Array(n);
+    while(n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {type:mime});
+}
+
+function handleStoryUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    storyFile = file;
+    const previewContainer = document.getElementById('storyPreviewContainer');
+    const modal = document.getElementById('storyPreviewModal');
+
+    // Clear previous preview
+    previewContainer.innerHTML = '';
+
+    if (file.type.startsWith('image/')) {
+        // Image preview
+        const img = document.createElement('img');
+        img.className = 'w-full h-full object-contain';
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        previewContainer.appendChild(img);
+    } else if (file.type.startsWith('video/')) {
+        // Video preview
+        const video = document.createElement('video');
+        video.className = 'w-full h-full';
+        video.controls = true;
+        video.autoplay = true;
+        video.muted = true;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            video.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        previewContainer.appendChild(video);
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeStoryPreview() {
+    document.getElementById('storyPreviewModal').classList.add('hidden');
+    document.getElementById('storyUpload').value = '';
+    storyFile = null;
+}
+
+async function uploadStory() {
+    if (!storyFile) return;
+
+    const formData = new FormData();
+    formData.append('story', storyFile);
+
+    try {
+        const response = await fetch('/story', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            closeStoryPreview();
+            // Show success message
+            const successMsg = document.createElement('div');
+            successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+            successMsg.textContent = 'Story uploaded successfully!';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
+            
+            // Refresh the page after a short delay
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            const errorMsg = data.error || 'Error uploading story';
+            const details = data.details ? `: ${data.details}` : '';
+            alert(`${errorMsg}${details}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error uploading story. Please try again.');
+    }
+}
+</script>
+
+</body>
+</html>
