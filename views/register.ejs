@@ -20,6 +20,13 @@
             </div>
         <% } %>
         
+        <div id="toast" class="fixed top-4 right-4 max-w-xs bg-red-500 text-white px-4 py-3 rounded shadow-lg transform transition-all duration-500 opacity-0 translate-y-8 pointer-events-none" role="alert">
+            <div class="flex items-center">
+                <div class="py-1"><svg class="fill-current h-6 w-6 text-white mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
+                <div id="toastMessage"></div>
+            </div>
+        </div>
+        
         <form id="registerForm" class="mt-8 space-y-6" action="/register" method="POST" novalidate>
             <div class="rounded-md shadow-sm -space-y-px">
                 <div>
@@ -120,6 +127,45 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
     
+    // Check URL parameters for error messages
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    
+    if (errorParam) {
+        let errorMessage = '';
+        
+        switch(errorParam) {
+            case 'username_taken':
+                errorMessage = 'Username is already taken. Please choose a different username.';
+                break;
+            case 'email_taken':
+                errorMessage = 'Email is already registered. Please use a different email or login.';
+                break;
+            default:
+                errorMessage = 'An error occurred during registration. Please try again.';
+        }
+        
+        showToast(errorMessage);
+    }
+    
+    // Function to show toast message
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        toastMessage.textContent = message;
+        
+        // Show the toast
+        toast.classList.remove('opacity-0', 'translate-y-8');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        
+        // Hide the toast after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-8');
+            toast.classList.remove('opacity-100', 'translate-y-0');
+        }, 5000);
+    }
+    
     // Username processing - convert spaces to underscores
     username.addEventListener('input', function() {
         this.value = this.value.replace(/\s+/g, '_');
@@ -170,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!isValid) {
             e.preventDefault();
+            showToast('Please fix the form errors before submitting.');
         }
     });
 });

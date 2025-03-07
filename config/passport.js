@@ -12,11 +12,14 @@ console.log('Google OAuth client ID loaded:', Boolean(process.env.GOOGLE_CLIENT_
 console.log('Google OAuth client secret loaded:', Boolean(process.env.GOOGLE_CLIENT_SECRET) ? 'Yes' : 'No');
 console.log('Client ID ends with:', GOOGLE_CLIENT_ID.substring(GOOGLE_CLIENT_ID.length - 5));
 
+// Get the application URL from environment or default to localhost
+const APP_URL = process.env.APP_URL || 'http://localhost:3000';
+
 // Configure Google OAuth strategy
 passport.use(new GoogleStrategy({
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback",
+    callbackURL: `${APP_URL}/auth/google/callback`,
     passReqToCallback: true
   },
   async (req, accessToken, refreshToken, profile, done) => {

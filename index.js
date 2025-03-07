@@ -21,6 +21,9 @@ const storyModel = require("./models/story");
 const session = require('express-session');
 const passport = require('./config/passport');
 
+// Add this near the top of the file where other environment variables are setup
+const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
+
 // mongoose.connect('mongodb://localhost:27017/pinspire')
 //     .then(() => console.log('Connected to MongoDB'))
 //     .catch(err => console.error('MongoDB connection error:', err));
@@ -253,27 +256,46 @@ app.get("/register" , (req,res)=>{
 })
 
 app.post("/register" ,async (req,res)=>{
-    let { email, username, name, password } = req.body;
- 
-    let user = await userModel.findOne({email})
-    if (user) return res.status(500).send("user registered")
+    try {
+        let { email, username, name, password } = req.body;
+    
+        // Check if email already exists
+        let emailUser = await userModel.findOne({email});
+        if (emailUser) {
+            return res.redirect("/register?error=email_taken");
+        }
+        
+        // Check if username already exists
+        let usernameUser = await userModel.findOne({username});
+        if (usernameUser) {
+            return res.redirect("/register?error=username_taken");
+        }
 
-    bcrypt.genSalt(10, (err, salt) => {
-        bcrypt.hash(password, salt, async (err, hash) => {
-            let user = await userModel.create({
-                name, 
-                email, 
-                username, 
-                password: hash,
-                posts: [] // Initialize empty posts array
-            });
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(password, salt, async (err, hash) => {
+                try {
+                    let user = await userModel.create({
+                        name, 
+                        email, 
+                        username, 
+                        password: hash,
+                        posts: [] // Initialize empty posts array
+                    });
 
-            let token = jwt.sign({email: email}, "shhhh");
-            res.cookie("token", token);
-            // Instead of directly rendering, redirect to profile
-            res.redirect("/profile");
+                    let token = jwt.sign({email: email}, JWT_SECRET);
+                    res.cookie("token", token);
+                    // Instead of directly rendering, redirect to profile
+                    res.redirect("/profile");
+                } catch (error) {
+                    console.error("Error creating user:", error);
+                    return res.redirect("/register?error=registration_failed");
+                }
+            })
         })
-    })
+    } catch (error) {
+        console.error("Registration error:", error);
+        res.redirect("/register?error=registration_failed");
+    }
 })
 
 app.post("/login", async (req, res) => {
@@ -283,30 +305,30 @@ app.post("/login", async (req, res) => {
         let user = await userModel.findOne({ email });
         if (!user) {
             console.log('Login attempt with non-existent email:', email);
-            return res.render("login", { error: "Invalid email or password" });
+            return res.redirect("/login?error=invalid_credentials");
         }
 
         bcrypt.compare(password, user.password, (err, result) => {
             if (err) {
                 console.error('Error comparing passwords:', err);
-                return res.render("login", { error: "An error occurred during login. Please try again." });
+                return res.redirect("/login?error=login_error");
             }
             
             if (result) {
                 let token = jwt.sign({ 
                     name: user.name,
                     email: user.email 
-                }, "shhhh");
+                }, JWT_SECRET);
                 res.cookie("token", token);
                 return res.redirect("/profile");
             }
             
             console.log('Failed login attempt for user:', email);
-            res.render("login", { error: "Invalid email or password" });
+            res.redirect("/login?error=invalid_credentials");
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.render("login", { error: "An error occurred during login. Please try again." });
+        res.redirect("/login?error=login_error");
     }
 });
   
@@ -341,7 +363,7 @@ function isLoggedIn(req, res, next) {
     } 
     
     try {
-        let data = jwt.verify(req.cookies.token, "shhhh");
+        let data = jwt.verify(req.cookies.token, JWT_SECRET);
         req.user = data;
         console.log('User authenticated via JWT');
         next();
@@ -1118,7 +1140,7 @@ app.get('/auth/google/callback',
             const token = jwt.sign({
                 name: req.user.name,
                 email: req.user.email
-            }, "shhhh");
+            }, JWT_SECRET);
             
             // Set cookie
             res.cookie("token", token);
