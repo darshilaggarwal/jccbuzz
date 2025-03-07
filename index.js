@@ -1110,46 +1110,46 @@ async function updateUserStoryStatus(userId) {
     });
 }
 
-// Google OAuth routes
-app.get('/auth/google',
-    function(req, res, next) {
-        console.log('Starting Google authentication');
-        next();
-    },
-    passport.authenticate('google', { 
-        scope: ['profile', 'email']
-    })
-);
-
-app.get('/auth/google/callback', 
-    function(req, res, next) {
-        console.log('Google auth callback received');
-        passport.authenticate('google', { 
-            failureRedirect: '/login',
-            failWithError: true
-        })(req, res, function(err) {
-            if (err) {
-                console.error('Google authentication error:', err);
-                return res.redirect('/login?error=google_auth_failed');
-            }
-            
-            // Authentication succeeded
-            console.log('Google authentication successful for:', req.user.email);
-            
-            // Create JWT token
-            const token = jwt.sign({
-                name: req.user.name,
-                email: req.user.email
-            }, JWT_SECRET);
-            
-            // Set cookie
-            res.cookie("token", token);
-            
-            // Redirect to profile page
-            res.redirect('/profile');
-        });
-    }
-);
+// Google OAuth routes - temporarily disabled
+// app.get('/auth/google',
+//     function(req, res, next) {
+//         console.log('Starting Google authentication');
+//         next();
+//     },
+//     passport.authenticate('google', { 
+//         scope: ['profile', 'email']
+//     })
+// );
+// 
+// app.get('/auth/google/callback', 
+//     function(req, res, next) {
+//         console.log('Google auth callback received');
+//         passport.authenticate('google', { 
+//             failureRedirect: '/login',
+//             failWithError: true
+//         })(req, res, function(err) {
+//             if (err) {
+//                 console.error('Google authentication error:', err);
+//                 return res.redirect('/login?error=google_auth_failed');
+//             }
+//             
+//             // Authentication succeeded
+//             console.log('Google authentication successful for:', req.user.email);
+//             
+//             // Create JWT token
+//             const token = jwt.sign({
+//                 name: req.user.name,
+//                 email: req.user.email
+//             }, JWT_SECRET);
+//             
+//             // Set cookie
+//             res.cookie("token", token);
+//             
+//             // Redirect to profile page
+//             res.redirect('/profile');
+//         });
+//     }
+// );
 
 // Middleware to fetch unread messages count
 async function fetchUnreadMessagesCount(req, res, next) {
