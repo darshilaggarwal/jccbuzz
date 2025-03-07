@@ -1,5 +1,33 @@
 <%- include('partials/header') %>
 
+<!-- Add this near the top of the body -->
+<div id="toast" class="fixed top-4 right-4 z-50 transform transition-transform duration-300 translate-x-full">
+    <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
+        <span class="mr-2"><i class="fas fa-check-circle"></i></span>
+        <span id="toast-message"></span>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="max-w-4xl mx-auto mt-6 px-4">
+    <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden mb-6">
+        <form action="/search" method="GET" class="flex items-center p-2">
+            <div class="relative flex-grow">
+                <input type="text" 
+                       name="q" 
+                       placeholder="Search users..." 
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+            </div>
+            <button type="submit" class="ml-2 px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex-shrink-0">
+                Search
+            </button>
+        </form>
+    </div>
+</div>
+
 <!-- Stories Section -->
 <div class="max-w-4xl mx-auto mt-8 px-4">
     <!-- Stories Section -->
@@ -65,43 +93,31 @@
                 return; // Skip this post entirely
             }
         %>
-            <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:shadow-lg transition-shadow duration-200">
+            <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden transform hover:shadow-lg transition-shadow duration-200 post-container">
                 <!-- Post Header -->
                 <div class="p-4 flex items-center justify-between">
-                    <% if (post.user) { %>
                     <a href="/user/<%= post.user.username %>" class="flex items-center group">
                         <div class="relative">
                             <img src="<%= post.user.profileImage %>" 
                                  alt="Profile" 
                                  class="w-10 h-10 rounded-full object-cover group-hover:opacity-90">
-                            <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                            <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"></div>
                         </div>
                         <div class="ml-3">
-                            <h5 class="font-semibold text-gray-800 group-hover:text-blue-600"><%= post.user.name %></h5>
-                            <p class="text-xs text-gray-500">@<%= post.user.username %></p>
+                            <h5 class="font-semibold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"><%= post.user.name %></h5>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">@<%= post.user.username %></p>
                         </div>
                     </a>
-                    <% } else { %>
-                    <div class="flex items-center group">
-                        <div class="relative">
-                            <img src="/images/default-profile.png" 
-                                 alt="Deleted User" 
-                                 class="w-10 h-10 rounded-full object-cover">
-                        </div>
-                        <div class="ml-3">
-                            <h5 class="font-semibold text-gray-800">Deleted User</h5>
-                            <p class="text-xs text-gray-500">Account no longer available</p>
-                        </div>
+                    <div class="flex space-x-2">
+                        <button onclick="showPostOptions('<%= post._id %>')" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
                     </div>
-                    <% } %>
-                    <button class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-ellipsis-h"></i>
-                    </button>
                 </div>
 
                 <!-- Images -->
                 <% if (post.images && post.images.length > 0) { %>
-                    <div class="relative">
+                    <div class="relative post-image" ondblclick="handleDoubleTap('<%= post._id %>')">
                         <div class="swiper-container">
                             <div class="swiper-wrapper">
                                 <% post.images.forEach(image => { %>
@@ -118,6 +134,9 @@
                                 <div class="swiper-button-prev"></div>
                             <% } %>
                         </div>
+                        <div class="heart-animation hidden absolute inset-0 flex items-center justify-center">
+                            <i class="fas fa-heart text-red-500"></i>
+                        </div>
                     </div>
                 <% } %>
 
@@ -127,29 +146,33 @@
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center space-x-4">
                             <button onclick="toggleLike('<%= post._id %>')" 
+                                    id="like-btn-<%= post._id %>"
                                     class="like-btn <%= post.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:scale-110 transform transition-transform">
                                 <i class="fas fa-heart text-2xl"></i>
                                 <span class="like-count ml-1 text-sm"><%= post.likes.length %></span>
                             </button>
                             <button onclick="focusComment('<%= post._id %>')" 
-                                    class="text-gray-500 hover:text-gray-700 hover:scale-110 transform transition-transform">
+                                    class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
                                 <i class="fas fa-comment text-2xl"></i>
                                 <span class="ml-1 text-sm"><%= post.comments.length %></span>
                             </button>
-                            <button class="text-gray-500 hover:text-gray-700 hover:scale-110 transform transition-transform">
+                            <button onclick="sharePost('<%= post._id %>')" 
+                                    class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
                                 <i class="fas fa-share text-2xl"></i>
                             </button>
                         </div>
-                        <button class="text-gray-500 hover:text-gray-700 hover:scale-110 transform transition-transform">
+                        <button onclick="toggleSavePost('<%= post._id %>')"
+                                id="save-btn-<%= post._id %>"
+                                class="save-btn <%= user.savedPosts && user.savedPosts.includes(post._id) ? 'text-blue-500' : 'text-gray-500' %> dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
                             <i class="fas fa-bookmark text-2xl"></i>
                         </button>
                     </div>
 
-                    <h3 class="font-semibold text-lg mb-2"><%= post.title %></h3>
-                    <p class="text-gray-700 mb-2"><%= post.content %></p>
+                    <h3 class="font-semibold text-lg mb-2 text-gray-800 dark:text-white"><%= post.title %></h3>
+                    <p class="text-gray-700 dark:text-gray-300 mb-2"><%= post.content %></p>
                     
                     <!-- Post Metadata -->
-                    <div class="text-xs text-gray-500 mb-4">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-4">
                         <span><%= new Date(post.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) %></span>
                         • <span><%= post.likes.length %> likes</span>
                         • <span><%= post.comments.length %> comments</span>
@@ -216,6 +239,61 @@
                     </button>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-4">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Share Post</h3>
+        </div>
+        <div class="p-4">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Share with (username)</label>
+                <input type="text" 
+                       id="shareUsername" 
+                       class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                       placeholder="Enter username">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message (optional)</label>
+                <textarea id="shareMessage" 
+                          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          rows="3" 
+                          placeholder="Add a message..."></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeShareModal()" 
+                        class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+                    Cancel
+                </button>
+                <button onclick="confirmShare()" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    Share
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Post Options Modal -->
+<div id="postOptionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4 overflow-hidden">
+        <div class="p-4">
+            <button class="w-full text-left py-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white rounded-md">
+                <i class="fas fa-link mr-2 text-gray-600 dark:text-gray-400"></i> Copy link
+            </button>
+            <button class="w-full text-left py-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white rounded-md">
+                <i class="fas fa-flag mr-2 text-gray-600 dark:text-gray-400"></i> Report post
+            </button>
+            <button class="w-full text-left py-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 rounded-md">
+                <i class="fas fa-ban mr-2"></i> Unfollow user
+            </button>
+            <button onclick="closePostOptionsModal()" class="w-full text-center py-3 px-4 text-gray-800 dark:text-white font-medium border-t border-gray-200 dark:border-gray-700 mt-2">
+                Cancel
+            </button>
         </div>
     </div>
 </div>
@@ -877,7 +955,231 @@ function resumeStory() {
         mediaElement.play();
     }
 }
+
+// Like functionality
+function toggleLike(postId) {
+    fetch(`/post/${postId}/like`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const likeBtn = document.getElementById(`like-btn-${postId}`);
+        const likeCount = likeBtn.querySelector('.like-count');
+        
+        if (data.liked) {
+            likeBtn.classList.remove('text-gray-500');
+            likeBtn.classList.add('text-red-500');
+        } else {
+            likeBtn.classList.remove('text-red-500');
+            likeBtn.classList.add('text-gray-500');
+        }
+        
+        likeCount.textContent = data.likeCount;
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Double tap to like
+function handleDoubleTap(postId) {
+    const likeBtn = document.getElementById(`like-btn-${postId}`);
+    const imgContainer = event.currentTarget;
+    const heartAnimation = imgContainer.querySelector('.heart-animation');
+    
+    // Only like if not already liked
+    if (!likeBtn.classList.contains('text-red-500')) {
+        toggleLike(postId);
+        
+        // Show heart animation
+        heartAnimation.classList.remove('hidden');
+        setTimeout(() => {
+            heartAnimation.classList.add('hidden');
+        }, 1000);
+    }
+}
+
+// Focus on comment input
+function focusComment(postId) {
+    const commentInput = document.querySelector(`#comment-input-${postId}`);
+    if (commentInput) {
+        commentInput.focus();
+    }
+}
+
+// Save post functionality
+function toggleSavePost(postId) {
+    fetch(`/post/${postId}/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const saveBtn = document.getElementById(`save-btn-${postId}`);
+        
+        if (data.saved) {
+            saveBtn.classList.remove('text-gray-500');
+            saveBtn.classList.add('text-blue-500');
+        } else {
+            saveBtn.classList.remove('text-blue-500');
+            saveBtn.classList.add('text-gray-500');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Share post functionality
+let currentPostId = null;
+let selectedUserId = null;
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    toastMessage.textContent = message;
+    
+    // Show toast
+    toast.classList.remove('translate-x-full');
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+    }, 3000);
+}
+
+function sharePost(postId) {
+    currentPostId = postId;
+    document.getElementById('shareModal').classList.remove('hidden');
+    document.getElementById('shareUsername').value = '';
+    document.getElementById('shareMessage').value = '';
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').classList.add('hidden');
+    currentPostId = null;
+}
+
+function confirmShare() {
+    const username = document.getElementById('shareUsername').value.trim();
+    const message = document.getElementById('shareMessage').value.trim();
+    
+    if (!username) {
+        showToast('Please enter a username to share with');
+        return;
+    }
+    
+    fetch(`/post/${currentPostId}/share`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            showToast(data.error);
+        } else {
+            showToast('Post shared successfully!');
+            closeShareModal();
+        }
+    })
+    .catch(error => {
+        console.error('Error sharing post:', error);
+        showToast('Failed to share post. Please try again.');
+    });
+}
+
+// Post options modal
+function showPostOptions(postId) {
+    document.getElementById('postOptionsModal').classList.remove('hidden');
+}
+
+function closePostOptionsModal() {
+    document.getElementById('postOptionsModal').classList.add('hidden');
+}
+
+// User search for share functionality
+document.getElementById('shareRecipient').addEventListener('input', function(e) {
+    const query = e.target.value.trim();
+    const userResults = document.getElementById('userResults');
+    
+    if (query.length < 2) {
+        userResults.classList.add('hidden');
+        return;
+    }
+    
+    fetch(`/search?q=${encodeURIComponent(query)}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+            userResults.innerHTML = '';
+            
+            if (data.users && data.users.length > 0) {
+                data.users.forEach(user => {
+                    const userItem = document.createElement('div');
+                    userItem.className = 'flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer';
+                    userItem.innerHTML = `
+                        <img src="${user.profileImage}" alt="${user.name}" class="w-8 h-8 rounded-full mr-2">
+                        <div>
+                            <div class="font-semibold text-gray-800 dark:text-white">${user.name}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">@${user.username}</div>
+                        </div>
+                    `;
+                    userItem.addEventListener('click', function() {
+                        document.getElementById('share-username-${postId}').value = user.username;
+                        selectedUserId = user._id;
+                        userResults.classList.add('hidden');
+                    });
+                    userResults.appendChild(userItem);
+                });
+                userResults.classList.remove('hidden');
+            } else {
+                userResults.innerHTML = '<div class="p-2 text-gray-500 dark:text-gray-400">No users found</div>';
+                userResults.classList.remove('hidden');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+});
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+    const shareModal = document.getElementById('shareModal');
+    const postOptionsModal = document.getElementById('postOptionsModal');
+    
+    if (event.target === shareModal) {
+        closeShareModal();
+    }
+    
+    if (event.target === postOptionsModal) {
+        closePostOptionsModal();
+    }
+});
 </script>
+
+<!-- Share Modal Template -->
+<template id="share-modal-template">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+            <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Share Post</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Share with (username)</label>
+                    <input type="text" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message (optional)</label>
+                    <textarea class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" rows="3" placeholder="Add a message..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeShareModal(this)" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
+                    <button onclick="confirmShare(this)" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Share</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
 
 </body>
 </html>

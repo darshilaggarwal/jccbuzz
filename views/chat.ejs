@@ -1,68 +1,123 @@
 <%- include('partials/header') %>
 
 <div class="max-w-4xl mx-auto mt-8 px-4">
-    <div class="bg-white rounded-lg shadow-md">
-        <!-- Chat Header -->
-        <div class="p-4 border-b flex items-center justify-between">
-            <div class="flex items-center">
-                <a href="/user/<%= otherUser.username %>" class="flex items-center hover:opacity-80">
+    <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden flex flex-col h-[calc(100vh-8rem)]">
+        <!-- Chat Header - Make it sticky -->
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-black sticky top-0 z-10">
+            <a href="/user/<%= otherUser.username %>" class="flex items-center hover:opacity-80">
+                <div class="relative">
                     <img src="<%= otherUser.profileImage %>" 
                          alt="Profile" 
-                         class="w-10 h-10 rounded-full object-cover">
-                    <div class="ml-3">
-                        <h1 class="font-semibold text-gray-800"><%= otherUser.name %></h1>
-                        <p class="text-sm text-gray-500">
-                            @<%= otherUser.username %>
-                            <span id="onlineStatus" class="ml-2 <%= otherUser.isOnline ? 'text-green-500' : 'text-gray-400' %>">
-                                ● <%= otherUser.isOnline ? 'Online' : 'Offline' %>
-                            </span>
-                            <span id="typingStatus" class="ml-2 text-gray-400 italic hidden">typing...</span>
-                        </p>
-                    </div>
-                </a>
-            </div>
+                         class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700">
+                    <div class="absolute bottom-0 right-0 w-3 h-3 <%= otherUser.isOnline ? 'bg-green-500' : 'bg-gray-400' %> rounded-full border-2 border-white dark:border-gray-700"></div>
+                </div>
+                <div class="ml-3">
+                    <h5 class="font-semibold text-gray-800 dark:text-white"><%= otherUser.name %></h5>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        @<%= otherUser.username %>
+                        <span id="typingStatus" class="ml-2 text-blue-500 italic hidden">typing...</span>
+                    </p>
+                </div>
+            </a>
         </div>
 
-        <!-- Messages -->
-        <div id="messages" class="p-4 space-y-4 h-[500px] overflow-y-auto">
+        <!-- Messages Container -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages">
             <% chat.messages.forEach(message => { %>
-                <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %>">
-                    <div class="flex items-end space-x-2">
-                        <% if (message.sender._id.toString() !== user._id.toString()) { %>
-                            <img src="<%= message.sender.profileImage %>" 
-                                 alt="Profile" 
-                                 class="w-8 h-8 rounded-full object-cover">
+                <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %> group">
+                    <div class="relative max-w-[70%] <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3">
+                        <% if (message.isPostShare && message.sharedPostPreview) { %>
+                            <!-- Shared Post Preview -->
+                            <div class="border rounded-lg p-3 mb-2 bg-white dark:bg-gray-800">
+                                <% if (message.sharedPostPreview.image) { %>
+                                    <img src="<%= message.sharedPostPreview.image %>" alt="Post preview" class="w-full h-48 object-cover rounded-lg mb-2">
+                                <% } %>
+                                <div class="text-gray-800 dark:text-white font-medium mb-1"><%= message.sharedPostPreview.title %></div>
+                                <div class="text-gray-600 dark:text-gray-300 text-sm"><%= message.sharedPostPreview.content %></div>
+                                <a href="/post/<%= message.sharedPostPreview.postId %>" class="text-blue-500 text-sm mt-2 inline-block">View Post</a>
+                            </div>
                         <% } %>
-                        <div class="max-w-xs <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800' %> rounded-lg p-3">
-                            <% if (message.isStoryReply) { %>
-                                <div class="text-xs opacity-75 mb-1">
-                                    Replied to your story
-                                </div>
+                        
+                        <% if (message.mediaType !== 'none' && message.mediaUrl) { %>
+                            <% if (message.mediaType === 'image') { %>
+                                <img src="<%= message.mediaUrl %>" alt="Shared image" class="max-w-full rounded-lg mb-2">
+                            <% } else if (message.mediaType === 'video') { %>
+                                <video src="<%= message.mediaUrl %>" controls class="max-w-full rounded-lg mb-2"></video>
                             <% } %>
-                            <p><%= message.content %></p>
-                            <p class="text-xs opacity-75 mt-1">
-                                <%= new Date(message.timestamp).toLocaleTimeString() %>
-                            </p>
+                        <% } %>
+                        
+                        <% if (message.content) { %>
+                            <div class="<%= message.isEdited ? 'flex items-center gap-1' : '' %>">
+                                <span><%= message.content %></span>
+                                <% if (message.isEdited) { %>
+                                    <span class="text-xs opacity-75">(edited)</span>
+                                <% } %>
+                            </div>
+                        <% } %>
+
+                        <!-- Message Options Button - Show on hover -->
+                        <% if (message.sender._id.toString() === user._id.toString()) { %>
+                            <button onclick="showMessageOptions('<%= message._id %>')" 
+                                    class="absolute top-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                        <% } %>
+                        
+                        <div class="text-xs <%= message.sender._id.toString() === user._id.toString() ? 'text-blue-100' : 'text-gray-500' %> mt-1">
+                            <%= new Date(message.createdAt).toLocaleTimeString() %>
                         </div>
                     </div>
                 </div>
-            <% }) %>
+            <% }); %>
         </div>
 
         <!-- Message Input -->
-        <div class="p-4 border-t">
-            <form id="messageForm" class="flex space-x-2">
-                <input type="text" 
-                       id="messageInput"
-                       placeholder="Type a message..." 
-                       class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       required>
+        <div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-black sticky bottom-0">
+            <form id="messageForm" class="flex items-center space-x-2">
+                <input type="file" id="mediaInput" class="hidden" accept="image/*,video/*">
+                <button type="button" id="mediaButton" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
+                    <i class="fas fa-image"></i>
+                </button>
+                <div class="relative flex-1">
+                    <input type="text" 
+                           id="messageInput"
+                           placeholder="Message..." 
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white"
+                           required>
+                </div>
                 <button type="submit" 
-                        class="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600">
-                    Send
+                        class="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-paper-plane"></i>
                 </button>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Message Options Modal -->
+<div id="messageOptionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-xl">
+        <div class="p-4 space-y-4">
+            <button onclick="editMessage()" class="w-full text-left py-3 text-blue-500">
+                Edit Message
+            </button>
+            <button onclick="deleteMessage()" class="w-full text-left py-3 text-red-500">
+                Delete Message
+            </button>
+            <button onclick="closeMessageOptions()" class="w-full text-center py-3 text-gray-500 border-t dark:border-gray-700">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Media Preview -->
+<div id="mediaPreview" class="fixed bottom-20 left-0 right-0 bg-white dark:bg-gray-900 p-4 hidden">
+    <div class="flex items-center justify-between">
+        <div id="previewContent" class="flex-1"></div>
+        <button id="cancelMedia" class="ml-4 text-red-500">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 </div>
 
@@ -73,12 +128,18 @@ const userId = '<%= user._id %>';
 const chatId = '<%= chat._id %>';
 const receiverId = '<%= otherUser._id %>';
 let typingTimeout;
+let selectedMedia = null;
+let currentMessageId = null;
 
 const messagesContainer = document.getElementById('messages');
 const messageForm = document.getElementById('messageForm');
 const messageInput = document.getElementById('messageInput');
-const onlineStatus = document.getElementById('onlineStatus');
 const typingStatus = document.getElementById('typingStatus');
+const mediaInput = document.getElementById('mediaInput');
+const mediaButton = document.getElementById('mediaButton');
+const mediaPreview = document.getElementById('mediaPreview');
+const previewContent = document.getElementById('previewContent');
+const cancelMedia = document.getElementById('cancelMedia');
 
 function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -90,17 +151,21 @@ socket.emit('authenticate', userId);
 // Listen for online/offline status
 socket.on('userOnline', (onlineUserId) => {
     if (onlineUserId === receiverId) {
-        onlineStatus.textContent = '● Online';
-        onlineStatus.classList.remove('text-gray-400');
-        onlineStatus.classList.add('text-green-500');
+        const statusDot = document.querySelector('.absolute.bottom-0.right-0');
+        if (statusDot) {
+            statusDot.classList.remove('bg-gray-400');
+            statusDot.classList.add('bg-green-500');
+        }
     }
 });
 
 socket.on('userOffline', (offlineUserId) => {
     if (offlineUserId === receiverId) {
-        onlineStatus.textContent = '● Offline';
-        onlineStatus.classList.remove('text-green-500');
-        onlineStatus.classList.add('text-gray-400');
+        const statusDot = document.querySelector('.absolute.bottom-0.right-0');
+        if (statusDot) {
+            statusDot.classList.remove('bg-green-500');
+            statusDot.classList.add('bg-gray-400');
+        }
     }
 });
 
@@ -124,67 +189,146 @@ socket.on('userTyping', (data) => {
 });
 
 // Handle message input
-let typingTimer;
 messageInput.addEventListener('input', () => {
-    clearTimeout(typingTimer);
     socket.emit('typing', { receiverId, chatId });
-    
-    typingTimer = setTimeout(() => {
-        socket.emit('stopTyping', { receiverId, chatId });
-    }, 2000);
 });
 
 // Handle message submission
-messageForm.addEventListener('submit', (e) => {
+messageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const content = messageInput.value.trim();
-    if (!content) return;
-
-    socket.emit('privateMessage', {
-        chatId,
-        content,
-        receiverId
-    });
-
-    // Optimistically add message to chat
-    appendMessage({
-        content,
-        timestamp: new Date(),
-        sender: {
-            _id: userId,
-            profileImage: '<%= user.profileImage %>'
+    
+    if (!content && !selectedMedia) return;
+    
+    if (selectedMedia) {
+        const formData = new FormData();
+        formData.append('media', selectedMedia);
+        if (content) formData.append('content', content);
+        formData.append('receiverId', receiverId);
+        
+        try {
+            const response = await fetch(`/chat/${chatId}/media`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            appendMessage(data, true);
+        } catch (error) {
+            console.error('Error sending media message:', error);
         }
-    }, true);
-
+        
+        selectedMedia = null;
+        mediaPreview.classList.add('hidden');
+        mediaInput.value = '';
+    } else {
+        socket.emit('privateMessage', {
+            chatId,
+            content,
+            receiverId
+        });
+    }
+    
     messageInput.value = '';
     scrollToBottom();
 });
 
-function appendMessage(message, isSender) {
-    const messageHTML = `
-        <div class="flex ${isSender ? 'justify-end' : 'justify-start'}">
-            <div class="flex items-end space-x-2">
-                ${!isSender ? `
-                    <img src="${message.sender.profileImage}" 
-                         alt="Profile" 
-                         class="w-8 h-8 rounded-full object-cover">
-                ` : ''}
-                <div class="max-w-xs ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'} rounded-lg p-3">
-                    <p>${message.content}</p>
-                    <p class="text-xs opacity-75 mt-1">
-                        ${new Date(message.timestamp).toLocaleTimeString()}
-                    </p>
-                </div>
-            </div>
-        </div>
-    `;
+// Handle media button click
+mediaButton.addEventListener('click', () => {
+    mediaInput.click();
+});
+
+// Handle media selection
+mediaInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
     
-    messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+    selectedMedia = file;
+    previewContent.innerHTML = '';
+    mediaPreview.classList.remove('hidden');
+    
+    if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.className = 'h-20 rounded object-contain';
+        img.file = file;
+        previewContent.appendChild(img);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => { img.src = e.target.result; };
+        reader.readAsDataURL(file);
+    } else if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.className = 'h-20 rounded';
+        video.controls = true;
+        previewContent.appendChild(video);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => { video.src = e.target.result; };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Handle message options
+function showMessageOptions(messageId) {
+    currentMessageId = messageId;
+    document.getElementById('messageOptionsModal').classList.remove('hidden');
+}
+
+function closeMessageOptions() {
+    document.getElementById('messageOptionsModal').classList.add('hidden');
+    currentMessageId = null;
+}
+
+async function editMessage() {
+    const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
+    const content = messageElement.querySelector('span').textContent;
+    
+    const newContent = prompt('Edit message:', content);
+    if (newContent && newContent !== content) {
+        try {
+            const response = await fetch(`/message/${currentMessageId}/edit`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content: newContent })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                messageElement.querySelector('span').textContent = data.content;
+                if (data.isEdited) {
+                    messageElement.querySelector('.text-xs.opacity-75').textContent = '(edited)';
+                }
+            }
+        } catch (error) {
+            console.error('Error editing message:', error);
+        }
+    }
+    
+    closeMessageOptions();
+}
+
+async function deleteMessage() {
+    if (confirm('Are you sure you want to delete this message?')) {
+        try {
+            const response = await fetch(`/message/${currentMessageId}/delete`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`).closest('.flex');
+                messageElement.remove();
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+        }
+    }
+    
+    closeMessageOptions();
 }
 
 // Initial scroll to bottom
 scrollToBottom();
 </script>
 
-</body>
-</html> 
+<%- include('partials/footer') %> 

@@ -12,66 +12,145 @@
     </form>
 
     <!-- Comments Section -->
-    <div class="space-y-4 comments-section" data-post-id="<%= post._id %>">
-        <% post.comments.forEach((comment, commentIndex) => { %>
-            <div class="comment-container">
-                <!-- Main Comment -->
-                <div class="flex items-start space-x-3">
-                    <img src="<%= comment.user.profileImage %>" 
-                         alt="Profile" 
-                         class="w-8 h-8 rounded-full object-cover">
-                    <div class="flex-1">
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="font-medium"><%= comment.user.name %></div>
-                            <p class="text-gray-700"><%= comment.content %></p>
-                        </div>
-                        <div class="mt-1 flex items-center space-x-4 text-sm text-gray-500">
-                            <button onclick="likeComment('<%= comment._id %>')" 
-                                    class="like-btn <%= comment.likes.includes(user._id) ? 'text-red-500' : '' %>">
-                                <i class="fas fa-heart"></i>
-                                <span class="like-count"><%= comment.likes.length %></span>
-                            </button>
-                            <button onclick="showReplyForm(this)">Reply</button>
-                        </div>
-
-                        <!-- Reply Form (Hidden by default) -->
-                        <form class="mt-2 hidden reply-form" onsubmit="addReply(event, '<%= comment._id %>')">
-                            <div class="flex gap-2">
-                                <input type="text" 
-                                       placeholder="Write a reply..." 
-                                       class="flex-1 px-3 py-1 border rounded-lg text-sm"
-                                       required>
-                                <button type="submit" 
-                                        class="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm">
-                                    Reply
-                                </button>
+    <div class="comments-section mt-4">
+        <% if (post.comments && post.comments.length > 0) { %>
+            <div class="space-y-3 max-h-48 overflow-y-auto" id="comments-container-<%= post._id %>">
+                <% post.comments.forEach(comment => { %>
+                    <div class="flex space-x-2">
+                        <img src="<%= comment.user.profileImage %>" 
+                             alt="<%= comment.user.name %>" 
+                             class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
+                        <div class="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
+                            <div class="flex justify-between items-start">
+                                <p class="font-medium text-sm text-gray-800 dark:text-white"><%= comment.user.name %></p>
+                                <span class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(comment.createdAt).toLocaleDateString() %></span>
                             </div>
-                        </form>
-
-                        <!-- Replies -->
-                        <div class="mt-2 space-y-2 replies-section">
-                            <% comment.replies.forEach((reply, replyIndex) => { %>
-                                <div class="flex items-start space-x-3 ml-6">
-                                    <img src="<%= reply.user.profileImage %>" 
-                                         alt="Profile" 
-                                         class="w-6 h-6 rounded-full object-cover">
-                                    <div class="flex-1">
-                                        <div class="bg-gray-50 p-2 rounded-lg">
-                                            <div class="font-medium text-sm"><%= reply.user.name %></div>
-                                            <p class="text-sm text-gray-700"><%= reply.content %></p>
-                                        </div>
-                                        <button onclick="likeReply('<%= comment._id %>', <%= replyIndex %>)" 
-                                                class="mt-1 text-xs text-gray-500 like-btn <%= reply.likes.includes(user._id) ? 'text-red-500' : '' %>">
-                                            <i class="fas fa-heart"></i>
-                                            <span class="like-count"><%= reply.likes.length %></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            <% }) %>
+                            <p class="text-gray-600 dark:text-gray-300 text-sm"><%= comment.content %></p>
                         </div>
                     </div>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <!-- Comment Form -->
+        <form class="mt-3 flex items-center" onsubmit="addComment(event, '<%= post._id %>')">
+            <img src="<%= user.profileImage %>" 
+                 alt="Your profile" 
+                 class="w-8 h-8 rounded-full object-cover mr-2">
+            <div class="relative flex-1">
+                <input type="text" 
+                       id="comment-input-<%= post._id %>" 
+                       placeholder="Add a comment..." 
+                       class="w-full py-2 px-3 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white text-sm"
+                       required>
+                <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-600">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Add comment functionality
+function addComment(event, postId) {
+    event.preventDefault();
+    const inputEl = document.getElementById(`comment-input-${postId}`);
+    const content = inputEl.value.trim();
+    
+    if (!content) return;
+    
+    fetch(`/post/${postId}/comment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to add comment');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Create new comment HTML
+        const commentHTML = `
+            <div class="flex space-x-2">
+                <img src="${data.comment.user.profileImage}" 
+                     alt="${data.comment.user.name}" 
+                     class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
+                <div class="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
+                    <div class="flex justify-between items-start">
+                        <p class="font-medium text-sm text-gray-800 dark:text-white">${data.comment.user.name}</p>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">${data.comment.content}</p>
                 </div>
             </div>
-        <% }) %>
-    </div>
-</div> 
+        `;
+        
+        // Add the new comment to the DOM
+        const commentsContainer = document.getElementById(`comments-container-${postId}`);
+        
+        // If there are no comments yet, create the container
+        if (!commentsContainer) {
+            const newCommentsContainer = document.createElement('div');
+            newCommentsContainer.id = `comments-container-${postId}`;
+            newCommentsContainer.className = 'space-y-3 max-h-48 overflow-y-auto';
+            newCommentsContainer.innerHTML = commentHTML;
+            inputEl.closest('.comments-section').insertBefore(newCommentsContainer, inputEl.closest('form'));
+        } else {
+            commentsContainer.insertAdjacentHTML('beforeend', commentHTML);
+            commentsContainer.scrollTop = commentsContainer.scrollHeight;
+        }
+        
+        // Clear the input
+        inputEl.value = '';
+        
+        // Update the comment count display
+        const commentCountEl = document.querySelector(`button[onclick="focusComment('${postId}')"] span`);
+        if (commentCountEl) {
+            const currentCount = parseInt(commentCountEl.textContent) || 0;
+            commentCountEl.textContent = currentCount + 1;
+        }
+    })
+    .catch(error => {
+        console.error('Error adding comment:', error);
+        alert('Failed to add comment. Please try again.');
+    });
+}
+
+// Listen for new comments via socket
+if (typeof io !== 'undefined') {
+    const socket = io();
+    socket.on('newComment', function(data) {
+        const commentsContainer = document.getElementById(`comments-container-${data.postId}`);
+        if (commentsContainer) {
+            const commentHTML = `
+                <div class="flex space-x-2">
+                    <img src="${data.comment.user.profileImage}" 
+                         alt="${data.comment.user.name}" 
+                         class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
+                    <div class="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
+                        <div class="flex justify-between items-start">
+                            <p class="font-medium text-sm text-gray-800 dark:text-white">${data.comment.user.name}</p>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-300 text-sm">${data.comment.content}</p>
+                    </div>
+                </div>
+            `;
+            commentsContainer.insertAdjacentHTML('beforeend', commentHTML);
+            commentsContainer.scrollTop = commentsContainer.scrollHeight;
+            
+            // Update comment count
+            const commentCountEl = document.querySelector(`button[onclick="focusComment('${data.postId}')"] span`);
+            if (commentCountEl) {
+                const currentCount = parseInt(commentCountEl.textContent) || 0;
+                commentCountEl.textContent = currentCount + 1;
+            }
+        }
+    });
+}
+</script> 

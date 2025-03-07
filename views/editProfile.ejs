@@ -1,75 +1,151 @@
 <%- include('partials/header') %>
 
-<div class="max-w-2xl mx-auto mt-8 px-4">
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Edit Profile</h1>
+<div class="max-w-2xl mx-auto mt-8 px-4" id="main-container">
+    <div class="bg-white dark:bg-black rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Edit Profile</h1>
 
         <div class="mb-8">
             <div class="flex items-center justify-center mb-4">
                 <img src="<%= user.profileImage %>" 
                      alt="Profile" 
-                     class="w-32 h-32 rounded-full object-cover">
+                     id="profile-preview"
+                     class="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-lg">
             </div>
             <form action="/upload-profile-pic" method="POST" enctype="multipart/form-data" class="text-center">
                 <label class="block mb-2">
                     <span class="sr-only">Choose profile photo</span>
                     <input type="file" 
                            name="profileImage" 
-                           class="block w-full text-sm text-gray-500
+                           id="profile-image-input"
+                           class="block w-full text-sm text-gray-500 dark:text-gray-300
                                   file:mr-4 file:py-2 file:px-4
                                   file:rounded-full file:border-0
                                   file:text-sm file:font-semibold
                                   file:bg-blue-50 file:text-blue-700
-                                  hover:file:bg-blue-100"
-                           accept="image/*">
+                                  dark:file:bg-gray-900 dark:file:text-blue-300
+                                  hover:file:bg-blue-100 dark:hover:file:bg-gray-800"
+                           accept="image/*"
+                           onchange="previewImage(this)">
                 </label>
-                <button type="submit" 
-                        class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">
-                    Update Photo
-                </button>
+                <div class="flex justify-center space-x-2">
+                    <button type="submit" 
+                            class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
+                        Update Photo
+                    </button>
+                    <a href="/remove-profile-pic" 
+                       class="mt-2 px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors">
+                        Remove Photo
+                    </a>
+                </div>
             </form>
         </div>
 
         <form action="/update-profile" method="POST" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Name</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
                 <input type="text" 
                        name="name" 
                        value="<%= user.name %>" 
-                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:text-white"
                        required>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Username</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
                 <input type="text" 
                        name="username" 
                        value="<%= user.username %>" 
-                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:text-white"
                        required>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Bio</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
                 <textarea name="bio" 
                           rows="4" 
-                          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:text-white"
                           ><%= user.bio %></textarea>
+            </div>
+            
+            <!-- Dark Mode Toggle -->
+            <div class="flex items-center space-x-2">
+                <label for="darkMode" class="text-sm font-medium text-gray-700 dark:text-gray-300">Dark Mode</label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="darkMode" class="sr-only peer" <%= user.darkMode ? 'checked' : '' %>>
+                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
             </div>
 
             <div class="flex justify-end space-x-3">
                 <a href="/profile" 
-                   class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                   class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
                     Cancel
                 </a>
                 <button type="submit" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
                     Save Changes
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+// Preview image before upload
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            document.getElementById('profile-preview').src = e.target.result;
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Dark mode functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const darkModeToggle = document.getElementById('darkMode');
+    
+    // Check if dark mode is enabled in localStorage
+    if (localStorage.getItem('darkMode') === 'enabled') {
+        document.documentElement.classList.add('dark');
+        darkModeToggle.checked = true;
+    }
+    
+    // Toggle dark mode
+    darkModeToggle.addEventListener('change', function() {
+        if (this.checked) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('darkMode', 'enabled');
+            
+            // Save preference to user profile
+            updateDarkModePreference(true);
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('darkMode', 'disabled');
+            
+            // Save preference to user profile
+            updateDarkModePreference(false);
+        }
+    });
+    
+    // Function to update user dark mode preference
+    function updateDarkModePreference(isDarkMode) {
+        fetch('/update-theme', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ darkMode: isDarkMode })
+        })
+        .then(response => response.json())
+        .then(data => console.log('Theme preference updated:', data))
+        .catch(error => console.error('Error updating theme preference:', error));
+    }
+});
+</script>
 
 </body>
 </html> 

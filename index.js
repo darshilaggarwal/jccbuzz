@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 const express = require("express");
 const app = express();
 const server = require('http').createServer(app);
@@ -105,6 +108,44 @@ const uploadStory = multer({
     storage: storyStorage,
     limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 }).single('story');
+
+// Configure multer storage for chat media uploads
+const chatMediaStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = path.join(__dirname, 'public/uploads/chat');
+        
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, 'chat-' + uniqueSuffix + ext);
+    }
+});
+
+// Filter for images and videos
+const chatMediaFilter = function (req, file, cb) {
+    // Accept images and videos
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only images and videos are allowed'), false);
+    }
+};
+
+const uploadChatMedia = multer({ 
+    storage: chatMediaStorage,
+    fileFilter: chatMediaFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+}).single('media');
 
 // Serve static files
 app.use(express.static('public'));
@@ -235,41 +276,78 @@ app.post("/register" ,async (req,res)=>{
     })
 })
 
-app.post("/login" , async (req,res)=>{
+app.post("/login", async (req, res) => {
+    try {
+        let { email, password } = req.body;
 
-    let { email , password} = req.body;
+        let user = await userModel.findOne({ email });
+        if (!user) {
+            console.log('Login attempt with non-existent email:', email);
+            return res.render("login", { error: "Invalid email or password" });
+        }
 
-    let user = await userModel.findOne({email})
-    if (!user) return res.status(300).send("user needs to be registered")
-
-        bcrypt.compare(password , user.password , (err, result)=>{
+        bcrypt.compare(password, user.password, (err, result) => {
+            if (err) {
+                console.error('Error comparing passwords:', err);
+                return res.render("login", { error: "An error occurred during login. Please try again." });
+            }
+            
             if (result) {
-                let token = jwt.sign({ email: user.email }, "shhhh");
+                let token = jwt.sign({ 
+                    name: user.name,
+                    email: user.email 
+                }, "shhhh");
                 res.cookie("token", token);
                 return res.redirect("/profile");
             }
-            res.redirect("/login");
-        })
-
-})
+            
+            console.log('Failed login attempt for user:', email);
+            res.render("login", { error: "Invalid email or password" });
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.render("login", { error: "An error occurred during login. Please try again." });
+    }
+});
   
-app.get("/logout" , (req,res)=>{
-    res.cookie("token" , "")
-    res.redirect("/")
-    // res.render("landing")
-})
+app.get("/logout", (req, res) => {
+    // Clear JWT cookie
+    res.cookie("token", "");
+    
+    // Clear Passport session
+    if (req.logout) {
+        req.logout(function(err) {
+            if (err) { 
+                console.error('Error during logout:', err);
+            }
+            res.redirect("/");
+        });
+    } else {
+        res.redirect("/");
+    }
+});
 
 function isLoggedIn(req, res, next) {
+    // Check for passport session-based authentication first
+    if (req.isAuthenticated && req.isAuthenticated()) {
+        console.log('User authenticated via Passport session');
+        return next();
+    }
+    
+    // Fall back to JWT token-based authentication
     if (!req.cookies.token || req.cookies.token === "") {
-        res.redirect("/");
-    } else {
-        try {
-            let data = jwt.verify(req.cookies.token, "shhhh");
-            req.user = data;
-            next();
-        } catch (error) {
-            res.status(401).send("Invalid token");
-        }
+        console.log('No authentication token found, redirecting to login');
+        return res.redirect("/login");
+    } 
+    
+    try {
+        let data = jwt.verify(req.cookies.token, "shhhh");
+        req.user = data;
+        console.log('User authenticated via JWT');
+        next();
+    } catch (error) {
+        console.error('JWT verification error:', error);
+        res.redirect("/login?error=session_expired");
     }
 }
 
@@ -325,17 +403,25 @@ app.post("/post/:postId/like", isLoggedIn, async (req, res) => {
             return res.status(404).json({ error: "Post not found" });
         }
 
-        // Check if the user has already liked the post
-        if (!post.likes.includes(user._id)) {
-            post.likes.push(user._id);
-            await post.save();
-            res.json({ message: "Post liked", likes: post.likes.length });
+        const userLiked = post.likes.includes(user._id);
+        
+        if (userLiked) {
+            // Unlike the post
+            post.likes = post.likes.filter(id => !id.equals(user._id));
         } else {
-            return res.status(400).json({ error: "Post already liked" });
+            // Like the post
+            post.likes.push(user._id);
         }
+        
+        await post.save();
+        
+        res.json({
+            liked: !userLiked,
+            likeCount: post.likes.length
+        });
     } catch (error) {
-        console.error('Error liking post:', error);
-        res.status(500).json({ error: "Error liking post" });
+        console.error('Like/unlike error:', error);
+        res.status(500).json({ error: 'An error occurred while processing your request' });
     }
 });
 
@@ -413,19 +499,45 @@ app.post("/post/:postId/comment", isLoggedIn, async (req, res) => {
         const post = await postModel.findById(req.params.postId);
         const user = await userModel.findOne({ email: req.user.email });
 
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+
         const comment = await commentModel.create({
             content,
             user: user._id,
-            post: post._id,
-            likes: [],
-            replies: []
+            post: post._id
         });
 
+        // Add comment to post's comments array
         post.comments.push(comment._id);
         await post.save();
 
-        res.json(await comment.populate('user', 'name username profileImage'));
+        // Populate user details for the response
+        await comment.populate('user', 'name username profileImage');
+
+        // Emit socket event for real-time updates
+        io.emit('newComment', {
+            postId: post._id,
+            comment: {
+                _id: comment._id,
+                content: comment.content,
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    username: user.username,
+                    profileImage: user.profileImage
+                },
+                createdAt: comment.createdAt
+            }
+        });
+
+        res.json({
+            success: true,
+            comment: comment
+        });
     } catch (error) {
+        console.error('Error adding comment:', error);
         res.status(500).json({ error: "Error adding comment" });
     }
 });
@@ -533,23 +645,48 @@ app.post("/update-profile", isLoggedIn, async (req, res) => {
     try {
         const { name, username, bio } = req.body;
         const user = await userModel.findOne({ email: req.user.email });
-
-        // Check if username is being changed and is not taken
-        if (username !== user.username) {
-            const existingUser = await userModel.findOne({ username });
-            if (existingUser) {
-                return res.status(400).send("Username already taken");
-            }
-        }
-
+        
         user.name = name;
         user.username = username;
         user.bio = bio;
-
+        
         await user.save();
         res.redirect("/profile");
     } catch (error) {
+        console.error('Error updating profile:', error);
         res.status(500).send("Error updating profile");
+    }
+});
+
+// Update theme preference
+app.post("/update-theme", isLoggedIn, async (req, res) => {
+    try {
+        const { darkMode } = req.body;
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        user.darkMode = darkMode;
+        await user.save();
+        
+        res.json({ success: true, darkMode: user.darkMode });
+    } catch (error) {
+        console.error('Error updating theme preference:', error);
+        res.status(500).json({ success: false, error: "Failed to update theme preference" });
+    }
+});
+
+// Remove profile picture
+app.get("/remove-profile-pic", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        // Reset to default profile image
+        user.profileImage = '/placeholder/image.png';
+        await user.save();
+        
+        res.redirect("/edit-profile");
+    } catch (error) {
+        console.error('Error removing profile picture:', error);
+        res.status(500).send("Error removing profile picture");
     }
 });
 
@@ -575,10 +712,21 @@ app.get("/chat/:userId", isLoggedIn, async (req, res) => {
         const currentUser = await userModel.findOne({ email: req.user.email });
         const otherUser = await userModel.findById(req.params.userId);
 
+        if (!otherUser) {
+            return res.status(404).send("User not found");
+        }
+
         let chat = await chatModel.findOne({
             participants: { $all: [currentUser._id, otherUser._id] }
         }).populate('participants', 'name username profileImage isOnline')
-          .populate('messages.sender', 'name username profileImage');
+          .populate('messages.sender', 'name username profileImage')
+          .populate({
+              path: 'messages.sharedPost',
+              populate: {
+                  path: 'user',
+                  select: 'name username profileImage'
+              }
+          });
 
         if (!chat) {
             chat = await chatModel.create({
@@ -588,33 +736,73 @@ app.get("/chat/:userId", isLoggedIn, async (req, res) => {
             await chat.populate('participants', 'name username profileImage isOnline');
         }
 
-        res.render("chat", { user: currentUser, chat, otherUser });
+        res.render("chat", { 
+            user: currentUser, 
+            chat, 
+            otherUser,
+            messages: chat.messages || [] // Explicitly pass messages array
+        });
     } catch (error) {
+        console.error('Error loading chat:', error);
         res.status(500).send("Error loading chat");
     }
 });
 
-// Send message
-app.post("/chat/:chatId/message", isLoggedIn, async (req, res) => {
+// Send a message with media
+app.post("/chat/:chatId/media", isLoggedIn, async (req, res) => {
     try {
-        const { content } = req.body;
-        const user = await userModel.findOne({ email: req.user.email });
-        const chat = await chatModel.findById(req.params.chatId);
-
-        chat.messages.push({
-            sender: user._id,
-            content
+        uploadChatMedia(req, res, async function (err) {
+            if (err) {
+                return res.status(400).json({ error: err.message });
+            }
+            
+            const { chatId } = req.params;
+            const { content, receiverId } = req.body;
+            
+            const user = await userModel.findOne({ email: req.user.email });
+            const chat = await chatModel.findById(chatId);
+            
+            if (!chat) {
+                return res.status(404).json({ error: "Chat not found" });
+            }
+            
+            // Determine media type
+            let mediaType = 'none';
+            if (req.file) {
+                mediaType = req.file.mimetype.startsWith('image/') ? 'image' : 'video';
+            }
+            
+            // Create message
+            const message = {
+                sender: user._id,
+                content: content || '',
+                mediaType,
+                mediaUrl: req.file ? `/uploads/chat/${req.file.filename}` : null,
+                read: false,
+                timestamp: Date.now()
+            };
+            
+            chat.messages.push(message);
+            chat.lastMessage = Date.now();
+            await chat.save();
+            
+            // Correctly populate the sender field using the full path
+            await chat.populate('messages.sender', 'name username profileImage');
+            
+            // Get the newly added message
+            const populatedMessage = chat.messages[chat.messages.length - 1];
+            
+            // Emit event to recipient
+            io.to(receiverId).emit('newMessage', {
+                chatId,
+                message: populatedMessage
+            });
+            
+            res.json(populatedMessage);
         });
-        chat.lastMessage = Date.now();
-        await chat.save();
-
-        // Populate the new message
-        const newMessage = chat.messages[chat.messages.length - 1];
-        await chat.populate('messages.sender', 'name username profileImage');
-
-        res.json(newMessage);
     } catch (error) {
-        res.status(500).json({ error: "Error sending message" });
+        console.error('Error sending media message:', error);
+        res.status(500).json({ error: "Error sending media message" });
     }
 });
 
@@ -902,26 +1090,407 @@ async function updateUserStoryStatus(userId) {
 
 // Google OAuth routes
 app.get('/auth/google',
+    function(req, res, next) {
+        console.log('Starting Google authentication');
+        next();
+    },
     passport.authenticate('google', { 
-        scope: ['profile', 'email'] 
+        scope: ['profile', 'email']
     })
 );
 
 app.get('/auth/google/callback', 
-    passport.authenticate('google', { 
-        failureRedirect: '/login' 
-    }),
-    function(req, res) {
-        // Create JWT token
-        const token = jwt.sign({
-            name: req.user.name,
-            email: req.user.email
-        }, "shhhh");
-        
-        // Set cookie
-        res.cookie("token", token);
-        
-        // Redirect to profile page
-        res.redirect('/profile');
+    function(req, res, next) {
+        console.log('Google auth callback received');
+        passport.authenticate('google', { 
+            failureRedirect: '/login',
+            failWithError: true
+        })(req, res, function(err) {
+            if (err) {
+                console.error('Google authentication error:', err);
+                return res.redirect('/login?error=google_auth_failed');
+            }
+            
+            // Authentication succeeded
+            console.log('Google authentication successful for:', req.user.email);
+            
+            // Create JWT token
+            const token = jwt.sign({
+                name: req.user.name,
+                email: req.user.email
+            }, "shhhh");
+            
+            // Set cookie
+            res.cookie("token", token);
+            
+            // Redirect to profile page
+            res.redirect('/profile');
+        });
     }
 );
+
+// Middleware to fetch unread messages count
+async function fetchUnreadMessagesCount(req, res, next) {
+    if (req.user) {
+        try {
+            const user = await userModel.findOne({ email: req.user.email });
+            
+            // Find all chats for this user
+            const chats = await chatModel.find({
+                participants: user._id
+            }).populate({
+                path: 'messages',
+                match: { 
+                    read: false,
+                    sender: { $ne: user._id } // Only count messages not sent by the current user
+                }
+            });
+            
+            // Count all unread messages
+            let unreadMessages = 0;
+            chats.forEach(chat => {
+                unreadMessages += chat.messages.length;
+            });
+            
+            res.locals.unreadMessages = unreadMessages;
+        } catch (error) {
+            console.error('Error fetching unread messages count:', error);
+            res.locals.unreadMessages = 0;
+        }
+    }
+    next();
+}
+
+// Apply the middleware after isLoggedIn
+app.use(fetchUnreadMessagesCount);
+
+// Send regular text message
+app.post("/chat/:chatId/message", isLoggedIn, async (req, res) => {
+    try {
+        const { content, receiverId } = req.body;
+        const user = await userModel.findOne({ email: req.user.email });
+        const chat = await chatModel.findById(req.params.chatId);
+        
+        if (!chat) {
+            return res.status(404).json({ error: "Chat not found" });
+        }
+        
+        chat.messages.push({
+            sender: user._id,
+            content,
+            mediaType: 'none',
+            read: false,
+            timestamp: Date.now()
+        });
+        
+        chat.lastMessage = Date.now();
+        await chat.save();
+        
+        // Correctly populate the message
+        await chat.populate('messages.sender', 'name username profileImage');
+        
+        // Get the newly added message
+        const newMessage = chat.messages[chat.messages.length - 1];
+        
+        // Emit socket event to the recipient
+        io.to(receiverId).emit('newMessage', {
+            chatId: chat._id,
+            message: newMessage
+        });
+        
+        res.json(newMessage);
+    } catch (error) {
+        console.error('Error sending message:', error);
+        res.status(500).json({ error: "Error sending message" });
+    }
+});
+
+// Save post
+app.post("/post/:postId/save", isLoggedIn, async (req, res) => {
+    try {
+        const post = await postModel.findById(req.params.postId);
+        const user = await userModel.findOne({ email: req.user.email });
+
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+
+        // Check if post is already saved
+        const postIndex = user.savedPosts.indexOf(post._id);
+        
+        if (postIndex === -1) {
+            // Add post to saved posts
+            user.savedPosts.push(post._id);
+            await user.save();
+            res.json({ message: "Post saved", saved: true });
+        } else {
+            // Remove post from saved posts
+            user.savedPosts.splice(postIndex, 1);
+            await user.save();
+            res.json({ message: "Post unsaved", saved: false });
+        }
+    } catch (error) {
+        console.error('Error saving post:', error);
+        res.status(500).json({ error: "Error saving post" });
+    }
+});
+
+// Get saved posts
+app.get("/saved-posts", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email })
+            .populate({
+                path: 'savedPosts',
+                populate: {
+                    path: 'user',
+                    select: 'username name profileImage'
+                }
+            });
+        
+        res.render("savedPosts", { 
+            user: user, 
+            savedPosts: user.savedPosts 
+        });
+    } catch (error) {
+        console.error('Error fetching saved posts:', error);
+        res.status(500).send("Error fetching saved posts");
+    }
+});
+
+// Share post route
+app.post('/post/:postId/share', isLoggedIn, async (req, res) => {
+    try {
+        const { username, message } = req.body;
+        const postId = req.params.postId;
+        
+        // Find the sender (current user)
+        const sender = await userModel.findOne({ email: req.user.email });
+        
+        // Find the receiver by username
+        const receiver = await userModel.findOne({ username: username });
+        
+        if (!receiver) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Find the post and populate user details
+        const post = await postModel.findById(postId).populate('user', 'name username profileImage');
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        
+        // Find existing chat or create new one
+        let chat = await chatModel.findOne({
+            participants: {
+                $all: [sender._id, receiver._id],
+                $size: 2
+            }
+        });
+        
+        if (!chat) {
+            chat = new chatModel({
+                participants: [sender._id, receiver._id],
+                messages: []
+            });
+        }
+        
+        // Create post preview
+        const postPreview = {
+            title: post.title,
+            content: post.content,
+            image: post.images && post.images.length > 0 ? post.images[0].url : null,
+            postId: post._id
+        };
+        
+        // Add the shared post message
+        chat.messages.push({
+            sender: sender._id,
+            content: message || 'Shared a post with you',
+            isPostShare: true,
+            sharedPost: post._id,
+            sharedPostPreview: postPreview
+        });
+        
+        await chat.save();
+        
+        // Populate the sender details and shared post details for the response
+        await chat.populate([
+            { path: 'messages.sender', select: 'name username profileImage' },
+            { path: 'messages.sharedPost', populate: { path: 'user', select: 'name username profileImage' } }
+        ]);
+        
+        // Emit socket event to recipient if they're online
+        const recipientSocketId = connectedUsers.get(receiver._id.toString());
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('newMessage', {
+                chatId: chat._id,
+                message: chat.messages[chat.messages.length - 1]
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Post shared successfully',
+            chat: chat
+        });
+    } catch (error) {
+        console.error('Error sharing post:', error);
+        res.status(500).json({ error: 'An error occurred while sharing the post' });
+    }
+});
+
+// Search route
+app.get('/search', isLoggedIn, async (req, res) => {
+    try {
+        const query = req.query.q;
+        const format = req.query.format; // Check if format=json is requested
+        
+        if (!query) {
+            if (format === 'json') {
+                return res.json({ users: [] });
+            }
+            return res.render('searchResults', { users: [], query: '' });
+        }
+        
+        // Search for users by name or username
+        const users = await userModel.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { username: { $regex: query, $options: 'i' } }
+            ]
+        });
+        
+        // If JSON format is requested, return JSON response
+        if (format === 'json') {
+            return res.json({ users });
+        }
+        
+        // Otherwise render the template
+        res.render('searchResults', { users, query });
+    } catch (error) {
+        console.error('Search error:', error);
+        if (req.query.format === 'json') {
+            return res.status(500).json({ error: 'An error occurred during search' });
+        }
+        res.status(500).send('An error occurred during search');
+    }
+});
+
+// Display saved posts
+app.get('/saved-posts', isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email })
+            .populate({
+                path: 'savedPosts',
+                populate: {
+                    path: 'user',
+                    select: 'name username profileImage'
+                }
+            });
+        
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+        
+        res.render('savedPosts', { 
+            savedPosts: user.savedPosts || [],
+            user: user
+        });
+    } catch (error) {
+        console.error('Error fetching saved posts:', error);
+        res.status(500).send('Error fetching saved posts');
+    }
+});
+
+// Add view post route
+app.get("/post/:postId", isLoggedIn, async (req, res) => {
+    try {
+        const post = await postModel.findById(req.params.postId)
+            .populate('user', 'name username profileImage')
+            .populate({
+                path: 'comments',
+                populate: [
+                    {
+                        path: 'user',
+                        select: 'name username profileImage'
+                    },
+                    {
+                        path: 'replies.user',
+                        select: 'name username profileImage'
+                    }
+                ]
+            })
+            .populate('likes');
+
+        if (!post) {
+            return res.status(404).send("Post not found");
+        }
+
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        res.render("singlePost", { post, user: currentUser });
+    } catch (error) {
+        console.error('Error loading post:', error);
+        res.status(500).send("Error loading post");
+    }
+});
+
+// Add message edit route
+app.put("/message/:messageId/edit", isLoggedIn, async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { content } = req.body;
+        const user = await userModel.findOne({ email: req.user.email });
+
+        // Find the chat containing this message
+        const chat = await chatModel.findOne({
+            "messages._id": messageId,
+            "messages.sender": user._id
+        });
+
+        if (!chat) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        // Update the message
+        const message = chat.messages.id(messageId);
+        message.content = content;
+        message.isEdited = true;
+        await chat.save();
+
+        res.json({
+            success: true,
+            content: message.content,
+            isEdited: true
+        });
+    } catch (error) {
+        console.error('Error editing message:', error);
+        res.status(500).json({ error: "Error editing message" });
+    }
+});
+
+// Add message delete route
+app.delete("/message/:messageId/delete", isLoggedIn, async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const user = await userModel.findOne({ email: req.user.email });
+
+        // Find the chat containing this message
+        const chat = await chatModel.findOne({
+            "messages._id": messageId,
+            "messages.sender": user._id
+        });
+
+        if (!chat) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        // Remove the message
+        chat.messages.pull({ _id: messageId });
+        await chat.save();
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        res.status(500).json({ error: "Error deleting message" });
+    }
+});

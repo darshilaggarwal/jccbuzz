@@ -2,22 +2,36 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const userModel = require('../models/user');
 
+// Get your credentials from:
+// https://console.cloud.google.com/apis/credentials
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'YOUR_CLIENT_SECRET';
+
+// Log credential status (without revealing the actual values)
+console.log('Google OAuth client ID loaded:', Boolean(process.env.GOOGLE_CLIENT_ID) ? 'Yes' : 'No');
+console.log('Google OAuth client secret loaded:', Boolean(process.env.GOOGLE_CLIENT_SECRET) ? 'Yes' : 'No');
+console.log('Client ID ends with:', GOOGLE_CLIENT_ID.substring(GOOGLE_CLIENT_ID.length - 5));
+
 // Configure Google OAuth strategy
 passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'YOUR_GOOGLE_CLIENT_SECRET',
-    callbackURL: "/auth/google/callback",
+    clientID: GOOGLE_CLIENT_ID,
+    clientSecret: GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/callback",
     passReqToCallback: true
   },
   async (req, accessToken, refreshToken, profile, done) => {
     try {
+      console.log('Google profile received:', profile.displayName);
+      
       // Check if user already exists
       let user = await userModel.findOne({ email: profile.emails[0].value });
       
       if (user) {
         // User exists, update their Google profile info if needed
+        console.log('Existing user logged in with Google:', user.email);
         return done(null, user);
       } else {
+        console.log('Creating new user from Google profile:', profile.emails[0].value);
         // Create a new user with Google profile info
         const newUser = await userModel.create({
           name: profile.displayName,
@@ -30,6 +44,7 @@ passport.use(new GoogleStrategy({
         return done(null, newUser);
       }
     } catch (error) {
+      console.error('Error in Google authentication:', error);
       return done(error, null);
     }
   }

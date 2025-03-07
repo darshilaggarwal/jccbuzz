@@ -8,7 +8,16 @@ const messageSchema = new mongoose.Schema({
     },
     content: {
         type: String,
-        required: true
+        required: false // Not required for media messages or shared posts
+    },
+    mediaType: {
+        type: String,
+        enum: ['none', 'image', 'video'],
+        default: 'none'
+    },
+    mediaUrl: {
+        type: String,
+        default: null
     },
     isStoryReply: {
         type: Boolean,
@@ -18,7 +27,26 @@ const messageSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Story'
     },
-    timestamp: {
+    isPostShare: {
+        type: Boolean,
+        default: false
+    },
+    sharedPost: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post',
+        default: null
+    },
+    sharedPostPreview: {
+        title: String,
+        content: String,
+        image: String,
+        postId: mongoose.Schema.Types.ObjectId
+    },
+    read: {
+        type: Boolean,
+        default: false
+    },
+    createdAt: {
         type: Date,
         default: Date.now
     }
@@ -30,10 +58,18 @@ const chatSchema = new mongoose.Schema({
         ref: 'User'
     }],
     messages: [messageSchema],
-    lastMessage: {
+    lastActivity: {
         type: Date,
         default: Date.now
     }
+});
+
+// Update lastActivity when a new message is added
+chatSchema.pre('save', function(next) {
+    if (this.isModified('messages')) {
+        this.lastActivity = Date.now();
+    }
+    next();
 });
 
 module.exports = mongoose.model('Chat', chatSchema); 

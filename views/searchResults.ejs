@@ -1,0 +1,38 @@
+<%- include('partials/header') %>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Search Results</h1>
+        <p class="text-gray-500 dark:text-gray-400">Results for "<%= query %>"</p>
+    </div>
+
+    <% if (users && users.length > 0) { %>
+        <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden">
+            <div class="divide-y divide-gray-200 dark:divide-gray-800">
+                <% users.forEach(user => { %>
+                    <a href="/user/<%= user.username %>" class="block hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                        <div class="p-4 flex items-center">
+                            <img src="<%= user.profileImage %>" 
+                                 alt="Profile" 
+                                 class="w-12 h-12 rounded-full object-cover">
+                            <div class="ml-4">
+                                <h2 class="font-semibold text-gray-800 dark:text-white"><%= user.name %></h2>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">@<%= user.username %></p>
+                            </div>
+                        </div>
+                    </a>
+                <% }) %>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="bg-white dark:bg-black rounded-lg shadow-md p-8 text-center">
+            <i class="fas fa-search text-5xl text-gray-300 dark:text-gray-700 mb-4"></i>
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Users Found</h2>
+            <p class="text-gray-500 dark:text-gray-400 mb-4">Try a different search term</p>
+            <a href="/feed" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Back to Feed</a>
+        </div>
+    <% } %>
+</div>
+
+</body>
+</html> 

@@ -31,13 +31,21 @@ const userSchema = new mongoose.Schema({
     },
     profileImage: {
         type: String,
-        default: '/images/default-profile.png' // Update this path
+        default: '/placeholder/image.png' // Updated to use image.png from the placeholder folder
     },
     posts: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Post'
     }],
+    savedPosts: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post'
+    }],
     hasActiveStory: {
+        type: Boolean,
+        default: false
+    },
+    darkMode: {
         type: Boolean,
         default: false
     }

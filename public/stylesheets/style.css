@@ -1,0 +1,161 @@
+/* Instagram-like styles */
+
+/* Double tap heart animation */
+@keyframes heart-beat {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.5);
+    opacity: 1;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  }
+  30% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+.heart-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: heart-beat 1s ease-out forwards;
+  pointer-events: none;
+  z-index: 10;
+  font-size: 80px;
+  color: white;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+}
+
+.heart-animation .fa-heart {
+  color: #ff3040;
+}
+
+/* Post card hover effects */
+.post-container {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.post-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Like button effects */
+.like-btn, .save-btn {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.like-btn:active, .save-btn:active {
+  transform: scale(0.85);
+}
+
+.like-btn.text-red-500, .save-btn.text-blue-500 {
+  animation: pop 0.3s ease-out;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Profile image hover effects */
+.profile-image {
+  transition: filter 0.3s ease;
+}
+
+.profile-image:hover {
+  filter: brightness(1.1);
+}
+
+/* Stories carousel styles */
+.stories-container {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.stories-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Improve focus styles for better accessibility */
+button:focus, a:focus, input:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Better mobile responsiveness */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .post-container {
+    border-radius: 0;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+  }
+}
+
+/* Dark mode enhancements */
+.dark .post-container {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .post-container:hover {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Search results styling */
+.search-result-item {
+  transition: background-color 0.3s ease;
+}
+
+.search-result-item:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.dark .search-result-item:hover {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Modal animations */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content {
+  animation: modal-in 0.3s ease-out forwards;
+} 
