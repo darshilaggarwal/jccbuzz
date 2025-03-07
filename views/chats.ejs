@@ -8,7 +8,8 @@
 
         <div class="divide-y">
             <% chats.forEach(chat => { %>
-                <% const otherUser = chat.participants.find(p => p._id.toString() !== user._id.toString()); %>
+                <% const otherUser = chat.participants.find(p => p && p._id && p._id.toString() !== user._id.toString()); %>
+                <% if (otherUser) { %>
                 <a href="/chat/<%= otherUser._id %>" 
                    class="flex items-center p-4 hover:bg-gray-50 transition-colors">
                     <img src="<%= otherUser.profileImage %>" 
@@ -24,6 +25,17 @@
                         <% } %>
                     </div>
                 </a>
+                <% } else { %>
+                <div class="flex items-center p-4 text-gray-500">
+                    <img src="/images/default-profile.png" 
+                         alt="Deleted User" 
+                         class="w-12 h-12 rounded-full object-cover">
+                    <div class="ml-4">
+                        <h2 class="font-semibold text-gray-800">Deleted User</h2>
+                        <p class="text-sm text-gray-500">This user is no longer available</p>
+                    </div>
+                </div>
+                <% } %>
             <% }) %>
         </div>
     </div>

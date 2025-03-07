@@ -59,10 +59,16 @@
 
     <!-- Posts Feed -->
     <div class="space-y-8">
-        <% posts.forEach(post => { %>
+        <% posts.forEach(post => { 
+            // Additional safety check to filter out posts with null users at template level
+            if (!post || !post.user) {
+                return; // Skip this post entirely
+            }
+        %>
             <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:shadow-lg transition-shadow duration-200">
                 <!-- Post Header -->
                 <div class="p-4 flex items-center justify-between">
+                    <% if (post.user) { %>
                     <a href="/user/<%= post.user.username %>" class="flex items-center group">
                         <div class="relative">
                             <img src="<%= post.user.profileImage %>" 
@@ -75,6 +81,19 @@
                             <p class="text-xs text-gray-500">@<%= post.user.username %></p>
                         </div>
                     </a>
+                    <% } else { %>
+                    <div class="flex items-center group">
+                        <div class="relative">
+                            <img src="/images/default-profile.png" 
+                                 alt="Deleted User" 
+                                 class="w-10 h-10 rounded-full object-cover">
+                        </div>
+                        <div class="ml-3">
+                            <h5 class="font-semibold text-gray-800">Deleted User</h5>
+                            <p class="text-xs text-gray-500">Account no longer available</p>
+                        </div>
+                    </div>
+                    <% } %>
                     <button class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-ellipsis-h"></i>
                     </button>

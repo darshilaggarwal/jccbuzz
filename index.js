@@ -15,6 +15,8 @@ const commentModel = require("./models/comment");
 const chatModel = require("./models/chat");
 const sharp = require('sharp');
 const storyModel = require("./models/story");
+const session = require('express-session');
+const passport = require('./config/passport');
 
 // mongoose.connect('mongodb://localhost:27017/pinspire')
 //     .then(() => console.log('Connected to MongoDB'))
@@ -106,6 +108,18 @@ const uploadStory = multer({
 
 // Serve static files
 app.use(express.static('public'));
+
+// Initialize express-session middleware
+app.use(session({
+    secret: 'shhhh',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false } // set to true if using https
+}));
+
+// Initialize passport and session
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.get("/" , (req,res)=>{
     res.render("landing")
@@ -280,7 +294,7 @@ app.get("/delete/:id", isLoggedIn, async (req, res) => {
 });
 
 app.get("/feed", isLoggedIn, async (req, res) => {
-    const posts = await postModel.find()
+    const posts = await postModel.find({ user: { $ne: null } })
         .populate('user', 'username name profileImage')
         .populate({
             path: 'comments',
@@ -885,3 +899,29 @@ async function updateUserStoryStatus(userId) {
         hasActiveStory: activeStories.length > 0
     });
 }
+
+// Google OAuth routes
+app.get('/auth/google',
+    passport.authenticate('google', { 
+        scope: ['profile', 'email'] 
+    })
+);
+
+app.get('/auth/google/callback', 
+    passport.authenticate('google', { 
+        failureRedirect: '/login' 
+    }),
+    function(req, res) {
+        // Create JWT token
+        const token = jwt.sign({
+            name: req.user.name,
+            email: req.user.email
+        }, "shhhh");
+        
+        // Set cookie
+        res.cookie("token", token);
+        
+        // Redirect to profile page
+        res.redirect('/profile');
+    }
+);

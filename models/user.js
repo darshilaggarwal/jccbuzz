@@ -43,4 +43,32 @@ const userSchema = new mongoose.Schema({
     }
 });
 
+// Update middleware to work with findOneAndDelete and findByIdAndDelete
+userSchema.pre(['remove', 'findOneAndDelete', 'deleteOne', 'findOneAndDelete'], async function(next) {
+    try {
+        // Get the document that's about to be deleted
+        const doc = this.getQuery ? await this.model.findOne(this.getQuery()) : this;
+        if (!doc) return next();
+
+        // Get the Post model
+        const Post = mongoose.model('Post');
+        const Comment = mongoose.model('Comment');
+        
+        // Delete all posts by this user
+        const posts = await Post.find({ user: doc._id });
+        
+        // Delete all comments on these posts
+        for (const post of posts) {
+            await Comment.deleteMany({ post: post._id });
+        }
+        
+        // Delete the posts
+        await Post.deleteMany({ user: doc._id });
+        
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
 module.exports = mongoose.model('User', userSchema); 
