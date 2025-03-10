@@ -237,6 +237,12 @@
                             class="px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+                    <!-- Delete Story Button (Only visible for story owner) -->
+                    <button id="deleteStoryBtn" 
+                            onclick="deleteCurrentStory()" 
+                            class="hidden px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-red-500/50">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </form>
             </div>
         </div>
@@ -664,6 +670,14 @@ function viewStory(index) {
     const userImage = document.getElementById('storyUserImage');
     const username = document.getElementById('storyUsername');
     const timeElement = document.getElementById('storyTime');
+    const deleteButton = document.getElementById('deleteStoryBtn');
+
+    // Show delete button only if the story belongs to current user
+    if (currentStory.user._id === '<%= user._id %>') {
+        deleteButton.classList.remove('hidden');
+    } else {
+        deleteButton.classList.add('hidden');
+    }
 
     // Clear previous media
     mediaContainer.innerHTML = '';
@@ -1156,6 +1170,27 @@ window.addEventListener('click', function(event) {
         closePostOptionsModal();
     }
 });
+
+// Add these functions to your script section
+async function deleteCurrentStory() {
+    if (!currentStory) return;
+
+    try {
+        const response = await fetch(`/story/${currentStory._id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            // Remove story from array
+            stories = stories.filter(story => story._id !== currentStory._id);
+            // Close modal and re-render stories
+            closeStoryModal();
+            renderStories();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
 </script>
 
 <!-- Share Modal Template -->

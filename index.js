@@ -1027,57 +1027,33 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('privateMessage', async (data) => {
-        try {
-            const { chatId, content, receiverId } = data;
-            const sender = await userModel.findById(socket.userId);
-            
-            const chat = await chatModel.findById(chatId);
-            const newMessage = {
-                sender: sender._id,
-                content,
-                timestamp: new Date()
-            };
-            
-            chat.messages.push(newMessage);
-            chat.lastMessage = new Date();
-            await chat.save();
-
-            const messageToSend = {
-                ...newMessage,
-                sender: {
-                    _id: sender._id,
-                    name: sender.name,
-                    profileImage: sender.profileImage
-                }
-            };
-
-            // Send to receiver if online
-            const receiverSocketId = connectedUsers.get(receiverId);
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit('newMessage', {
-                    chatId,
-                    message: messageToSend
-                });
-            }
-
-            // Confirm to sender
-            socket.emit('messageSent', {
-                chatId,
-                message: messageToSend
-            });
-        } catch (error) {
-            console.error('Message error:', error);
-            socket.emit('messageError', { error: 'Failed to send message' });
-        }
-    });
-
     socket.on('typing', (data) => {
         const receiverSocketId = connectedUsers.get(data.receiverId);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit('userTyping', {
                 chatId: data.chatId,
                 userId: socket.userId
+            });
+        }
+    });
+
+    socket.on('messageDeleted', (data) => {
+        const receiverSocketId = connectedUsers.get(data.receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('messageDeleted', {
+                chatId: data.chatId,
+                messageId: data.messageId
+            });
+        }
+    });
+
+    socket.on('messageReacted', (data) => {
+        const receiverSocketId = connectedUsers.get(data.receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('messageReacted', {
+                chatId: data.chatId,
+                messageId: data.messageId,
+                reaction: data.reaction
             });
         }
     });
@@ -1197,30 +1173,34 @@ app.post("/chat/:chatId/message", isLoggedIn, async (req, res) => {
             return res.status(404).json({ error: "Chat not found" });
         }
         
-        chat.messages.push({
+        const newMessage = {
             sender: user._id,
             content,
             mediaType: 'none',
             read: false,
-            timestamp: Date.now()
-        });
+            createdAt: Date.now()
+        };
         
+        chat.messages.push(newMessage);
         chat.lastMessage = Date.now();
         await chat.save();
         
-        // Correctly populate the message
+        // Populate the sender details
         await chat.populate('messages.sender', 'name username profileImage');
         
         // Get the newly added message
-        const newMessage = chat.messages[chat.messages.length - 1];
+        const populatedMessage = chat.messages[chat.messages.length - 1];
         
-        // Emit socket event to the recipient
-        io.to(receiverId).emit('newMessage', {
-            chatId: chat._id,
-            message: newMessage
-        });
+        // Emit to receiver
+        const receiverSocketId = connectedUsers.get(receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('newMessage', {
+                chatId: chat._id,
+                message: populatedMessage
+            });
+        }
         
-        res.json(newMessage);
+        res.json(populatedMessage);
     } catch (error) {
         console.error('Error sending message:', error);
         res.status(500).json({ error: "Error sending message" });
@@ -1479,6 +1459,19 @@ app.put("/message/:messageId/edit", isLoggedIn, async (req, res) => {
         message.isEdited = true;
         await chat.save();
 
+        // Find the other participant to notify them
+        const otherParticipant = chat.participants.find(p => p.toString() !== user._id.toString());
+        const receiverSocketId = connectedUsers.get(otherParticipant.toString());
+        
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('messageEdited', {
+                chatId: chat._id,
+                messageId,
+                content,
+                isEdited: true
+            });
+        }
+
         res.json({
             success: true,
             content: message.content,
@@ -1514,5 +1507,48 @@ app.delete("/message/:messageId/delete", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error deleting message:', error);
         res.status(500).json({ error: "Error deleting message" });
+    }
+});
+
+// Add message reaction route
+app.post("/message/:messageId/react", isLoggedIn, async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { reaction } = req.body;
+        const user = await userModel.findOne({ email: req.user.email });
+
+        // Find the chat containing this message
+        const chat = await chatModel.findOne({
+            "messages._id": messageId
+        });
+
+        if (!chat) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        // Update the message
+        const message = chat.messages.id(messageId);
+        message.reaction = reaction;
+        await chat.save();
+
+        // Find the other participant to notify them
+        const otherParticipant = chat.participants.find(p => p.toString() !== user._id.toString());
+        const receiverSocketId = connectedUsers.get(otherParticipant.toString());
+        
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('messageReacted', {
+                chatId: chat._id,
+                messageId,
+                reaction
+            });
+        }
+
+        res.json({
+            success: true,
+            reaction: message.reaction
+        });
+    } catch (error) {
+        console.error('Error adding reaction:', error);
+        res.status(500).json({ error: "Error adding reaction" });
     }
 });

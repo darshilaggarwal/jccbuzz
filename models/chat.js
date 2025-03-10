@@ -42,6 +42,10 @@ const messageSchema = new mongoose.Schema({
         image: String,
         postId: mongoose.Schema.Types.ObjectId
     },
+    reaction: {
+        type: String,
+        default: null
+    },
     read: {
         type: Boolean,
         default: false

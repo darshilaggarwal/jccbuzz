@@ -57,7 +57,7 @@
 
                         <!-- Message Options Button - Show on hover -->
                         <% if (message.sender._id.toString() === user._id.toString()) { %>
-                            <button onclick="showMessageOptions('<%= message._id %>')" 
+                            <button onclick="showMyMessageOptions('<%= message._id %>')" 
                                     class="absolute top-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
                                 <i class="fas fa-ellipsis-h"></i>
                             </button>
@@ -97,16 +97,35 @@
 <!-- Message Options Modal -->
 <div id="messageOptionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
     <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-xl">
-        <div class="p-4 space-y-4">
-            <button onclick="editMessage()" class="w-full text-left py-3 text-blue-500">
-                Edit Message
+        <div class="p-0 divide-y divide-gray-200 dark:divide-gray-700">
+            <button onclick="showReactionPicker()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                React
             </button>
-            <button onclick="deleteMessage()" class="w-full text-left py-3 text-red-500">
-                Delete Message
+            <button onclick="editMessage()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                Edit
             </button>
-            <button onclick="closeMessageOptions()" class="w-full text-center py-3 text-gray-500 border-t dark:border-gray-700">
+            <button onclick="deleteMessage()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-red-500">
+                Delete
+            </button>
+            <button onclick="closeMessageOptions()" class="w-full text-center py-3 text-sm text-gray-500">
                 Cancel
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reaction Picker Modal -->
+<div id="reactionPickerModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl shadow-lg">
+        <div class="p-3">
+            <div class="flex justify-around text-2xl">
+                <button onclick="addReaction('❤️')" class="p-2 hover:scale-125 transition-transform">❤️</button>
+                <button onclick="addReaction('😂')" class="p-2 hover:scale-125 transition-transform">😂</button>
+                <button onclick="addReaction('😮')" class="p-2 hover:scale-125 transition-transform">😮</button>
+                <button onclick="addReaction('😢')" class="p-2 hover:scale-125 transition-transform">😢</button>
+                <button onclick="addReaction('🔥')" class="p-2 hover:scale-125 transition-transform">🔥</button>
+                <button onclick="addReaction('👍')" class="p-2 hover:scale-125 transition-transform">👍</button>
+            </div>
         </div>
     </div>
 </div>
@@ -143,6 +162,56 @@ const cancelMedia = document.getElementById('cancelMedia');
 
 function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Update appendMessage function to separate message options based on ownership
+function appendMessage(message, isSender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-5`;
+    
+    const messageContent = `
+        <div class="relative max-w-[70%] ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3" data-message-id="${message._id}">
+            ${message.mediaType !== 'none' && message.mediaUrl ? `
+                ${message.mediaType === 'image' ? 
+                    `<img src="${message.mediaUrl}" alt="Shared image" class="max-w-full rounded-lg mb-2">` :
+                    `<video src="${message.mediaUrl}" controls class="max-w-full rounded-lg mb-2"></video>`
+                }
+            ` : ''}
+            
+            ${message.content ? `
+                <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
+                    <span class="message-content">${message.content}</span>
+                    ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
+                </div>
+            ` : ''}
+            
+            <!-- Different options buttons for own vs other's messages -->
+            ${isSender ? 
+                `<button onclick="showMyMessageOptions('${message._id}')" 
+                        class="absolute -top-3 -right-3 bg-white dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                    <i class="fas fa-ellipsis-h text-xs text-gray-500 dark:text-gray-400"></i>
+                </button>` 
+                : 
+                `<button onclick="showReactionPickerForMessage('${message._id}')" 
+                        class="absolute -top-3 -right-3 bg-white dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                    <i class="fas fa-smile text-xs text-gray-500 dark:text-gray-400"></i>
+                </button>`
+            }
+            
+            ${message.reaction ? `
+                <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
+                    <span class="reaction">${message.reaction}</span>
+                </div>
+            ` : ''}
+            
+            <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
+                ${new Date(message.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </div>
+        </div>
+    `;
+    
+    messageDiv.innerHTML = messageContent;
+    messagesContainer.appendChild(messageDiv);
 }
 
 // Authenticate with Socket.IO
@@ -213,6 +282,7 @@ messageForm.addEventListener('submit', async (e) => {
             });
             const data = await response.json();
             appendMessage(data, true);
+            scrollToBottom();
         } catch (error) {
             console.error('Error sending media message:', error);
         }
@@ -221,15 +291,27 @@ messageForm.addEventListener('submit', async (e) => {
         mediaPreview.classList.add('hidden');
         mediaInput.value = '';
     } else {
-        socket.emit('privateMessage', {
-            chatId,
-            content,
-            receiverId
-        });
+        try {
+            const response = await fetch(`/chat/${chatId}/message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content,
+                    receiverId
+                })
+            });
+            
+            const data = await response.json();
+            appendMessage(data, true);
+            scrollToBottom();
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
     }
     
     messageInput.value = '';
-    scrollToBottom();
 });
 
 // Handle media button click
@@ -267,68 +349,359 @@ mediaInput.addEventListener('change', (e) => {
     }
 });
 
-// Handle message options
-function showMessageOptions(messageId) {
+// Update the message options to separate own vs other functions
+function showMyMessageOptions(messageId) {
+    if (!messageId) {
+        console.error("No message ID provided");
+        return;
+    }
     currentMessageId = messageId;
     document.getElementById('messageOptionsModal').classList.remove('hidden');
 }
 
+function showReactionPickerForMessage(messageId) {
+    if (!messageId) {
+        console.error("No message ID provided");
+        return;
+    }
+    currentMessageId = messageId;
+    showReactionPicker();
+}
+
+// Improved reaction picker display
+function showReactionPicker() {
+    if (!currentMessageId) {
+        console.error("No message selected for reaction");
+        return;
+    }
+    document.getElementById('messageOptionsModal').classList.add('hidden');
+    document.getElementById('reactionPickerModal').classList.remove('hidden');
+}
+
+// Improved addReaction function with better error handling
+async function addReaction(reaction) {
+    if (!currentMessageId) {
+        console.error("Cannot add reaction: No message ID");
+        closeReactionPicker();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/message/${currentMessageId}/react`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reaction })
+        });
+        
+        if (response.ok) {
+            const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
+            if (!messageElement) {
+                console.error("Message element not found for reaction");
+                return;
+            }
+            
+            // Remove existing reaction if any
+            const existingReaction = messageElement.querySelector('.reaction-bubble');
+            if (existingReaction) {
+                existingReaction.remove();
+            }
+            
+            // Create and add the new reaction
+            const reactionElement = document.createElement('div');
+            reactionElement.className = 'absolute -bottom-6 right-2 reaction-bubble';
+            reactionElement.innerHTML = `<span class="reaction">${reaction}</span>`;
+            messageElement.appendChild(reactionElement);
+            
+            // Emit reaction to other user
+            socket.emit('messageReacted', {
+                chatId,
+                messageId: currentMessageId,
+                reaction,
+                receiverId
+            });
+        } else {
+            const errorText = await response.text();
+            console.error("Failed to add reaction:", errorText);
+        }
+    } catch (error) {
+        console.error('Error adding reaction:', error);
+    }
+    
+    closeReactionPicker();
+    currentMessageId = null; // Reset after use
+}
+
+// Fix delete function to also reset currentMessageId
+async function deleteMessage() {
+    if (!currentMessageId) {
+        console.error("Cannot delete: No message ID");
+        closeMessageOptions();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/message/${currentMessageId}/delete`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`).closest('.flex');
+            if (messageElement) {
+                // Add fade-out animation
+                messageElement.style.transition = 'opacity 0.3s ease-out';
+                messageElement.style.opacity = '0';
+                setTimeout(() => {
+                    messageElement.remove();
+                }, 300);
+                
+                // Emit delete event to other user
+                socket.emit('messageDeleted', {
+                    chatId,
+                    messageId: currentMessageId,
+                    receiverId
+                });
+            }
+        } else {
+            console.error("Failed to delete message:", await response.text());
+        }
+    } catch (error) {
+        console.error('Error deleting message:', error);
+    }
+    
+    closeMessageOptions();
+    currentMessageId = null; // Reset after use
+}
+
+// Improved edit function to reset currentMessageId after use
+async function editMessage() {
+    closeMessageOptions();
+    
+    if (!currentMessageId) {
+        console.error("Cannot edit: No message ID");
+        return;
+    }
+    
+    const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
+    if (!messageElement) {
+        console.error("Message element not found");
+        currentMessageId = null; // Reset on error
+        return;
+    }
+    
+    const messageTextContainer = messageElement.querySelector('.message-text');
+    const messageSpan = messageElement.querySelector('.message-content');
+    
+    if (!messageSpan) {
+        console.error("Message content span not found");
+        currentMessageId = null; // Reset on error
+        return;
+    }
+    
+    const currentContent = messageSpan.textContent;
+    
+    // Create inline edit input with background for better visibility
+    const inputElement = document.createElement('input');
+    inputElement.type = 'text';
+    inputElement.value = currentContent;
+    inputElement.className = 'w-full bg-blue-600 border-none focus:outline-none focus:ring-0 p-0 text-white rounded';
+    
+    // Replace text with input
+    messageSpan.replaceWith(inputElement);
+    inputElement.focus();
+    inputElement.select();
+    
+    // Store messageId in a local variable since we'll reset currentMessageId
+    const messageIdForEdit = currentMessageId;
+    
+    // Handle edit completion
+    const completeEdit = async (save = true) => {
+        const newContent = inputElement.value.trim();
+        if (save && newContent && newContent !== currentContent) {
+            try {
+                const response = await fetch(`/message/${messageIdForEdit}/edit`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: newContent })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'message-content';
+                    newSpan.textContent = data.content;
+                    inputElement.replaceWith(newSpan);
+                    
+                    // Add edited indicator if not already present
+                    if (data.isEdited && messageTextContainer && !messageTextContainer.querySelector('.text-xs.opacity-75')) {
+                        messageTextContainer.classList.add('flex', 'items-center', 'gap-1');
+                        const editedSpan = document.createElement('span');
+                        editedSpan.className = 'text-xs opacity-75';
+                        editedSpan.textContent = '(edited)';
+                        messageTextContainer.appendChild(editedSpan);
+                    }
+                    
+                    // Emit edit event to other user for real-time update
+                    socket.emit('messageEdited', {
+                        chatId,
+                        messageId: messageIdForEdit,
+                        content: data.content,
+                        receiverId
+                    });
+                } else {
+                    console.error("Failed to update message:", await response.text());
+                    // Restore original content if update failed
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'message-content';
+                    newSpan.textContent = currentContent;
+                    inputElement.replaceWith(newSpan);
+                }
+            } catch (error) {
+                console.error('Error editing message:', error);
+                // Restore original content on error
+                const newSpan = document.createElement('span');
+                newSpan.className = 'message-content';
+                newSpan.textContent = currentContent;
+                inputElement.replaceWith(newSpan);
+            }
+        } else {
+            // Restore original content if cancelled or no changes
+            const newSpan = document.createElement('span');
+            newSpan.className = 'message-content';
+            newSpan.textContent = currentContent;
+            inputElement.replaceWith(newSpan);
+        }
+    };
+    
+    // Handle input blur and Enter key
+    inputElement.addEventListener('blur', () => completeEdit(true));
+    inputElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            completeEdit(true);
+        } else if (e.key === 'Escape') {
+            completeEdit(false);
+        }
+    });
+    
+    // Reset currentMessageId after setting up edit
+    currentMessageId = null;
+}
+
+// Handle message options
 function closeMessageOptions() {
     document.getElementById('messageOptionsModal').classList.add('hidden');
     currentMessageId = null;
 }
 
-async function editMessage() {
-    const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
-    const content = messageElement.querySelector('span').textContent;
-    
-    const newContent = prompt('Edit message:', content);
-    if (newContent && newContent !== content) {
-        try {
-            const response = await fetch(`/message/${currentMessageId}/edit`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ content: newContent })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                messageElement.querySelector('span').textContent = data.content;
-                if (data.isEdited) {
-                    messageElement.querySelector('.text-xs.opacity-75').textContent = '(edited)';
-                }
-            }
-        } catch (error) {
-            console.error('Error editing message:', error);
-        }
-    }
-    
-    closeMessageOptions();
+// Cancel media upload
+cancelMedia.addEventListener('click', () => {
+    selectedMedia = null;
+    mediaInput.value = '';
+    mediaPreview.classList.add('hidden');
+});
+
+function closeReactionPicker() {
+    document.getElementById('reactionPickerModal').classList.add('hidden');
+    currentMessageId = null; // Reset after use
 }
 
-async function deleteMessage() {
-    if (confirm('Are you sure you want to delete this message?')) {
-        try {
-            const response = await fetch(`/message/${currentMessageId}/delete`, {
-                method: 'DELETE'
-            });
-            
-            if (response.ok) {
-                const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`).closest('.flex');
+// Add back event listeners
+// Add listener for message deletion from other user
+socket.on('messageDeleted', (data) => {
+    if (data.chatId === chatId) {
+        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`).closest('.flex');
+        if (messageElement) {
+            messageElement.style.transition = 'opacity 0.3s ease-out';
+            messageElement.style.opacity = '0';
+            setTimeout(() => {
                 messageElement.remove();
-            }
-        } catch (error) {
-            console.error('Error deleting message:', error);
+            }, 300);
         }
     }
-    
-    closeMessageOptions();
-}
+});
+
+// Fix the messageEdited listener to properly update edited messages
+socket.on('messageEdited', (data) => {
+    if (data.chatId === chatId) {
+        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if (messageElement) {
+            const messageSpan = messageElement.querySelector('.message-content');
+            if (messageSpan) {
+                messageSpan.textContent = data.content;
+                
+                // Add edited indicator if not already present
+                const messageTextContainer = messageElement.querySelector('.message-text');
+                if (messageTextContainer && !messageTextContainer.querySelector('.text-xs.opacity-75')) {
+                    messageTextContainer.classList.add('flex', 'items-center', 'gap-1');
+                    const editedSpan = document.createElement('span');
+                    editedSpan.className = 'text-xs opacity-75';
+                    editedSpan.textContent = '(edited)';
+                    messageTextContainer.appendChild(editedSpan);
+                }
+            } else {
+                console.error("Message span not found for edit");
+            }
+        }
+    }
+});
+
+// Add socket listener for reactions
+socket.on('messageReacted', (data) => {
+    if (data.chatId === chatId) {
+        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if (!messageElement) {
+            console.error("Message element not found for reaction");
+            return;
+        }
+        
+        // Remove existing reaction if any
+        const existingReaction = messageElement.querySelector('.reaction-bubble');
+        if (existingReaction) {
+            existingReaction.remove();
+        }
+        
+        // Create and add the new reaction
+        const reactionElement = document.createElement('div');
+        reactionElement.className = 'absolute -bottom-6 left-2 reaction-bubble';
+        reactionElement.innerHTML = `<span class="reaction">${data.reaction}</span>`;
+        messageElement.appendChild(reactionElement);
+    }
+});
 
 // Initial scroll to bottom
 scrollToBottom();
+
+// Update reaction bubble styling
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+.reaction-bubble {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 0.2rem 0.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 10;
+    display: inline-block;
+    font-size: 1rem;
+}
+
+.dark .reaction-bubble {
+    background-color: rgb(31, 41, 55);
+}
+
+.message-options-btn {
+    width: 24px;
+    height: 24px;
+}
+
+.message-text {
+    word-break: break-word;
+}
+</style>
+`);
 </script>
 
 <%- include('partials/footer') %> 
