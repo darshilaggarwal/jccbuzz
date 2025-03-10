@@ -150,6 +150,32 @@ const uploadChatMedia = multer({
     }
 }).single('media');
 
+// Add voice message upload configuration
+const uploadVoiceStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = path.join(__dirname, 'public/uploads/voice');
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, req.user._id + '-' + Date.now() + '-' + file.originalname);
+    }
+});
+
+const uploadVoice = multer({
+    storage: uploadVoiceStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+    fileFilter: function (req, file, cb) {
+        if (file.mimetype.startsWith('audio/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only audio files are allowed'), false);
+        }
+    }
+}).single('voice');
+
 // Serve static files
 app.use(express.static('public'));
 
@@ -1069,6 +1095,41 @@ io.on('connection', (socket) => {
             }
         }
     });
+
+    // Voice Call Signaling
+    // When a user initiates a call
+    socket.on('callUser', (data) => {
+        const { userToCall, signalData, from, fromName } = data;
+        io.to(userSocketIdMap[userToCall]).emit('incomingCall', {
+            signal: signalData,
+            from,
+            fromName
+        });
+    });
+
+    // When a user accepts a call
+    socket.on('answerCall', (data) => {
+        const { signal, to } = data;
+        io.to(userSocketIdMap[to]).emit('callAccepted', signal);
+    });
+
+    // When a user rejects a call
+    socket.on('rejectCall', (data) => {
+        const { from, to } = data;
+        io.to(userSocketIdMap[from]).emit('callRejected', { from: to });
+    });
+
+    // When a user ends a call
+    socket.on('endCall', (data) => {
+        const { to } = data;
+        io.to(userSocketIdMap[to]).emit('callEnded');
+    });
+
+    // When user is unavailable for call
+    socket.on('userBusy', (data) => {
+        const { from } = data;
+        io.to(userSocketIdMap[from]).emit('userBusy');
+    });
 });
 
 // Change app.listen to server.listen
@@ -1510,11 +1571,16 @@ app.delete("/message/:messageId/delete", isLoggedIn, async (req, res) => {
     }
 });
 
-// Add message reaction route
+// Update the message reaction route to correctly save reactions and handle errors
 app.post("/message/:messageId/react", isLoggedIn, async (req, res) => {
     try {
         const { messageId } = req.params;
         const { reaction } = req.body;
+        
+        if (!messageId || messageId === 'null' || messageId === 'undefined') {
+            return res.status(400).json({ error: "Invalid message ID" });
+        }
+        
         const user = await userModel.findOne({ email: req.user.email });
 
         // Find the chat containing this message
@@ -1526,21 +1592,28 @@ app.post("/message/:messageId/react", isLoggedIn, async (req, res) => {
             return res.status(404).json({ error: "Message not found" });
         }
 
-        // Update the message
+        // Update the message with the reaction
         const message = chat.messages.id(messageId);
+        
+        if (!message) {
+            return res.status(404).json({ error: "Message not found in chat" });
+        }
+        
         message.reaction = reaction;
         await chat.save();
 
         // Find the other participant to notify them
-        const otherParticipant = chat.participants.find(p => p.toString() !== user._id.toString());
-        const receiverSocketId = connectedUsers.get(otherParticipant.toString());
-        
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit('messageReacted', {
-                chatId: chat._id,
-                messageId,
-                reaction
-            });
+        const otherParticipant = chat.participants.find(p => !p.equals(user._id));
+        if (otherParticipant) {
+            const receiverSocketId = connectedUsers.get(otherParticipant.toString());
+            
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('messageReacted', {
+                    chatId: chat._id,
+                    messageId,
+                    reaction
+                });
+            }
         }
 
         res.json({
@@ -1550,5 +1623,60 @@ app.post("/message/:messageId/react", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error adding reaction:', error);
         res.status(500).json({ error: "Error adding reaction" });
+    }
+});
+
+// Add voice message route
+app.post("/chat/:chatId/voice", isLoggedIn, async (req, res) => {
+    try {
+        uploadVoice(req, res, async function (err) {
+            if (err) {
+                return res.status(400).json({ error: err.message });
+            }
+            
+            const { chatId } = req.params;
+            const { receiverId } = req.body;
+            
+            const user = await userModel.findOne({ email: req.user.email });
+            const chat = await chatModel.findById(chatId);
+            
+            if (!chat) {
+                return res.status(404).json({ error: "Chat not found" });
+            }
+            
+            // Create message
+            const message = {
+                sender: user._id,
+                content: '', // No text content for voice messages
+                mediaType: 'audio',
+                mediaUrl: `/uploads/voice/${req.file.filename}`,
+                read: false,
+                createdAt: Date.now()
+            };
+            
+            chat.messages.push(message);
+            chat.lastMessage = Date.now();
+            await chat.save();
+            
+            // Populate the sender details
+            await chat.populate('messages.sender', 'name username profileImage');
+            
+            // Get the newly added message
+            const populatedMessage = chat.messages[chat.messages.length - 1];
+            
+            // Emit to receiver
+            const receiverSocketId = connectedUsers.get(receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('newMessage', {
+                    chatId: chat._id,
+                    message: populatedMessage
+                });
+            }
+            
+            res.json(populatedMessage);
+        });
+    } catch (error) {
+        console.error('Error sending voice message:', error);
+        res.status(500).json({ error: "Error sending voice message" });
     }
 });

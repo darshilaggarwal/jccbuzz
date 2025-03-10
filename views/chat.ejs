@@ -19,36 +19,42 @@
                     </p>
                 </div>
             </a>
+            
+            <!-- Add call button -->
+            <button id="callButton" class="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                </svg>
+            </button>
         </div>
 
         <!-- Messages Container -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages">
             <% chat.messages.forEach(message => { %>
-                <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %> group">
-                    <div class="relative max-w-[70%] <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3">
-                        <% if (message.isPostShare && message.sharedPostPreview) { %>
-                            <!-- Shared Post Preview -->
-                            <div class="border rounded-lg p-3 mb-2 bg-white dark:bg-gray-800">
-                                <% if (message.sharedPostPreview.image) { %>
-                                    <img src="<%= message.sharedPostPreview.image %>" alt="Post preview" class="w-full h-48 object-cover rounded-lg mb-2">
-                                <% } %>
-                                <div class="text-gray-800 dark:text-white font-medium mb-1"><%= message.sharedPostPreview.title %></div>
-                                <div class="text-gray-600 dark:text-gray-300 text-sm"><%= message.sharedPostPreview.content %></div>
-                                <a href="/post/<%= message.sharedPostPreview.postId %>" class="text-blue-500 text-sm mt-2 inline-block">View Post</a>
-                            </div>
-                        <% } %>
-                        
+                <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %> group mb-6">
+                    <div class="relative max-w-[70%] <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3" data-message-id="<%= message._id %>">
                         <% if (message.mediaType !== 'none' && message.mediaUrl) { %>
                             <% if (message.mediaType === 'image') { %>
                                 <img src="<%= message.mediaUrl %>" alt="Shared image" class="max-w-full rounded-lg mb-2">
                             <% } else if (message.mediaType === 'video') { %>
                                 <video src="<%= message.mediaUrl %>" controls class="max-w-full rounded-lg mb-2"></video>
+                            <% } else if (message.mediaType === 'audio') { %>
+                                <div class="audio-player w-full mb-2">
+                                    <audio src="<%= message.mediaUrl %>" class="hidden"></audio>
+                                    <div class="flex items-center">
+                                        <button class="play-btn text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'blue-500' %> mr-2">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                        <div class="waveform w-32 h-8 bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-400' : 'gray-300' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-600' : 'gray-600' %> rounded-full"></div>
+                                        <span class="audio-duration text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'gray-600' %> text-xs ml-2">0:00</span>
+                                    </div>
+                                </div>
                             <% } %>
                         <% } %>
                         
                         <% if (message.content) { %>
-                            <div class="<%= message.isEdited ? 'flex items-center gap-1' : '' %>">
-                                <span><%= message.content %></span>
+                            <div class="message-text <%= message.isEdited ? 'flex items-center gap-1' : '' %>">
+                                <span class="message-content"><%= message.content %></span>
                                 <% if (message.isEdited) { %>
                                     <span class="text-xs opacity-75">(edited)</span>
                                 <% } %>
@@ -58,13 +64,25 @@
                         <!-- Message Options Button - Show on hover -->
                         <% if (message.sender._id.toString() === user._id.toString()) { %>
                             <button onclick="showMyMessageOptions('<%= message._id %>')" 
-                                    class="absolute top-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                <i class="fas fa-ellipsis-h"></i>
+                                    class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                                <i class="fas fa-ellipsis-h text-xs text-white"></i>
+                            </button>
+                        <% } else { %>
+                            <button onclick="showReactionPickerForMessage('<%= message._id %>')" 
+                                    class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                                <i class="fas fa-smile text-xs text-white"></i>
                             </button>
                         <% } %>
                         
+                        <!-- Show Reaction if it exists -->
+                        <% if (message.reaction) { %>
+                            <div class="absolute -bottom-6 <%= message.sender._id.toString() === user._id.toString() ? 'right-2' : 'left-2' %> reaction-bubble">
+                                <span class="reaction"><%= message.reaction %></span>
+                            </div>
+                        <% } %>
+                        
                         <div class="text-xs <%= message.sender._id.toString() === user._id.toString() ? 'text-blue-100' : 'text-gray-500' %> mt-1">
-                            <%= new Date(message.createdAt).toLocaleTimeString() %>
+                            <%= new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
                         </div>
                     </div>
                 </div>
@@ -78,13 +96,30 @@
                 <button type="button" id="mediaButton" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
                     <i class="fas fa-image"></i>
                 </button>
+                
+                <!-- Voice Recording Button -->
+                <button type="button" id="voiceButton" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                
                 <div class="relative flex-1">
                     <input type="text" 
                            id="messageInput"
                            placeholder="Message..." 
                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white"
                            required>
+                           
+                    <!-- Voice Recording Indicator (Hidden by default) -->
+                    <div id="recordingIndicator" class="absolute inset-0 flex items-center px-4 hidden">
+                        <div class="flex-1 flex items-center">
+                            <div class="recording-dot mr-2"></div>
+                            <span class="text-red-500">Recording...</span>
+                            <div id="recordingVisualizer" class="flex-1 mx-4 h-6"></div>
+                            <span id="recordingTimer" class="text-gray-500">0:00</span>
+                        </div>
+                    </div>
                 </div>
+                
                 <button type="submit" 
                         class="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i class="fas fa-paper-plane"></i>
@@ -140,6 +175,49 @@
     </div>
 </div>
 
+<!-- Voice Recording Controls (Hidden by default) -->
+<div id="voiceControls" class="fixed bottom-20 left-0 right-0 bg-white dark:bg-gray-900 p-4 hidden">
+    <div class="flex items-center justify-between max-w-4xl mx-auto">
+        <button id="cancelRecording" class="p-2 text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+            <i class="fas fa-trash"></i>
+        </button>
+        <div class="flex-1 flex items-center justify-center">
+            <div id="waveform" class="w-full h-12"></div>
+        </div>
+        <button id="sendRecording" class="p-2 text-blue-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Add the audio message template -->
+<template id="audio-message-template">
+    <div class="flex items-center p-3 rounded-lg w-full max-w-xs bg-white dark:bg-gray-800 shadow">
+        <div class="audio-player w-full">
+            <div class="flex items-center gap-3">
+                <div class="play-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500 play-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500 pause-icon hidden" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h.01a1 1 0 110 2H8a1 1 0 01-1-1zm3 0a1 1 0 011-1h.01a1 1 0 110 2H11a1 1 0 01-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="waveform h-8 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                        <div class="progress-bar absolute top-0 left-0 h-full bg-purple-300 dark:bg-purple-800 opacity-50" style="width: 0%;"></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span class="current-time">0:00</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                </div>
+            </div>
+            <audio class="hidden"></audio>
+        </div>
+    </div>
+</template>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
@@ -164,17 +242,30 @@ function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Update appendMessage function to separate message options based on ownership
+// Modify the existing message rendering in the chat to show reactions
 function appendMessage(message, isSender) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-5`;
+    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-6`;
     
     const messageContent = `
         <div class="relative max-w-[70%] ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3" data-message-id="${message._id}">
             ${message.mediaType !== 'none' && message.mediaUrl ? `
                 ${message.mediaType === 'image' ? 
                     `<img src="${message.mediaUrl}" alt="Shared image" class="max-w-full rounded-lg mb-2">` :
-                    `<video src="${message.mediaUrl}" controls class="max-w-full rounded-lg mb-2"></video>`
+                    message.mediaType === 'video' ? 
+                    `<video src="${message.mediaUrl}" controls class="max-w-full rounded-lg mb-2"></video>` :
+                    message.mediaType === 'audio' ?
+                    `<div class="audio-player w-full mb-2">
+                        <audio src="${message.mediaUrl}" class="hidden"></audio>
+                        <div class="flex items-center">
+                            <button class="play-btn text-${isSender ? 'white' : 'blue-500'} mr-2">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="waveform w-32 h-8 bg-${isSender ? 'blue-400' : 'gray-300'} dark:bg-${isSender ? 'blue-600' : 'gray-600'} rounded-full"></div>
+                            <span class="audio-duration text-${isSender ? 'white' : 'gray-600'} text-xs ml-2">0:00</span>
+                        </div>
+                    </div>` :
+                    ''
                 }
             ` : ''}
             
@@ -188,16 +279,17 @@ function appendMessage(message, isSender) {
             <!-- Different options buttons for own vs other's messages -->
             ${isSender ? 
                 `<button onclick="showMyMessageOptions('${message._id}')" 
-                        class="absolute -top-3 -right-3 bg-white dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
-                    <i class="fas fa-ellipsis-h text-xs text-gray-500 dark:text-gray-400"></i>
+                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                    <i class="fas fa-ellipsis-h text-xs text-white"></i>
                 </button>` 
                 : 
                 `<button onclick="showReactionPickerForMessage('${message._id}')" 
-                        class="absolute -top-3 -right-3 bg-white dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
-                    <i class="fas fa-smile text-xs text-gray-500 dark:text-gray-400"></i>
+                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                    <i class="fas fa-smile text-xs text-white"></i>
                 </button>`
             }
             
+            <!-- Show Reaction if it exists -->
             ${message.reaction ? `
                 <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
                     <span class="reaction">${message.reaction}</span>
@@ -211,6 +303,48 @@ function appendMessage(message, isSender) {
     `;
     
     messageDiv.innerHTML = messageContent;
+    
+    // Set up audio player if this is an audio message
+    if (message.mediaType === 'audio') {
+        const audioPlayer = messageDiv.querySelector('.audio-player');
+        const audio = audioPlayer.querySelector('audio');
+        const playBtn = audioPlayer.querySelector('.play-btn');
+        const durationEl = audioPlayer.querySelector('.audio-duration');
+        
+        // Load audio and update duration
+        audio.addEventListener('loadedmetadata', () => {
+            const duration = Math.round(audio.duration);
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+            durationEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        });
+        
+        // Play/pause functionality
+        playBtn.addEventListener('click', () => {
+            if (audio.paused) {
+                // Pause all other playing audio
+                document.querySelectorAll('audio').forEach(a => {
+                    if (a !== audio && !a.paused) {
+                        a.pause();
+                        const btn = a.parentElement.querySelector('.play-btn i');
+                        btn.classList.replace('fa-pause', 'fa-play');
+                    }
+                });
+                
+                audio.play();
+                playBtn.querySelector('i').classList.replace('fa-play', 'fa-pause');
+            } else {
+                audio.pause();
+                playBtn.querySelector('i').classList.replace('fa-pause', 'fa-play');
+            }
+        });
+        
+        // Reset play button when audio ends
+        audio.addEventListener('ended', () => {
+            playBtn.querySelector('i').classList.replace('fa-pause', 'fa-play');
+        });
+    }
+    
     messagesContainer.appendChild(messageDiv);
 }
 
@@ -364,8 +498,24 @@ function showReactionPickerForMessage(messageId) {
         console.error("No message ID provided");
         return;
     }
+    
+    console.log("Opening reaction picker for message:", messageId);
     currentMessageId = messageId;
-    showReactionPicker();
+    
+    // Position the reaction picker near the message
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+        const rect = messageElement.getBoundingClientRect();
+        const reactionPicker = document.getElementById('reactionPickerModal');
+        const pickerContent = reactionPicker.querySelector('div');
+        
+        // Update the position of the reaction picker for better UX
+        pickerContent.style.top = `${rect.top - 100}px`;
+        
+        document.getElementById('reactionPickerModal').classList.remove('hidden');
+    } else {
+        console.error("Message element not found");
+    }
 }
 
 // Improved reaction picker display
@@ -378,7 +528,7 @@ function showReactionPicker() {
     document.getElementById('reactionPickerModal').classList.remove('hidden');
 }
 
-// Improved addReaction function with better error handling
+// Update the improved addReaction function to better handle the reaction process
 async function addReaction(reaction) {
     if (!currentMessageId) {
         console.error("Cannot add reaction: No message ID");
@@ -679,22 +829,13 @@ scrollToBottom();
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 .reaction-bubble {
-    background-color: white;
+    background-color: transparent;
     border-radius: 1rem;
-    padding: 0.2rem 0.5rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    padding: 0.2rem 0.4rem;
     z-index: 10;
     display: inline-block;
-    font-size: 1rem;
-}
-
-.dark .reaction-bubble {
-    background-color: rgb(31, 41, 55);
-}
-
-.message-options-btn {
-    width: 24px;
-    height: 24px;
+    font-size: 1.25rem;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
 }
 
 .message-text {
@@ -702,6 +843,408 @@ document.head.insertAdjacentHTML('beforeend', `
 }
 </style>
 `);
+
+// Voice recording variables
+let mediaRecorder;
+let audioChunks = [];
+let recordingStream;
+let recordingStartTime;
+let recordingTimer;
+let recordingVisualizerContext;
+let recordingAnalyser;
+
+const voiceButton = document.getElementById('voiceButton');
+const recordingIndicator = document.getElementById('recordingIndicator');
+const recordingVisualizer = document.getElementById('recordingVisualizer');
+const recordingTimerEl = document.getElementById('recordingTimer');
+const voiceControls = document.getElementById('voiceControls');
+const cancelRecording = document.getElementById('cancelRecording');
+const sendRecording = document.getElementById('sendRecording');
+
+// Set up voice recording
+voiceButton.addEventListener('click', async () => {
+    try {
+        if (recordingStream) {
+            // Already recording, stop it
+            stopRecording();
+            return;
+        }
+        
+        // Request microphone access
+        recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Hide text input and show recording UI
+        messageInput.classList.add('hidden');
+        recordingIndicator.classList.remove('hidden');
+        voiceControls.classList.remove('hidden');
+        
+        // Set up audio context for visualization
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(recordingStream);
+        recordingAnalyser = audioContext.createAnalyser();
+        recordingAnalyser.fftSize = 256;
+        source.connect(recordingAnalyser);
+        
+        // Set up recording timer
+        recordingStartTime = Date.now();
+        recordingTimer = setInterval(updateRecordingTimer, 1000);
+        
+        // Set up media recorder
+        mediaRecorder = new MediaRecorder(recordingStream);
+        audioChunks = [];
+        
+        mediaRecorder.addEventListener('dataavailable', event => {
+            audioChunks.push(event.data);
+        });
+        
+        mediaRecorder.addEventListener('stop', () => {
+            // Create blob from recorded chunks
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            sendVoiceMessage(audioBlob);
+        });
+        
+        // Start visualizing audio
+        setupVisualization();
+        
+        // Start recording
+        mediaRecorder.start();
+        
+    } catch (error) {
+        console.error('Error starting voice recording:', error);
+        alert('Could not access microphone. Please check your permissions.');
+    }
+});
+
+// Cancel recording button
+cancelRecording.addEventListener('click', () => {
+    if (recordingStream) {
+        stopRecordingAndDiscard();
+    }
+});
+
+// Send recording button
+sendRecording.addEventListener('click', () => {
+    if (recordingStream) {
+        stopRecording();
+    }
+});
+
+// Update recording timer
+function updateRecordingTimer() {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    recordingTimerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Set up audio visualization
+function setupVisualization() {
+    recordingVisualizerContext = document.createElement('canvas').getContext('2d');
+    recordingVisualizer.innerHTML = '';
+    recordingVisualizer.appendChild(recordingVisualizerContext.canvas);
+    recordingVisualizerContext.canvas.width = recordingVisualizer.clientWidth;
+    recordingVisualizerContext.canvas.height = recordingVisualizer.clientHeight;
+    
+    visualize();
+}
+
+// Update styles for better visualization
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+.recording-dot {
+    width: 12px;
+    height: 12px;
+    background-color: #EF4444;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+#recordingVisualizer {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#recordingVisualizer canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.audio-player .waveform {
+    position: relative;
+    overflow: hidden;
+}
+
+.audio-player .waveform::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+    animation: wave 2s linear infinite;
+}
+
+.audio-player .play-btn {
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.audio-player .play-btn:hover {
+    transform: scale(1.1);
+    background-color: rgba(0,0,0,0.1);
+}
+
+@keyframes wave {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+</style>
+`);
+
+// Update the visualization function to make it more visually appealing
+function visualize() {
+    if (!recordingAnalyser) return;
+    
+    const bufferLength = recordingAnalyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    function draw() {
+        if (!recordingStream) return;
+        
+        requestAnimationFrame(draw);
+        
+        recordingAnalyser.getByteFrequencyData(dataArray);
+        
+        recordingVisualizerContext.clearRect(0, 0, recordingVisualizerContext.canvas.width, recordingVisualizerContext.canvas.height);
+        
+        const barWidth = (recordingVisualizerContext.canvas.width / bufferLength) * 2.5;
+        let x = 0;
+        
+        // Create gradient
+        const gradient = recordingVisualizerContext.createLinearGradient(0, 0, 0, recordingVisualizerContext.canvas.height);
+        gradient.addColorStop(0, '#EF4444'); // Red at top
+        gradient.addColorStop(0.5, '#EC4899'); // Pink in middle
+        gradient.addColorStop(1, '#8B5CF6'); // Purple at bottom
+        recordingVisualizerContext.fillStyle = gradient;
+        
+        for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * recordingVisualizerContext.canvas.height;
+            
+            // Make the bars more visually appealing with rounded tops
+            recordingVisualizerContext.beginPath();
+            recordingVisualizerContext.roundRect(
+                x, 
+                recordingVisualizerContext.canvas.height - barHeight, 
+                barWidth, 
+                barHeight,
+                [barWidth/2, barWidth/2, 0, 0] // Rounded top corners
+            );
+            recordingVisualizerContext.fill();
+            
+            x += barWidth + 1;
+        }
+    }
+    
+    draw();
+}
+
+// Stop recording and send message
+function stopRecording() {
+    if (!recordingStream) return;
+    
+    // Stop recording
+    mediaRecorder.stop();
+    recordingStream.getTracks().forEach(track => track.stop());
+    
+    // Clear timer
+    clearInterval(recordingTimer);
+    
+    // Reset UI
+    messageInput.classList.remove('hidden');
+    recordingIndicator.classList.add('hidden');
+    voiceControls.classList.add('hidden');
+    
+    // Clean up
+    recordingStream = null;
+    recordingAnalyser = null;
+}
+
+// Stop recording and discard audio
+function stopRecordingAndDiscard() {
+    if (!recordingStream) return;
+    
+    // Stop media recorder without saving
+    mediaRecorder.stop();
+    recordingStream.getTracks().forEach(track => track.stop());
+    
+    // Clear timer
+    clearInterval(recordingTimer);
+    
+    // Reset UI
+    messageInput.classList.remove('hidden');
+    recordingIndicator.classList.add('hidden');
+    voiceControls.classList.add('hidden');
+    
+    // Clean up
+    recordingStream = null;
+    recordingAnalyser = null;
+    audioChunks = [];
+}
+
+// Send voice message to server
+async function sendVoiceMessage(audioBlob) {
+    const formData = new FormData();
+    formData.append('voice', audioBlob, 'voice-message.webm');
+    formData.append('receiverId', receiverId);
+    
+    try {
+        const response = await fetch(`/chat/${chatId}/voice`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            appendMessage(data, true);
+            scrollToBottom();
+        } else {
+            console.error('Error sending voice message:', data.error);
+        }
+    } catch (error) {
+        console.error('Error sending voice message:', error);
+    }
+}
+
+// Helper function to format time for audio duration display
+function formatTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
+    
+    // If seconds is a Date object, return formatted time
+    if (seconds instanceof Date) {
+        const hours = seconds.getHours();
+        const minutes = seconds.getMinutes();
+        return `${hours}:${minutes.toString().padStart(2, '0')}`;
+    }
+    
+    // Otherwise format as duration
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+// Helper function to update audio duration display
+function updateAudioDuration(audio, durationElement) {
+    if (!audio || !durationElement) return;
+    
+    if (isNaN(audio.duration)) {
+        durationElement.textContent = '0:00';
+    } else {
+        durationElement.textContent = formatTime(audio.duration);
+    }
+}
+
+// Helper function to toggle audio playback
+function toggleAudioPlayback(audio, playIcon, pauseIcon) {
+    // Pause all other audio elements first
+    document.querySelectorAll('audio').forEach(a => {
+        if (a !== audio && !a.paused) {
+            a.pause();
+            // Reset all other play/pause icons
+            const playerContainer = a.closest('.audio-player');
+            if (playerContainer) {
+                playerContainer.querySelector('.play-icon')?.classList.remove('hidden');
+                playerContainer.querySelector('.pause-icon')?.classList.add('hidden');
+            }
+        }
+    });
+    
+    if (audio.paused) {
+        audio.play();
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+    } else {
+        audio.pause();
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+    }
+}
+
+// Initialize audio players
+function initializeAudioPlayers() {
+    document.querySelectorAll('.audio-player').forEach(player => {
+        const audio = player.querySelector('audio');
+        const playBtn = player.querySelector('.play-btn');
+        const playIcon = player.querySelector('.play-icon');
+        const pauseIcon = player.querySelector('.pause-icon');
+        const progressBar = player.querySelector('.progress-bar');
+        const currentTimeEl = player.querySelector('.current-time');
+        const durationEl = player.querySelector('.duration');
+        
+        if (!audio || audio.hasAttribute('data-initialized')) return;
+        
+        // Mark as initialized
+        audio.setAttribute('data-initialized', 'true');
+        
+        audio.addEventListener('loadedmetadata', () => {
+            updateAudioDuration(audio, durationEl);
+        });
+        
+        audio.addEventListener('timeupdate', () => {
+            // Update current time
+            const currentTime = formatTime(audio.currentTime);
+            currentTimeEl.textContent = currentTime;
+            
+            // Update progress bar
+            const progress = (audio.currentTime / audio.duration) * 100;
+            if (progressBar) progressBar.style.width = `${progress}%`;
+        });
+        
+        audio.addEventListener('ended', () => {
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+            if (progressBar) progressBar.style.width = '0%';
+            currentTimeEl.textContent = '0:00';
+        });
+        
+        playBtn.addEventListener('click', () => {
+            toggleAudioPlayback(audio, playIcon, pauseIcon);
+        });
+        
+        // Add click event on waveform for seeking
+        const waveform = player.querySelector('.waveform');
+        if (waveform) {
+            waveform.addEventListener('click', (e) => {
+                if (!audio.duration) return;
+                
+                const rect = waveform.getBoundingClientRect();
+                const position = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = position * audio.duration;
+                
+                if (audio.paused) {
+                    toggleAudioPlayback(audio, playIcon, pauseIcon);
+                }
+            });
+        }
+    });
+}
+
+// Initialize audio players when page loads
+document.addEventListener('DOMContentLoaded', initializeAudioPlayers);
 </script>
 
 <%- include('partials/footer') %> 
