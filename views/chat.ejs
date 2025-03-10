@@ -41,12 +41,20 @@
                             <% } else if (message.mediaType === 'audio') { %>
                                 <div class="audio-player w-full mb-2">
                                     <audio src="<%= message.mediaUrl %>" class="hidden"></audio>
-                                    <div class="flex items-center">
-                                        <button class="play-btn text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'blue-500' %> mr-2">
-                                            <i class="fas fa-play"></i>
+                                    <div class="flex items-center gap-3">
+                                        <button class="play-btn text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'blue-500' %> rounded-full bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-700' : 'gray-200' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-800' : 'gray-700' %> w-8 h-8 flex items-center justify-center">
+                                            <i class="fas fa-play play-icon"></i>
+                                            <i class="fas fa-pause pause-icon hidden"></i>
                                         </button>
-                                        <div class="waveform w-32 h-8 bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-400' : 'gray-300' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-600' : 'gray-600' %> rounded-full"></div>
-                                        <span class="audio-duration text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'gray-600' %> text-xs ml-2">0:00</span>
+                                        <div class="flex-1 relative">
+                                            <div class="waveform h-8 bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-400/30' : 'gray-300' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-600/30' : 'gray-600' %> rounded-full overflow-hidden">
+                                                <div class="progress-bar absolute top-0 left-0 h-full bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-500' : 'gray-400' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-700' : 'gray-500' %>" style="width: 0%;"></div>
+                                            </div>
+                                            <div class="flex justify-between text-xs text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'gray-600' %> mt-1">
+                                                <span class="current-time">0:00</span>
+                                                <span class="audio-duration">0:00</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             <% } %>
@@ -242,12 +250,11 @@ function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Modify the existing message rendering in the chat to show reactions
-function appendMessage(message, isSender) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-6`;
+// Helper function to create message HTML
+function createMessageHTML(message) {
+    const isSender = message.sender._id === userId;
     
-    const messageContent = `
+    return `
         <div class="relative max-w-[70%] ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3" data-message-id="${message._id}">
             ${message.mediaType !== 'none' && message.mediaUrl ? `
                 ${message.mediaType === 'image' ? 
@@ -257,14 +264,21 @@ function appendMessage(message, isSender) {
                     message.mediaType === 'audio' ?
                     `<div class="audio-player w-full mb-2">
                         <audio src="${message.mediaUrl}" class="hidden"></audio>
-                        <div class="flex items-center">
-                            <button class="play-btn text-${isSender ? 'white' : 'blue-500'} mr-2">
-                                <i class="fas fa-play"></i>
+                        <div class="flex items-center gap-3">
+                            <button class="play-btn text-${isSender ? 'white' : 'blue-500'} rounded-full bg-${isSender ? 'blue-700' : 'gray-200'} dark:bg-${isSender ? 'blue-800' : 'gray-700'} w-8 h-8 flex items-center justify-center">
+                                <i class="fas fa-play play-icon"></i>
+                                <i class="fas fa-pause pause-icon hidden"></i>
                             </button>
-                            <div class="waveform w-32 h-8 bg-${isSender ? 'blue-400' : 'gray-300'} dark:bg-${isSender ? 'blue-600' : 'gray-600'} rounded-full"></div>
-                            <span class="audio-duration text-${isSender ? 'white' : 'gray-600'} text-xs ml-2">0:00</span>
-                        </div>
-                    </div>` :
+                            <div class="flex-1 relative">
+                                <div class="waveform h-8 bg-${isSender ? 'blue-400/30' : 'gray-300'} dark:bg-${isSender ? 'blue-600/30' : 'gray-600'} rounded-full overflow-hidden">
+                                    <div class="progress-bar absolute top-0 left-0 h-full bg-${isSender ? 'blue-500' : 'gray-400'} dark:bg-${isSender ? 'blue-700' : 'gray-500'}" style="width: 0%;"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-${isSender ? 'white' : 'gray-600'} mt-1">
+                                    <span class="current-time">0:00</span>
+                                    <span class="audio-duration">0:00</span>
+                                </div>
+                            </div>
+                        </div>` :
                     ''
                 }
             ` : ''}
@@ -301,48 +315,22 @@ function appendMessage(message, isSender) {
             </div>
         </div>
     `;
+}
+
+// Modify the existing message rendering in the chat to show reactions
+function appendMessage(message, isSender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-6`;
     
+    const messageContent = createMessageHTML(message);
     messageDiv.innerHTML = messageContent;
     
     // Set up audio player if this is an audio message
     if (message.mediaType === 'audio') {
         const audioPlayer = messageDiv.querySelector('.audio-player');
-        const audio = audioPlayer.querySelector('audio');
-        const playBtn = audioPlayer.querySelector('.play-btn');
-        const durationEl = audioPlayer.querySelector('.audio-duration');
-        
-        // Load audio and update duration
-        audio.addEventListener('loadedmetadata', () => {
-            const duration = Math.round(audio.duration);
-            const minutes = Math.floor(duration / 60);
-            const seconds = duration % 60;
-            durationEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        });
-        
-        // Play/pause functionality
-        playBtn.addEventListener('click', () => {
-            if (audio.paused) {
-                // Pause all other playing audio
-                document.querySelectorAll('audio').forEach(a => {
-                    if (a !== audio && !a.paused) {
-                        a.pause();
-                        const btn = a.parentElement.querySelector('.play-btn i');
-                        btn.classList.replace('fa-pause', 'fa-play');
-                    }
-                });
-                
-                audio.play();
-                playBtn.querySelector('i').classList.replace('fa-play', 'fa-pause');
-            } else {
-                audio.pause();
-                playBtn.querySelector('i').classList.replace('fa-pause', 'fa-play');
-            }
-        });
-        
-        // Reset play button when audio ends
-        audio.addEventListener('ended', () => {
-            playBtn.querySelector('i').classList.replace('fa-pause', 'fa-play');
-        });
+        if (audioPlayer) {
+            initAudioPlayer(audioPlayer);
+        }
     }
     
     messagesContainer.appendChild(messageDiv);
@@ -990,6 +978,12 @@ document.head.insertAdjacentHTML('beforeend', `
     width: 100%;
     background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
     animation: wave 2s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.audio-player.playing .waveform::before {
+    opacity: 1;
 }
 
 .audio-player .play-btn {
@@ -1006,6 +1000,28 @@ document.head.insertAdjacentHTML('beforeend', `
 .audio-player .play-btn:hover {
     transform: scale(1.1);
     background-color: rgba(0,0,0,0.1);
+}
+
+.audio-player .progress-bar {
+    position: relative;
+}
+
+.audio-player .progress-bar::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #fff;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.audio-player.playing .progress-bar::after {
+    opacity: 1;
 }
 
 @keyframes wave {
@@ -1184,67 +1200,152 @@ function toggleAudioPlayback(audio, playIcon, pauseIcon) {
     }
 }
 
-// Initialize audio players
-function initializeAudioPlayers() {
-    document.querySelectorAll('.audio-player').forEach(player => {
-        const audio = player.querySelector('audio');
-        const playBtn = player.querySelector('.play-btn');
-        const playIcon = player.querySelector('.play-icon');
-        const pauseIcon = player.querySelector('.pause-icon');
-        const progressBar = player.querySelector('.progress-bar');
-        const currentTimeEl = player.querySelector('.current-time');
-        const durationEl = player.querySelector('.duration');
-        
-        if (!audio || audio.hasAttribute('data-initialized')) return;
-        
-        // Mark as initialized
-        audio.setAttribute('data-initialized', 'true');
-        
-        audio.addEventListener('loadedmetadata', () => {
-            updateAudioDuration(audio, durationEl);
-        });
-        
-        audio.addEventListener('timeupdate', () => {
-            // Update current time
-            const currentTime = formatTime(audio.currentTime);
-            currentTimeEl.textContent = currentTime;
+// Function to initialize audio player
+function initAudioPlayer(player) {
+    const audio = player.querySelector('audio');
+    const playBtn = player.querySelector('.play-btn');
+    const playIcon = playBtn.querySelector('.play-icon');
+    const pauseIcon = playBtn.querySelector('.pause-icon');
+    const progressBar = player.querySelector('.progress-bar');
+    const currentTimeEl = player.querySelector('.current-time');
+    const durationEl = player.querySelector('.audio-duration');
+    const waveform = player.querySelector('.waveform');
+    
+    if (!audio || audio.hasAttribute('data-initialized')) return;
+    
+    // Format time helper function
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+    
+    // Update progress function
+    const updateProgress = () => {
+        if (!audio.paused) {
+            const currentTime = audio.currentTime;
+            const duration = audio.duration;
+            const progressPercent = (currentTime / duration) * 100;
             
-            // Update progress bar
-            const progress = (audio.currentTime / audio.duration) * 100;
-            if (progressBar) progressBar.style.width = `${progress}%`;
-        });
-        
-        audio.addEventListener('ended', () => {
-            playIcon.classList.remove('hidden');
-            pauseIcon.classList.add('hidden');
-            if (progressBar) progressBar.style.width = '0%';
-            currentTimeEl.textContent = '0:00';
-        });
-        
-        playBtn.addEventListener('click', () => {
-            toggleAudioPlayback(audio, playIcon, pauseIcon);
-        });
-        
-        // Add click event on waveform for seeking
-        const waveform = player.querySelector('.waveform');
-        if (waveform) {
-            waveform.addEventListener('click', (e) => {
-                if (!audio.duration) return;
-                
-                const rect = waveform.getBoundingClientRect();
-                const position = (e.clientX - rect.left) / rect.width;
-                audio.currentTime = position * audio.duration;
-                
-                if (audio.paused) {
-                    toggleAudioPlayback(audio, playIcon, pauseIcon);
+            // Update progress bar width
+            progressBar.style.width = `${progressPercent}%`;
+            
+            // Update current time display
+            currentTimeEl.textContent = formatTime(currentTime);
+            
+            // Continue updating
+            requestAnimationFrame(updateProgress);
+        }
+    };
+    
+    // Load audio and update duration
+    audio.addEventListener('loadedmetadata', () => {
+        const duration = Math.round(audio.duration);
+        durationEl.textContent = formatTime(duration);
+    });
+    
+    // Play/pause functionality
+    playBtn.addEventListener('click', () => {
+        if (audio.paused) {
+            // Pause all other playing audio
+            document.querySelectorAll('audio').forEach(a => {
+                if (a !== audio && !a.paused) {
+                    a.pause();
+                    const playerBtn = a.closest('.audio-player').querySelector('.play-btn');
+                    playerBtn.querySelector('.play-icon').classList.remove('hidden');
+                    playerBtn.querySelector('.pause-icon').classList.add('hidden');
+                    a.closest('.audio-player').classList.remove('playing');
                 }
             });
+            
+            audio.play();
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+            player.classList.add('playing');
+            
+            // Start progress animation
+            requestAnimationFrame(updateProgress);
+        } else {
+            audio.pause();
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+            player.classList.remove('playing');
         }
     });
+    
+    // Reset play button when audio ends
+    audio.addEventListener('ended', () => {
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        player.classList.remove('playing');
+        
+        // Reset progress bar
+        progressBar.style.width = '0%';
+        currentTimeEl.textContent = '0:00';
+    });
+    
+    // Add seeking functionality
+    if (waveform) {
+        waveform.addEventListener('click', (e) => {
+            if (!audio.duration) return;
+            
+            const rect = waveform.getBoundingClientRect();
+            const position = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = position * audio.duration;
+            
+            // Update progress bar and time display
+            progressBar.style.width = `${position * 100}%`;
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+            
+            // If audio was paused, start playing
+            if (audio.paused) {
+                audio.play();
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                requestAnimationFrame(updateProgress);
+            }
+        });
+    }
+    
+    // Mark as initialized
+    audio.setAttribute('data-initialized', 'true');
 }
 
-// Initialize audio players when page loads
-document.addEventListener('DOMContentLoaded', initializeAudioPlayers);
+// Initialize all audio players on page load
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.audio-player').forEach(initAudioPlayer);
+});
+
+// Make sure to initialize audio players for new messages
+socket.on('receive message', (message) => {
+    // Check if we already have this message
+    if (document.querySelector(`.message-${message._id}`)) {
+        return;
+    }
+
+    // Create the message
+    const messageContent = createMessageHTML(message);
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message message-${message._id} ${message.sender._id === userId ? 'sent' : 'received'}`;
+    messageDiv.innerHTML = messageContent;
+    messagesContainer.appendChild(messageDiv);
+
+    // Initialize audio player if this is an audio message
+    if (message.mediaType === 'audio') {
+        const newAudioPlayer = messageDiv.querySelector('.audio-player');
+        if (newAudioPlayer) {
+            initAudioPlayer(newAudioPlayer);
+        }
+    }
+
+    // Scroll to bottom
+    scrollToBottom();
+
+    // Mark message as read
+    if (message.sender._id !== userId) {
+        fetch(`/messages/${message._id}/read`, { method: 'POST' });
+    }
+});
 </script>
 
 <%- include('partials/footer') %> 
