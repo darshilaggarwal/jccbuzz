@@ -21,6 +21,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    enrollment_number: {
+        type: String,
+        required: true,
+        unique: true
+    },
     bio: {
         type: String,
         default: "Hey there! I'm using Pinspire"

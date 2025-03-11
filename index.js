@@ -1,4 +1,4 @@
-// Load environment variables
+// Load environment variables from .env file
 require('dotenv').config();
 
 const express = require("express");
@@ -20,6 +20,8 @@ const sharp = require('sharp');
 const storyModel = require("./models/story");
 const session = require('express-session');
 const passport = require('./config/passport');
+const StudentVerification = require('./models/studentVerification');
+const axios = require('axios');
 
 // Add this near the top of the file where other environment variables are setup
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
@@ -283,16 +285,36 @@ app.get("/register" , (req,res)=>{
 
 app.post("/register" ,async (req,res)=>{
     try {
-        let { email, username, name, password } = req.body;
+        let { email, username, name, password, enrollment_number } = req.body;
     
+        if (!enrollment_number) {
+            return res.redirect("/register?error=invalid_enrollment");
+        }
+        
+        // Verify that the enrollment number is valid and verified
+        const student = await StudentVerification.findOne({ enrollment_number });
+        if (!student) {
+            return res.redirect("/register?error=invalid_enrollment");
+        }
+        
+        if (!student.is_verified) {
+            return res.redirect("/register?error=not_verified");
+        }
+        
+        // Check if enrollment number is already registered
+        const enrollmentUser = await userModel.findOne({ enrollment_number });
+        if (enrollmentUser) {
+            return res.redirect("/register?error=enrollment_taken");
+        }
+        
         // Check if email already exists
-        let emailUser = await userModel.findOne({email});
+        let emailUser = await userModel.findOne({ email });
         if (emailUser) {
             return res.redirect("/register?error=email_taken");
         }
         
         // Check if username already exists
-        let usernameUser = await userModel.findOne({username});
+        let usernameUser = await userModel.findOne({ username });
         if (usernameUser) {
             return res.redirect("/register?error=username_taken");
         }
@@ -305,10 +327,11 @@ app.post("/register" ,async (req,res)=>{
                         email, 
                         username, 
                         password: hash,
+                        enrollment_number,
                         posts: [] // Initialize empty posts array
                     });
 
-                    let token = jwt.sign({email: email}, JWT_SECRET);
+                    let token = jwt.sign({ email: email }, JWT_SECRET);
                     res.cookie("token", token);
                     // Instead of directly rendering, redirect to profile
                     res.redirect("/profile");
@@ -316,8 +339,8 @@ app.post("/register" ,async (req,res)=>{
                     console.error("Error creating user:", error);
                     return res.redirect("/register?error=registration_failed");
                 }
-            })
-        })
+            });
+        });
     } catch (error) {
         console.error("Registration error:", error);
         res.redirect("/register?error=registration_failed");
@@ -1299,24 +1322,27 @@ app.post("/post/:postId/save", isLoggedIn, async (req, res) => {
 });
 
 // Get saved posts
-app.get("/saved-posts", isLoggedIn, async (req, res) => {
+app.get('/savedPosts', isLoggedIn, async (req, res) => {
     try {
-        const user = await userModel.findOne({ email: req.user.email })
-            .populate({
-                path: 'savedPosts',
-                populate: {
-                    path: 'user',
-                    select: 'username name profileImage'
-                }
-            });
+        const user = await userModel.findById(req.user._id).populate({
+            path: 'savedPosts',
+            populate: {
+                path: 'user',
+                select: 'name username profileImage'
+            }
+        });
+
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
         
-        res.render("savedPosts", { 
-            user: user, 
-            savedPosts: user.savedPosts 
+        res.render('savedPosts', { 
+            savedPosts: user.savedPosts || [],
+            user: req.user
         });
     } catch (error) {
-        console.error('Error fetching saved posts:', error);
-        res.status(500).send("Error fetching saved posts");
+        console.error(error);
+        res.status(500).send('Server error');
     }
 });
 
@@ -1436,32 +1462,6 @@ app.get('/search', isLoggedIn, async (req, res) => {
             return res.status(500).json({ error: 'An error occurred during search' });
         }
         res.status(500).send('An error occurred during search');
-    }
-});
-
-// Display saved posts
-app.get('/saved-posts', isLoggedIn, async (req, res) => {
-    try {
-        const user = await userModel.findOne({ email: req.user.email })
-            .populate({
-                path: 'savedPosts',
-                populate: {
-                    path: 'user',
-                    select: 'name username profileImage'
-                }
-            });
-        
-        if (!user) {
-            return res.status(404).send('User not found');
-        }
-        
-        res.render('savedPosts', { 
-            savedPosts: user.savedPosts || [],
-            user: user
-        });
-    } catch (error) {
-        console.error('Error fetching saved posts:', error);
-        res.status(500).send('Error fetching saved posts');
     }
 });
 
@@ -1678,5 +1678,440 @@ app.post("/chat/:chatId/voice", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error sending voice message:', error);
         res.status(500).json({ error: "Error sending voice message" });
+    }
+});
+
+// Initialize the student database with the provided list
+app.get("/admin/init-student-db", async (req, res) => {
+    try {
+        // This is the list of students from the provided JSON
+        const students = [
+            { "enrollment_number": "021323001", "contact_number": "+919971790378" },
+            { "enrollment_number": "021323002", "contact_number": "+918800311464" },
+            { "enrollment_number": "021323004", "contact_number": "+917681962797" },
+            { "enrollment_number": "021323005", "contact_number": "+918595520738" },
+            { "enrollment_number": "021323006", "contact_number": "+918882194741" },
+            { "enrollment_number": "021323007", "contact_number": "+918750753183" },
+            { "enrollment_number": "021323008", "contact_number": "+918700574741" },
+            { "enrollment_number": "021323009", "contact_number": "+918178822096" },
+            { "enrollment_number": "021323010", "contact_number": "+919319981411" },
+            { "enrollment_number": "021323011", "contact_number": "+919990000968" },
+            { "enrollment_number": "021323012", "contact_number": "+918076787466" },
+            { "enrollment_number": "021323013", "contact_number": "+918130380530" },
+            { "enrollment_number": "021323014", "contact_number": "+919818597919" },
+            { "enrollment_number": "021323015", "contact_number": "+919812713690" },
+            { "enrollment_number": "021323016", "contact_number": "+919667101166" },
+            { "enrollment_number": "021323017", "contact_number": "+918860145650" },
+            { "enrollment_number": "021323018", "contact_number": "+918447540355" },
+            { "enrollment_number": "021323019", "contact_number": "+917835823519" },
+            { "enrollment_number": "021323020", "contact_number": "+918287941446" },
+            { "enrollment_number": "021323022", "contact_number": "+917048960372" },
+            { "enrollment_number": "021323023", "contact_number": "+919205858598" },
+            { "enrollment_number": "021323024", "contact_number": "+917011455905" },
+            { "enrollment_number": "021323025", "contact_number": "+918766362063" },
+            { "enrollment_number": "021323026", "contact_number": "+918373904766" },
+            { "enrollment_number": "021323027", "contact_number": "+917428036375" },
+            { "enrollment_number": "021323028", "contact_number": "+919870367909" },
+            { "enrollment_number": "021323029", "contact_number": "+919289649402" },
+            { "enrollment_number": "021323030", "contact_number": "+919315269874" },
+            { "enrollment_number": "021323031", "contact_number": "+919501695765" },
+            { "enrollment_number": "021323032", "contact_number": "+917827360413" },
+            { "enrollment_number": "021323034", "contact_number": "+919625538977" },
+            { "enrollment_number": "021323035", "contact_number": "+918882045806" },
+            { "enrollment_number": "021323036", "contact_number": "+918800244384" },
+            { "enrollment_number": "021323037", "contact_number": "+918076999627" },
+            { "enrollment_number": "021323038", "contact_number": "+918700696282" },
+            { "enrollment_number": "021323039", "contact_number": "+918383978660" },
+            { "enrollment_number": "021323040", "contact_number": "+918810560083" },
+            { "enrollment_number": "021723002", "contact_number": "+918017869250" },
+            { "enrollment_number": "021723003", "contact_number": "+918510005663" },
+            { "enrollment_number": "021723005", "contact_number": "+918168848171" },
+            { "enrollment_number": "021723006", "contact_number": "+919050651722" },
+            { "enrollment_number": "021723007", "contact_number": "+918595775758" },
+            { "enrollment_number": "021723008", "contact_number": "+919310285981" }
+        ];
+        
+        // Clear existing data
+        await StudentVerification.deleteMany({});
+        
+        // Insert new data
+        await StudentVerification.insertMany(students);
+        
+        res.json({ success: true, message: "Student database initialized with 44 records" });
+    } catch (error) {
+        console.error("Error initializing student database:", error);
+        res.status(500).json({ success: false, error: "Failed to initialize student database" });
+    }
+});
+
+// Generate a random 6-digit OTP
+function generateOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send OTP using Twilio instead of Fast2SMS
+async function sendOTP(phoneNumber, otp) {
+    try {
+        // Log attempt
+        console.log(`Attempting to send OTP ${otp} to ${phoneNumber}`);
+        
+        // Check for required Twilio credentials
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+        
+        if (!accountSid || !authToken || !twilioPhone) {
+            throw new Error("Twilio credentials are not properly configured");
+        }
+        
+        // Initialize Twilio client
+        const twilio = require('twilio')(accountSid, authToken);
+        
+        // Format the recipient phone number to include the country code
+        // Assuming Indian numbers (+91)
+        const formattedPhone = phoneNumber.startsWith('+') 
+            ? phoneNumber 
+            : `+91${phoneNumber}`;
+        
+        // Prepare the message
+        const message = `Your verification code for Pinspire is: ${otp}. Valid for 2 minutes.`;
+        
+        // Send the SMS
+        const response = await twilio.messages.create({
+            body: message,
+            from: twilioPhone,
+            to: formattedPhone
+        });
+        
+        console.log("Twilio message sent with SID:", response.sid);
+        return true;
+    } catch (error) {
+        console.error("Failed to send SMS via Twilio:", error.message);
+        
+        // For development - print clearer debugging info
+        if (process.env.NODE_ENV !== 'production') {
+            console.log("=========== TWILIO SMS TROUBLESHOOTING ===========");
+            console.log("1. Check your Twilio credentials at https://console.twilio.com");
+            console.log("2. Verify your Twilio account has sufficient funds");
+            console.log("3. Make sure the phone number is correctly formatted");
+            console.log("4. For international numbers, ensure country code is included");
+            console.log("5. Check that your Twilio phone number can send SMS");
+            console.log("==================================================");
+            
+            // In development, still return true for testing
+            console.log("DEVELOPMENT MODE: Using console OTP:", otp);
+            return true;
+        }
+        
+        return false;
+    }
+}
+
+// Request OTP endpoint
+app.post("/verify/request-otp", async (req, res) => {
+    try {
+        const { enrollment_number } = req.body;
+        
+        if (!enrollment_number) {
+            return res.status(400).json({ error: "Enrollment number is required" });
+        }
+        
+        console.log("Requesting OTP for enrollment number:", enrollment_number);
+        
+        // Check if enrollment number exists in the database
+        const student = await StudentVerification.findOne({ enrollment_number });
+        
+        if (!student) {
+            console.log("Invalid enrollment number:", enrollment_number);
+            return res.status(404).json({ error: "Invalid enrollment number. Only university students can register." });
+        }
+        
+        console.log("Found student record for enrollment number:", enrollment_number);
+        
+        // Check if a user with this enrollment number already exists
+        const existingUser = await userModel.findOne({ enrollment_number });
+        if (existingUser) {
+            console.log("Enrollment number already registered:", enrollment_number);
+            return res.status(400).json({ error: "This enrollment number is already registered. Please login instead." });
+        }
+        
+        // Generate a new OTP
+        const otp = generateOTP();
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 2); // OTP expires in 2 minutes
+        
+        console.log("Generated OTP for enrollment number:", enrollment_number, "OTP:", otp);
+        
+        // Mask phone number for privacy
+        const phoneNumber = student.contact_number;
+        let maskedPhone = "XXXXXX" + phoneNumber.slice(-4);
+        if (phoneNumber.length > 10) {
+            maskedPhone = phoneNumber.slice(0, 2) + "XXXXXX" + phoneNumber.slice(-4);
+        }
+        
+        console.log("Sending OTP to phone:", phoneNumber, "(masked as", maskedPhone + ")");
+        
+        // Try to send OTP to the student's phone number
+        try {
+            const sent = await sendOTP(student.contact_number, otp);
+            
+            if (!sent && process.env.NODE_ENV === 'production') {
+                console.error("Failed to send OTP to phone:", phoneNumber);
+                return res.status(500).json({ error: "Failed to send OTP. Please try again later." });
+            }
+            
+            // Update student record with OTP
+            student.otp = {
+                code: otp,
+                expires_at: expiresAt
+            };
+            await student.save();
+            
+            // In development, return the OTP for testing
+            const devOtpInfo = process.env.NODE_ENV !== 'production' ? { dev_otp: otp } : {};
+            
+            return res.json({ 
+                success: true, 
+                message: "OTP sent successfully",
+                expires_at: expiresAt,
+                masked_phone: maskedPhone,
+                ...devOtpInfo
+            });
+        } catch (smsError) {
+            console.error("Error sending OTP to phone:", phoneNumber, smsError);
+            
+            // In development, allow proceeding even if SMS fails
+            if (process.env.NODE_ENV !== 'production') {
+                // Save OTP anyway for testing
+                student.otp = {
+                    code: otp,
+                    expires_at: expiresAt
+                };
+                await student.save();
+                
+                return res.json({ 
+                    success: true, 
+                    message: "Development mode: OTP saved but not sent",
+                    expires_at: expiresAt,
+                    masked_phone: maskedPhone,
+                    dev_otp: otp,
+                    warning: "SMS sending failed but proceeding in development mode"
+                });
+            }
+            
+            return res.status(500).json({ error: "Failed to send OTP. Please check your phone number or try again later." });
+        }
+    } catch (error) {
+        console.error("Error in request-otp endpoint:", error);
+        
+        // Provide detailed error in development, generic error in production
+        if (process.env.NODE_ENV !== 'production') {
+            return res.status(500).json({ 
+                error: "Server error. Please try again.",
+                details: error.message,
+                stack: error.stack 
+            });
+        }
+        
+        res.status(500).json({ error: "Server error. Please try again." });
+    }
+});
+
+// Verify OTP endpoint
+app.post("/verify/verify-otp", async (req, res) => {
+    try {
+        const { enrollment_number, otp } = req.body;
+        
+        if (!enrollment_number || !otp) {
+            return res.status(400).json({ error: "Enrollment number and OTP are required" });
+        }
+        
+        // Find the student record
+        const student = await StudentVerification.findOne({ enrollment_number });
+        
+        if (!student) {
+            return res.status(404).json({ error: "Invalid enrollment number" });
+        }
+        
+        // Check if OTP exists and is valid
+        if (!student.otp || !student.otp.code) {
+            return res.status(400).json({ error: "No OTP requested. Please request a new OTP." });
+        }
+        
+        // Check if OTP has expired
+        if (new Date() > new Date(student.otp.expires_at)) {
+            return res.status(400).json({ error: "OTP has expired. Please request a new one." });
+        }
+        
+        // Verify OTP
+        if (student.otp.code !== otp) {
+            return res.status(400).json({ error: "Invalid OTP. Please try again." });
+        }
+        
+        // Mark student as verified
+        student.is_verified = true;
+        student.otp = null; // Clear OTP after successful verification
+        await student.save();
+        
+        return res.json({ 
+            success: true, 
+            message: "OTP verified successfully"
+        });
+        
+    } catch (error) {
+        console.error("Error in verify-otp endpoint:", error);
+        res.status(500).json({ error: "Server error. Please try again." });
+    }
+});
+
+// Test endpoint for SMS sending (development only)
+app.get("/admin/test-sms", async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ error: "This endpoint is only available in development mode" });
+    }
+    
+    try {
+        const testPhone = req.query.phone || "8700574741"; // Default to a test number
+        const testOTP = "123456";
+        
+        console.log("Testing SMS functionality with phone:", testPhone);
+        
+        // Check if Twilio API key is configured
+        if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_PHONE_NUMBER) {
+            return res.status(500).json({ 
+                error: "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER not configured", 
+                instructions: "Please add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER to your .env file" 
+            });
+        }
+        
+        // Try sending the test SMS
+        const sent = await sendOTP(testPhone, testOTP);
+        
+        if (sent) {
+            return res.json({ 
+                success: true, 
+                message: "Test SMS sent successfully",
+                phone: testPhone,
+                otp: testOTP
+            });
+        } else {
+            return res.status(500).json({ 
+                error: "Failed to send test SMS", 
+                phone: testPhone
+            });
+        }
+    } catch (error) {
+        console.error("Error in test-sms endpoint:", error);
+        return res.status(500).json({
+            error: "Server error",
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+// SMS Test Page - Useful for debugging SMS issues
+app.get('/admin/sms-test', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).send('This tool is not available in production');
+    }
+    
+    // Check if Twilio credentials are configured
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+    
+    let apiKeyStatus = 'Not configured';
+    if (accountSid) {
+        // Mask the key for security
+        apiKeyStatus = 'Configured: ' + accountSid.substring(0, 5) + '...' + accountSid.substring(accountSid.length - 5);
+    }
+    
+    res.render('test-sms', {
+        defaultPhone: req.query.phone || '',
+        defaultMessage: 'This is a test message from Pinspire.',
+        apiKeyStatus,
+        twilioPhone: twilioPhone || 'Not configured'
+    });
+});
+
+// SMS Test API Endpoint
+app.post('/admin/send-test-sms', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ success: false, error: 'This endpoint is only available in development mode' });
+    }
+    
+    try {
+        const { phone, message, use_otp } = req.body;
+        
+        if (!phone) {
+            return res.status(400).json({ success: false, error: 'Phone number is required' });
+        }
+        
+        let result;
+        if (use_otp) {
+            // Generate an OTP and send it
+            const otp = generateOTP();
+            const sent = await sendOTP(phone, otp);
+            
+            result = {
+                success: sent,
+                message: sent ? 'OTP sent successfully' : 'Failed to send OTP',
+                phone,
+                otp,
+                timestamp: new Date().toISOString(),
+                use_otp: true
+            };
+        } else {
+            // Send a custom message
+            if (!message) {
+                return res.status(400).json({ success: false, error: 'Message is required when not sending OTP' });
+            }
+            
+            // Send a direct message using Twilio
+            try {
+                const apiKey = process.env.TWILIO_ACCOUNT_SID;
+                if (!apiKey) {
+                    throw new Error('Twilio API key not configured');
+                }
+                
+                const twilio = require('twilio')(apiKey, process.env.TWILIO_AUTH_TOKEN);
+                
+                const response = await twilio.messages.create({
+                    body: message,
+                    from: process.env.TWILIO_PHONE_NUMBER,
+                    to: phone
+                });
+                
+                console.log('Twilio direct message response:', JSON.stringify(response));
+                
+                result = {
+                    success: response && response.sid,
+                    message: response && response.sid ? 'Message sent successfully' : 'Failed to send message',
+                    phone,
+                    api_response: response,
+                    timestamp: new Date().toISOString(),
+                    use_otp: false
+                };
+            } catch (error) {
+                console.error('Error sending direct message:', error);
+                result = {
+                    success: false,
+                    error: error.message,
+                    phone,
+                    timestamp: new Date().toISOString(),
+                    use_otp: false
+                };
+            }
+        }
+        
+        return res.json(result);
+    } catch (error) {
+        console.error('Error in send-test-sms endpoint:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Server error',
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
