@@ -6,9 +6,18 @@ const studentVerificationSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    contact_number: {
+    name: {
         type: String,
         required: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    contact_number: {
+        type: String,
+        required: false // Making this optional since we're using email now
     },
     is_verified: {
         type: Boolean,

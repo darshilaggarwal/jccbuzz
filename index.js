@@ -1,28 +1,34 @@
 // Load environment variables from .env file
 require('dotenv').config();
 
-const express = require("express");
+const express = require('express');
 const app = express();
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-const userModel = require("./models/user");  
-const postModel = require("./models/post")
-const cookieParser = require("cookie-parser");
-const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
 const mongoose = require('mongoose');
-const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const commentModel = require("./models/comment");
-const chatModel = require("./models/chat");
-const sharp = require('sharp');
-const storyModel = require("./models/story");
-const session = require('express-session');
-const passport = require('./config/passport');
+const userModel = require('./models/user');
+const postModel = require('./models/post');
+const commentModel = require('./models/comment');
+const chatModel = require('./models/chat');
+const storyModel = require('./models/story');
+const notificationModel = require('./models/notification');
 const StudentVerification = require('./models/studentVerification');
-const axios = require('axios');
-const notificationModel = require("./models/notification");
+const { sendOTPEmail } = require('./utils/emailSender');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+const multer = require('multer');
+const fs = require('fs');
+const sharp = require('sharp');
+const session = require('express-session');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const http = require('http');
+const socketIo = require('socket.io');
+const { Server } = require('socket.io');
+
+// Create HTTP server and Socket.io instance
+const server = http.createServer(app);
+const io = new Server(server);
 
 // Add this near the top of the file where other environment variables are setup
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
@@ -2031,22 +2037,40 @@ app.post("/verify/request-otp", async (req, res) => {
         
         console.log("Generated OTP for enrollment number:", enrollment_number, "OTP:", otp);
         
-        // Mask phone number for privacy
-        const phoneNumber = student.contact_number;
-        let maskedPhone = "XXXXXX" + phoneNumber.slice(-4);
-        if (phoneNumber.length > 10) {
-            maskedPhone = phoneNumber.slice(0, 2) + "XXXXXX" + phoneNumber.slice(-4);
-        }
-        
-        console.log("Sending OTP to phone:", phoneNumber, "(masked as", maskedPhone + ")");
-        
-        // Try to send OTP to the student's phone number
+        // Try to send OTP to the student's email
         try {
-            const sent = await sendOTP(student.contact_number, otp);
+            // Ensure student record has email and name
+            if (!student.email) {
+                return res.status(400).json({ 
+                    error: "Student email not found. Please contact support." 
+                });
+            }
             
-            if (!sent && process.env.NODE_ENV === 'production') {
-                console.error("Failed to send OTP to phone:", phoneNumber);
-                return res.status(500).json({ error: "Failed to send OTP. Please try again later." });
+            if (!student.name) {
+                return res.status(400).json({ 
+                    error: "Student name not found. Please contact support." 
+                });
+            }
+            
+            // Send OTP email
+            const sent = await sendOTPEmail(student.email, otp, student.name);
+            
+            if (!sent) {
+                console.error("Failed to send OTP to email:", student.email);
+                // Always show OTP in development mode
+                if (process.env.NODE_ENV !== 'production') {
+                    return res.status(200).json({ 
+                        success: true, 
+                        message: "Development mode: OTP saved but email failed",
+                        dev_otp: otp,
+                        expires_at: expiresAt,
+                        student_email: student.email
+                    });
+                } else {
+                    return res.status(500).json({ 
+                        error: "Failed to send OTP. Please try again later or contact support." 
+                    });
+                }
             }
             
             // Update student record with OTP
@@ -2063,13 +2087,13 @@ app.post("/verify/request-otp", async (req, res) => {
                 success: true, 
                 message: "OTP sent successfully",
                 expires_at: expiresAt,
-                masked_phone: maskedPhone,
+                student_email: student.email,
                 ...devOtpInfo
             });
-        } catch (smsError) {
-            console.error("Error sending OTP to phone:", phoneNumber, smsError);
+        } catch (emailError) {
+            console.error("Error sending OTP to email:", student.email, emailError);
             
-            // In development, allow proceeding even if SMS fails
+            // In development, allow proceeding even if email fails
             if (process.env.NODE_ENV !== 'production') {
                 // Save OTP anyway for testing
                 student.otp = {
@@ -2082,13 +2106,15 @@ app.post("/verify/request-otp", async (req, res) => {
                     success: true, 
                     message: "Development mode: OTP saved but not sent",
                     expires_at: expiresAt,
-                    masked_phone: maskedPhone,
+                    student_email: student.email,
                     dev_otp: otp,
-                    warning: "SMS sending failed but proceeding in development mode"
+                    warning: "Email sending failed but proceeding in development mode"
                 });
             }
             
-            return res.status(500).json({ error: "Failed to send OTP. Please check your phone number or try again later." });
+            return res.status(500).json({ 
+                error: "Failed to send OTP. Please try again later or contact support." 
+            });
         }
     } catch (error) {
         console.error("Error in request-otp endpoint:", error);
@@ -2102,7 +2128,9 @@ app.post("/verify/request-otp", async (req, res) => {
             });
         }
         
-        res.status(500).json({ error: "Server error. Please try again." });
+        return res.status(500).json({ 
+            error: "Server error. Please try again." 
+        });
     }
 });
 
@@ -2144,7 +2172,12 @@ app.post("/verify/verify-otp", async (req, res) => {
         
         return res.json({ 
             success: true, 
-            message: "OTP verified successfully"
+            message: "OTP verified successfully",
+            student: {
+                name: student.name,
+                email: student.email,
+                enrollment_number: student.enrollment_number
+            }
         });
         
     } catch (error) {

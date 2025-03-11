@@ -54,7 +54,7 @@
         <div id="step2" class="mt-8 space-y-6 hidden">
             <div class="rounded-md shadow-sm">
                 <div>
-                    <label for="otp" class="block text-sm font-medium text-gray-700 mb-1">Enter OTP sent to <span id="maskedPhone" class="font-medium text-blue-600"></span></label>
+                    <label for="otp" class="block text-sm font-medium text-gray-700 mb-1">Enter OTP sent to <span id="maskedEmail" class="font-medium text-blue-600"></span></label>
                     <div class="flex space-x-2 justify-center">
                         <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -87,11 +87,12 @@
         <!-- Step 3: Complete Registration -->
         <form id="registerForm" class="mt-8 space-y-6 hidden" action="/register" method="POST" novalidate>
             <input type="hidden" id="verified_enrollment" name="enrollment_number" value="">
+            <input type="hidden" id="verified_email" name="verified_email" value="">
             
             <div class="rounded-md shadow-sm -space-y-px">
                 <div>
                     <label for="name" class="sr-only">Full Name</label>
-                    <input id="name" name="name" type="text" required 
+                    <input id="name" name="name" type="text" required readonly
                            class="appearance-none rounded-none relative block w-full px-3 py-2 border
                                   border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md
                                   focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
@@ -109,7 +110,7 @@
                 </div>
                 <div>
                     <label for="email" class="sr-only">Email address</label>
-                    <input id="email" name="email" type="email" required 
+                    <input id="email" name="email" type="email" required readonly
                            class="appearance-none rounded-none relative block w-full px-3 py-2 border
                                   border-gray-300 placeholder-gray-500 text-gray-900
                                   focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
@@ -189,10 +190,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const enrollmentError = document.getElementById('enrollmentError');
     const otpError = document.getElementById('otpError');
     const countdownTimer = document.getElementById('countdownTimer');
+    const maskedEmail = document.getElementById('maskedEmail');
     const verifiedEnrollment = document.getElementById('verified_enrollment');
+    const verifiedEmail = document.getElementById('verified_email');
     const otpInputs = document.querySelectorAll('.otp-input');
     
     // Variables for the registration form elements
+    const nameInput = document.getElementById('name');
     const username = document.getElementById('username');
     const email = document.getElementById('email');
     const password = document.getElementById('password');
@@ -200,6 +204,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const usernameError = document.getElementById('usernameError');
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
+    
+    // Student data for autofill
+    let studentData = null;
     
     // OTP countdown timer variables
     let countdownInterval;
@@ -250,269 +257,300 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'invalid_otp':
                 errorMessage = 'Invalid OTP. Please try again.';
                 break;
+            case 'not_verified':
+                errorMessage = 'Your enrollment is not verified. Please complete the verification process.';
+                break;
+            case 'registration_failed':
+                errorMessage = 'Registration failed. Please try again.';
+                break;
             default:
-                errorMessage = 'An error occurred during registration. Please try again.';
+                errorMessage = 'An error occurred. Please try again.';
         }
         
         showToast(errorMessage);
     }
     
-    // Function to show toast message
-    function showToast(message) {
+    // Function to mask email for privacy
+    function maskEmail(email) {
+        if (!email) return '';
+        const [username, domain] = email.split('@');
+        
+        if (username.length <= 3) {
+            return `${username}***@${domain}`;
+        }
+        
+        return `${username.substring(0, 3)}***@${domain}`;
+    }
+    
+    // Function to show toast
+    function showToast(message, type = 'error') {
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toastMessage');
         
+        // Set message
         toastMessage.textContent = message;
         
-        // Show the toast
+        // Set toast type (color)
+        if (type === 'error') {
+            toast.classList.remove('bg-green-500');
+            toast.classList.add('bg-red-500');
+        } else {
+            toast.classList.remove('bg-red-500');
+            toast.classList.add('bg-green-500');
+        }
+        
+        // Show toast
         toast.classList.remove('opacity-0', 'translate-y-8');
         toast.classList.add('opacity-100', 'translate-y-0');
         
-        // Hide the toast after 5 seconds
+        // Hide toast after 5 seconds
         setTimeout(() => {
-            toast.classList.add('opacity-0', 'translate-y-8');
             toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', 'translate-y-8');
         }, 5000);
     }
     
-    // Start countdown timer
-    function startCountdown() {
-        clearInterval(countdownInterval);
-        timeLeft = 120; // Reset to 2 minutes
+    // Function to start countdown timer
+    function startCountdownTimer() {
+        timeLeft = 120; // 2 minutes
         
-        resendOtpBtn.classList.add('hidden');
+        clearInterval(countdownInterval);
         
         countdownInterval = setInterval(() => {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             
-            countdownTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            countdownTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
             
             if (timeLeft <= 0) {
                 clearInterval(countdownInterval);
-                countdownTimer.textContent = "OTP Expired";
+                countdownTimer.textContent = '0:00';
                 resendOtpBtn.classList.remove('hidden');
-            } else {
-                timeLeft--;
             }
+            
+            timeLeft--;
         }, 1000);
     }
     
-    // Request OTP function
-    async function requestOTP() {
-        const enrollment = enrollmentInput.value.trim();
+    // Request OTP
+    requestOtpBtn.addEventListener('click', async function() {
+        const enrollment_number = enrollmentInput.value.trim();
         
-        if (!enrollment) {
-            enrollmentError.textContent = 'Please enter your enrollment number';
+        if (!enrollment_number) {
+            enrollmentError.textContent = 'Please enter your enrollment number.';
             enrollmentError.classList.remove('hidden');
             return;
         }
         
+        enrollmentError.classList.add('hidden');
+        
         try {
-            // Show loading state
             requestOtpBtn.disabled = true;
-            requestOtpBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sending...';
+            requestOtpBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sending OTP...';
             
             const response = await fetch('/verify/request-otp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ enrollment_number: enrollment })
+                body: JSON.stringify({ enrollment_number })
             });
             
             const data = await response.json();
             
-            // Reset button state
-            requestOtpBtn.disabled = false;
-            requestOtpBtn.innerHTML = 'Request OTP';
-            
-            if (response.ok) {
-                // Display the masked phone number
-                document.getElementById('maskedPhone').textContent = data.masked_phone || 'your phone';
-                
-                // Move to step 2 (OTP verification)
-                step1.classList.add('hidden');
-                step2.classList.remove('hidden');
-                
-                // Start countdown
-                startCountdown();
-                
-                // Focus on first OTP input
-                otpInputs[0].focus();
-                
-                showToast('OTP sent to your registered phone number');
-            } else {
-                enrollmentError.textContent = data.error || 'Error requesting OTP';
-                enrollmentError.classList.remove('hidden');
+            if (!response.ok) {
+                throw new Error(data.error);
             }
-        } catch (error) {
-            console.error('Error requesting OTP:', error);
-            showToast('An error occurred. Please try again.');
             
-            // Reset button state
+            // Save student data for later use
+            if (data.student) {
+                studentData = data.student;
+            }
+            
+            // Set masked email
+            maskedEmail.textContent = maskEmail(data.student_email);
+            
+            // Hide step 1, show step 2
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            
+            // Set verified enrollment in hidden input
+            verifiedEnrollment.value = enrollment_number;
+            
+            // Start countdown timer
+            startCountdownTimer();
+            
+            // In development mode, show the OTP
+            if (data.dev_otp) {
+                showToast(`Development OTP: ${data.dev_otp}`, 'success');
+            } else {
+                showToast('OTP sent to your registered email address', 'success');
+            }
+            
+            // Focus on first OTP input
+            otpInputs[0].focus();
+        } catch (error) {
+            enrollmentError.textContent = error.message;
+            enrollmentError.classList.remove('hidden');
+        } finally {
             requestOtpBtn.disabled = false;
-            requestOtpBtn.innerHTML = 'Request OTP';
+            requestOtpBtn.textContent = 'Request OTP';
         }
-    }
+    });
     
-    // Verify OTP function
-    async function verifyOTP() {
-        // Collect OTP from input fields
-        let otp = '';
-        otpInputs.forEach(input => {
-            otp += input.value;
-        });
+    // Resend OTP
+    resendOtpBtn.addEventListener('click', async function() {
+        const enrollment_number = verifiedEnrollment.value;
+        
+        try {
+            resendOtpBtn.disabled = true;
+            resendOtpBtn.textContent = 'Sending...';
+            
+            const response = await fetch('/verify/request-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ enrollment_number })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error);
+            }
+            
+            // Reset OTP inputs
+            otpInputs.forEach(input => input.value = '');
+            
+            // Start countdown timer
+            startCountdownTimer();
+            
+            // Hide resend button
+            resendOtpBtn.classList.add('hidden');
+            
+            // In development mode, show the OTP
+            if (data.dev_otp) {
+                showToast(`Development OTP: ${data.dev_otp}`, 'success');
+            } else {
+                showToast('OTP resent to your registered email address', 'success');
+            }
+            
+            // Focus on first OTP input
+            otpInputs[0].focus();
+        } catch (error) {
+            otpError.textContent = error.message;
+            otpError.classList.remove('hidden');
+        } finally {
+            resendOtpBtn.disabled = false;
+            resendOtpBtn.textContent = 'Resend OTP';
+        }
+    });
+    
+    // Verify OTP
+    verifyOtpBtn.addEventListener('click', async function() {
+        const enrollment_number = verifiedEnrollment.value;
+        
+        // Collect OTP from inputs
+        const otp = Array.from(otpInputs).map(input => input.value).join('');
         
         if (otp.length !== 6) {
-            otpError.textContent = 'Please enter a valid 6-digit OTP';
+            otpError.textContent = 'Please enter a valid 6-digit OTP.';
             otpError.classList.remove('hidden');
             return;
         }
         
-        const enrollment = enrollmentInput.value.trim();
+        otpError.classList.add('hidden');
         
         try {
-            // Show loading state
             verifyOtpBtn.disabled = true;
-            verifyOtpBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Verifying...';
+            verifyOtpBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Verifying...';
             
             const response = await fetch('/verify/verify-otp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    enrollment_number: enrollment,
-                    otp: otp 
-                })
+                body: JSON.stringify({ enrollment_number, otp })
             });
             
             const data = await response.json();
             
-            // Reset button state
-            verifyOtpBtn.disabled = false;
-            verifyOtpBtn.innerHTML = 'Verify OTP';
-            
-            if (response.ok) {
-                // Store the verified enrollment number
-                verifiedEnrollment.value = enrollment;
-                
-                // Show success animation before moving to next step
-                step2.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-8">
-                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                            <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-medium text-gray-900">Verification Successful!</h3>
-                        <p class="text-sm text-gray-500 mt-1">Proceeding to registration...</p>
-                    </div>
-                `;
-                
-                // Move to step 3 (registration form) after a short delay
-                setTimeout(() => {
-                    step2.classList.add('hidden');
-                    registerForm.classList.remove('hidden');
-                    
-                    // Clear the countdown
-                    clearInterval(countdownInterval);
-                    
-                    showToast('Enrollment verified. Please complete registration.');
-                }, 1500);
-            } else {
-                otpError.textContent = data.error || 'Invalid OTP';
-                otpError.classList.remove('hidden');
-                
-                // Highlight OTP fields in red to indicate error
-                otpInputs.forEach(input => {
-                    input.classList.add('border-red-500');
-                    setTimeout(() => {
-                        input.classList.remove('border-red-500');
-                    }, 2000);
-                });
-                
-                // Clear OTP fields for retry
-                otpInputs.forEach(input => {
-                    input.value = '';
-                });
-                otpInputs[0].focus();
+            if (!response.ok) {
+                throw new Error(data.error);
             }
-        } catch (error) {
-            console.error('Error verifying OTP:', error);
-            showToast('An error occurred. Please try again.');
             
-            // Reset button state
+            // Stop countdown timer
+            clearInterval(countdownInterval);
+            
+            // Hide step 2, show registration form
+            step2.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            
+            // Auto-fill name and email if available
+            if (data.student) {
+                nameInput.value = data.student.name;
+                email.value = data.student.email;
+                verifiedEmail.value = data.student.email;
+                
+                // Suggest a username based on name (first name + random numbers)
+                const firstName = data.student.name.split(' ')[0].toLowerCase();
+                const randomNum = Math.floor(1000 + Math.random() * 9000);
+                username.value = `${firstName}${randomNum}`;
+            }
+            
+            showToast('OTP verified successfully!', 'success');
+        } catch (error) {
+            otpError.textContent = error.message;
+            otpError.classList.remove('hidden');
+        } finally {
             verifyOtpBtn.disabled = false;
-            verifyOtpBtn.innerHTML = 'Verify OTP';
+            verifyOtpBtn.textContent = 'Verify OTP';
         }
-    }
-    
-    // Event listeners
-    requestOtpBtn.addEventListener('click', requestOTP);
-    verifyOtpBtn.addEventListener('click', verifyOTP);
-    resendOtpBtn.addEventListener('click', requestOTP);
-    
-    // Username processing - convert spaces to underscores
-    username.addEventListener('input', function() {
-        this.value = this.value.replace(/\s+/g, '_');
     });
     
-    // Email validation
-    function isValidEmail(email) {
-        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        return regex.test(email);
-    }
-    
-    // Password validation
-    function isValidPassword(password) {
-        // At least 8 characters, 1 uppercase, 1 special character
-        const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
-        return regex.test(password);
-    }
-    
-    // Form submission
+    // Form validation before submission
     registerForm.addEventListener('submit', function(e) {
         let isValid = true;
         
-        // Reset errors
+        // Reset error messages
         nameError.classList.add('hidden');
         usernameError.classList.add('hidden');
         emailError.classList.add('hidden');
         passwordError.classList.add('hidden');
         
-        // Name validation
-        if (document.getElementById('name').value.trim() === '') {
-            nameError.textContent = 'Name is required';
-            nameError.classList.remove('hidden');
+        // Validate username
+        if (!username.value) {
+            usernameError.textContent = 'Username is required.';
+            usernameError.classList.remove('hidden');
             isValid = false;
-        }
-        
-        // Username validation
-        if (username.value.trim() === '') {
-            usernameError.textContent = 'Username is required';
+        } else if (username.value.length < 3) {
+            usernameError.textContent = 'Username must be at least 3 characters.';
             usernameError.classList.remove('hidden');
             isValid = false;
         }
         
-        // Email validation
-        if (!isValidEmail(email.value)) {
-            emailError.textContent = 'Please enter a valid email address';
-            emailError.classList.remove('hidden');
+        // Validate password
+        if (!password.value) {
+            passwordError.textContent = 'Password is required.';
+            passwordError.classList.remove('hidden');
             isValid = false;
-        }
-        
-        // Password validation
-        if (!isValidPassword(password.value)) {
-            passwordError.textContent = 'Password must be at least 8 characters with 1 uppercase letter and 1 special character';
+        } else if (password.value.length < 8) {
+            passwordError.textContent = 'Password must be at least 8 characters.';
+            passwordError.classList.remove('hidden');
+            isValid = false;
+        } else if (!/[A-Z]/.test(password.value)) {
+            passwordError.textContent = 'Password must include at least one uppercase letter.';
+            passwordError.classList.remove('hidden');
+            isValid = false;
+        } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password.value)) {
+            passwordError.textContent = 'Password must include at least one special character.';
             passwordError.classList.remove('hidden');
             isValid = false;
         }
         
         if (!isValid) {
             e.preventDefault();
-            showToast('Please fix the form errors before submitting.');
         }
     });
 });
