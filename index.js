@@ -219,6 +219,7 @@ app.get("/profile" ,isLoggedIn ,  async (req,res)=>{
         user = await userModel.findById(user._id)
             .populate({
                 path: 'posts',
+                options: { sort: { createdAt: -1 } }, // Sort posts by newest first
                 populate: {
                     path: 'user',
                     select: 'username name profileImage'
@@ -792,6 +793,7 @@ app.get("/user/:username", isLoggedIn, async (req, res) => {
         const profileUser = await userModel.findOne({ username: req.params.username })
             .populate({
                 path: 'posts',
+                options: { sort: { createdAt: -1 } }, // Sort posts by newest first
                 populate: {
                     path: 'user',
                     select: 'username name profileImage'

@@ -76,7 +76,7 @@
                             <div class="swiper-slide">
                                 <img src="<%= image.url %>" 
                                      alt="Post image"
-                                     class="w-full h-[32rem] object-cover">
+                                     class="w-full object-cover post-img md:max-h-[600px] h-auto aspect-square md:aspect-auto">
                             </div>
                         <% }) %>
                     </div>
@@ -84,6 +84,9 @@
                         <div class="swiper-pagination"></div>
                         <div class="swiper-button-next"></div>
                         <div class="swiper-button-prev"></div>
+                        <div class="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
+                            <span class="current-slide">1</span>/<%= post.images.length %>
+                        </div>
                     <% } %>
                 </div>
                 <div class="heart-animation hidden">
@@ -145,17 +148,55 @@
 // Initialize Swiper
 document.addEventListener('DOMContentLoaded', () => {
     const swipers = document.querySelectorAll('.swiper-container');
-    swipers.forEach(container => {
-        new Swiper(container, {
+    swipers.forEach((container, index) => {
+        const swiper = new Swiper(container, {
             pagination: {
                 el: '.swiper-pagination',
+                dynamicBullets: true,
             },
             navigation: {
                 nextEl: '.swiper-button-next',
                 prevEl: '.swiper-button-prev',
             },
+            grabCursor: true,
+            slideToClickedSlide: true,
+            keyboard: {
+                enabled: true,
+            },
+            on: {
+                slideChange: function() {
+                    const currentSlideIndicator = container.querySelector('.current-slide');
+                    if (currentSlideIndicator) {
+                        currentSlideIndicator.textContent = this.activeIndex + 1;
+                    }
+                }
+            }
         });
     });
+    
+    // Adjust image heights for better consistency
+    const adjustPostImageHeights = () => {
+        const postImages = document.querySelectorAll('.post-img');
+        
+        if (window.innerWidth >= 768) { // md breakpoint in Tailwind
+            postImages.forEach(img => {
+                const postWidth = img.offsetWidth;
+                // Use a more reasonable height for desktop view (max 600px)
+                img.style.maxHeight = '600px';
+            });
+        } else {
+            // On mobile, use square aspect ratio
+            postImages.forEach(img => {
+                img.style.height = img.offsetWidth + 'px';
+            });
+        }
+    };
+    
+    // Run once on load
+    adjustPostImageHeights();
+    
+    // Update on window resize
+    window.addEventListener('resize', adjustPostImageHeights);
 });
 
 // Like functionality

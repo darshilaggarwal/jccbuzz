@@ -205,14 +205,14 @@
         <% user.posts.forEach((post) => { %>
             <div class="bg-white rounded-lg shadow-md p-6">
                 <% if (post.images && post.images.length > 0) { %>
-                    <div class="relative mb-4">
+                    <div class="relative mb-4 overflow-hidden">
                         <div class="swiper-container">
                             <div class="swiper-wrapper">
                                 <% post.images.forEach(image => { %>
                                     <div class="swiper-slide">
                                         <img src="<%= image.url %>" 
                                              alt="Post image"
-                                             class="w-full h-64 object-cover rounded-lg">
+                                             class="w-full h-64 md:h-96 object-cover rounded-lg">
                                     </div>
                                 <% }) %>
                             </div>
@@ -220,6 +220,9 @@
                                 <div class="swiper-pagination"></div>
                                 <div class="swiper-button-next"></div>
                                 <div class="swiper-button-prev"></div>
+                                <div class="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
+                                    <span class="current-slide">1</span>/<%= post.images.length %>
+                                </div>
                             <% } %>
                         </div>
                     </div>
@@ -251,20 +254,88 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Swiper for carousels
     const swipers = document.querySelectorAll('.swiper-container');
-    swipers.forEach(container => {
-        new Swiper(container, {
+    swipers.forEach((container, index) => {
+        const swiper = new Swiper(container, {
             pagination: {
                 el: '.swiper-pagination',
+                dynamicBullets: true,
             },
             navigation: {
                 nextEl: '.swiper-button-next',
                 prevEl: '.swiper-button-prev',
             },
+            grabCursor: true,
+            slideToClickedSlide: true,
+            keyboard: {
+                enabled: true,
+            },
+            on: {
+                slideChange: function() {
+                    const currentSlideIndicator = container.querySelector('.current-slide');
+                    if (currentSlideIndicator) {
+                        currentSlideIndicator.textContent = this.activeIndex + 1;
+                    }
+                }
+            }
         });
     });
+    
+    // Adjust image heights for better consistency
+    const adjustPostImageHeights = () => {
+        const postImages = document.querySelectorAll('.post-img');
+        
+        if (window.innerWidth >= 768) { // md breakpoint in Tailwind
+            postImages.forEach(img => {
+                // Use a more reasonable height for desktop view
+                img.style.maxHeight = '600px';
+            });
+        } else {
+            // On mobile, use more compact dimensions
+            postImages.forEach(img => {
+                img.style.height = 'auto';
+            });
+        }
+    };
+    
+    // Run once on load
+    adjustPostImageHeights();
+    
+    // Update on window resize
+    window.addEventListener('resize', adjustPostImageHeights);
 });
+
+// Custom style for Swiper
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+/* Swiper Customization */
+.swiper-button-next,
+.swiper-button-prev {
+    color: white !important;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 50%;
+    width: 40px !important;
+    height: 40px !important;
+}
+
+.swiper-pagination-bullet {
+    background: white !important;
+    opacity: 0.8 !important;
+}
+
+.swiper-pagination-bullet-active {
+    background: #3B82F6 !important;
+}
+
+.swiper-container {
+    overflow: hidden;
+    border-radius: 0.5rem;
+}
+</style>
+`);
 
 let cropper;
 let currentImageIndex;
