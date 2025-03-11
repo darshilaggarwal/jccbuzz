@@ -1,0 +1,267 @@
+<%- include('partials/header') %>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Verify Your Login
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                We've sent a verification code to your email
+                <span class="font-medium text-blue-600" id="userEmail">
+                    <%= email %>
+                </span>
+            </p>
+        </div>
+        
+        <!-- Toast-style messages -->
+        <div id="toast" class="fixed top-4 right-4 max-w-xs bg-red-500 text-white px-4 py-3 rounded shadow-lg transform transition-all duration-500 opacity-0 translate-y-8 pointer-events-none" role="alert">
+            <div class="flex items-center">
+                <div class="py-1"><svg class="fill-current h-6 w-6 text-white mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
+                <div id="toastMessage"></div>
+            </div>
+        </div>
+        
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        This additional verification step helps protect your account. The OTP code expires in 2 minutes.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <form class="mt-8 space-y-6" id="verifyOtpForm">
+            <input type="hidden" name="loginToken" value="<%= loginToken %>">
+            
+            <div class="rounded-md shadow-sm">
+                <div>
+                    <label for="otp" class="block text-sm font-medium text-gray-700 mb-2">Verification Code</label>
+                    <input id="otp" name="otp" type="text" required 
+                           class="appearance-none relative block w-full px-3 py-2 border
+                                  border-gray-300 placeholder-gray-500 text-gray-900 rounded-md
+                                  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent
+                               text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Verify and Sign In
+                </button>
+            </div>
+            
+            <div class="flex items-center justify-between mt-4">
+                <div class="text-sm">
+                    <span id="countdown" class="text-gray-500">Code expires in: 2:00</span>
+                </div>
+                <div class="text-sm">
+                    <button type="button" id="resendOtpButton" class="font-medium text-blue-600 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Resend Code
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <div class="mt-4 text-center">
+            <a href="/login" class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                ← Back to Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // OTP Form submission
+    const verifyOtpForm = document.getElementById('verifyOtpForm');
+    const resendOtpButton = document.getElementById('resendOtpButton');
+    const countdownElement = document.getElementById('countdown');
+    
+    // Set initial expiry time (2 minutes from now)
+    let expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 2);
+    
+    // Update countdown every second
+    const countdownInterval = setInterval(updateCountdown, 1000);
+    
+    // Submit form handler
+    verifyOtpForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const otp = document.getElementById('otp').value;
+        const loginToken = document.querySelector('input[name="loginToken"]').value;
+        
+        if (!otp || otp.length !== 6 || !/^\d+$/.test(otp)) {
+            showToast('Please enter a valid 6-digit code');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/verify-login-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ otp, loginToken }),
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Redirect to profile page on success
+                window.location.href = '/profile';
+            } else {
+                showToast(data.error || 'Failed to verify code. Please try again.');
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.');
+            console.error('Error:', error);
+        }
+    });
+    
+    // Resend OTP handler
+    resendOtpButton.addEventListener('click', async function() {
+        if (resendOtpButton.disabled) return;
+        
+        // Disable button to prevent spam
+        resendOtpButton.disabled = true;
+        
+        try {
+            const loginToken = document.querySelector('input[name="loginToken"]').value;
+            
+            const response = await fetch('/resend-login-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ loginToken }),
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Reset countdown timer
+                expiryTime = new Date();
+                expiryTime.setMinutes(expiryTime.getMinutes() + 2);
+                
+                showSuccessToast('New code sent! Please check your email.');
+                
+                // Enable button after 30 seconds
+                setTimeout(() => {
+                    resendOtpButton.disabled = false;
+                }, 30000);
+            } else {
+                showToast(data.error || 'Failed to resend code. Please try again.');
+                // Enable button after 5 seconds on error
+                setTimeout(() => {
+                    resendOtpButton.disabled = false;
+                }, 5000);
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.');
+            console.error('Error:', error);
+            
+            // Enable button after 5 seconds on error
+            setTimeout(() => {
+                resendOtpButton.disabled = false;
+            }, 5000);
+        }
+    });
+    
+    // Update countdown timer
+    function updateCountdown() {
+        const now = new Date();
+        const timeLeft = expiryTime - now;
+        
+        if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            countdownElement.textContent = 'Code expired';
+            countdownElement.classList.remove('text-gray-500');
+            countdownElement.classList.add('text-red-500');
+            return;
+        }
+        
+        const minutes = Math.floor(timeLeft / 60000);
+        const seconds = Math.floor((timeLeft % 60000) / 1000);
+        
+        countdownElement.textContent = `Code expires in: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Function to show toast message
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        toast.classList.remove('bg-green-500');
+        toast.classList.add('bg-red-500');
+        toastMessage.textContent = message;
+        
+        // Show the toast
+        toast.classList.remove('opacity-0', 'translate-y-8');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        
+        // Hide the toast after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-8');
+            toast.classList.remove('opacity-100', 'translate-y-0');
+        }, 5000);
+    }
+    
+    // Function to show success toast message
+    function showSuccessToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        toast.classList.remove('bg-red-500');
+        toast.classList.add('bg-green-500');
+        toastMessage.textContent = message;
+        
+        // Show the toast
+        toast.classList.remove('opacity-0', 'translate-y-8');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        
+        // Hide the toast after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-8');
+            toast.classList.remove('opacity-100', 'translate-y-0');
+        }, 5000);
+    }
+    
+    // Check URL parameters for error messages
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    
+    if (errorParam) {
+        let errorMessage = '';
+        
+        switch(errorParam) {
+            case 'invalid_otp':
+                errorMessage = 'Invalid verification code. Please try again.';
+                break;
+            case 'expired_otp':
+                errorMessage = 'Verification code has expired. Please request a new one.';
+                break;
+            case 'expired_token':
+                errorMessage = 'Login session expired. Please log in again.';
+                break;
+            default:
+                errorMessage = 'An error occurred. Please try again.';
+        }
+        
+        showToast(errorMessage);
+    }
+});
+</script>
+
+</body>
+</html> 

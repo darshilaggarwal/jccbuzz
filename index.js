@@ -12,6 +12,7 @@ const chatModel = require('./models/chat');
 const storyModel = require('./models/story');
 const notificationModel = require('./models/notification');
 const StudentVerification = require('./models/studentVerification');
+const LoginVerification = require('./models/loginVerification');
 const { sendOTPEmail } = require('./utils/emailSender');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -401,19 +402,55 @@ app.post("/login", async (req, res) => {
             return res.redirect("/login?error=invalid_credentials");
         }
 
-        bcrypt.compare(password, user.password, (err, result) => {
+        bcrypt.compare(password, user.password, async (err, result) => {
             if (err) {
                 console.error('Error comparing passwords:', err);
                 return res.redirect("/login?error=login_error");
             }
             
             if (result) {
-                let token = jwt.sign({ 
-                    name: user.name,
-                    email: user.email 
-                }, JWT_SECRET);
-                res.cookie("token", token);
-                return res.redirect("/profile");
+                try {
+                    // Create a temporary login token
+                    const loginToken = jwt.sign({ 
+                        userId: user._id,
+                        email: user.email,
+                        type: 'login_verification',
+                        timestamp: Date.now()
+                    }, JWT_SECRET, { expiresIn: '5m' });
+                    
+                    // Generate OTP
+                    const otp = generateOTP();
+                    const expiresAt = new Date();
+                    expiresAt.setMinutes(expiresAt.getMinutes() + 2); // OTP expires in 2 minutes
+                    
+                    // Save login verification data
+                    await LoginVerification.create({
+                        userId: user._id,
+                        email: user.email,
+                        token: loginToken,
+                        otp: {
+                            code: otp,
+                            expiresAt: expiresAt
+                        }
+                    });
+                    
+                    // Send OTP email
+                    await sendOTPEmail(user.email, otp, user.name);
+                    
+                    // If in development mode, log the OTP (for testing)
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.log(`Login OTP for ${user.email}: ${otp}`);
+                    }
+                    
+                    // Redirect to OTP verification page
+                    return res.render("login-verify-otp", { 
+                        email: user.email,
+                        loginToken: loginToken
+                    });
+                } catch (error) {
+                    console.error('Error generating login OTP:', error);
+                    return res.redirect("/login?error=login_error");
+                }
             }
             
             console.log('Failed login attempt for user:', identifier);
@@ -422,6 +459,146 @@ app.post("/login", async (req, res) => {
     } catch (error) {
         console.error('Login error:', error);
         res.redirect("/login?error=login_error");
+    }
+});
+
+// Verify login OTP
+app.post("/verify-login-otp", async (req, res) => {
+    try {
+        const { otp, loginToken } = req.body;
+        
+        if (!otp || !loginToken) {
+            return res.status(400).json({ error: "Verification code and login token are required" });
+        }
+        
+        // Verify token
+        let decoded;
+        try {
+            decoded = jwt.verify(loginToken, JWT_SECRET);
+            if (decoded.type !== 'login_verification') {
+                return res.status(400).json({ error: "Invalid login token" });
+            }
+        } catch (err) {
+            console.error('Invalid or expired login token:', err);
+            return res.status(400).json({ error: "Login session expired. Please login again." });
+        }
+        
+        // Find the verification record
+        const verification = await LoginVerification.findOne({ token: loginToken });
+        
+        if (!verification) {
+            return res.status(400).json({ error: "Verification record not found. Please login again." });
+        }
+        
+        // Check if already verified
+        if (verification.isVerified) {
+            return res.status(400).json({ error: "This session is already verified. Please login again." });
+        }
+        
+        // Check if OTP has expired
+        if (new Date() > new Date(verification.otp.expiresAt)) {
+            return res.status(400).json({ error: "Verification code has expired. Please request a new one." });
+        }
+        
+        // Verify OTP
+        if (verification.otp.code !== otp) {
+            return res.status(400).json({ error: "Invalid verification code. Please try again." });
+        }
+        
+        // Mark as verified
+        verification.isVerified = true;
+        await verification.save();
+        
+        // Find the user
+        const user = await userModel.findById(decoded.userId);
+        
+        if (!user) {
+            return res.status(400).json({ error: "User not found" });
+        }
+        
+        // Generate the final authentication token
+        const token = jwt.sign({ 
+            name: user.name,
+            email: user.email 
+        }, JWT_SECRET);
+        
+        // Set cookie
+        res.cookie("token", token);
+        
+        // Return success
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('Error verifying login OTP:', error);
+        return res.status(500).json({ error: "Error verifying code. Please try again." });
+    }
+});
+
+// Resend login OTP
+app.post("/resend-login-otp", async (req, res) => {
+    try {
+        const { loginToken } = req.body;
+        
+        if (!loginToken) {
+            return res.status(400).json({ error: "Login token is required" });
+        }
+        
+        // Verify token
+        let decoded;
+        try {
+            decoded = jwt.verify(loginToken, JWT_SECRET);
+            if (decoded.type !== 'login_verification') {
+                return res.status(400).json({ error: "Invalid login token" });
+            }
+        } catch (err) {
+            console.error('Invalid or expired login token:', err);
+            return res.status(400).json({ error: "Login session expired. Please login again." });
+        }
+        
+        // Find the verification record
+        const verification = await LoginVerification.findOne({ token: loginToken });
+        
+        if (!verification) {
+            return res.status(400).json({ error: "Verification record not found. Please login again." });
+        }
+        
+        // Check if already verified
+        if (verification.isVerified) {
+            return res.status(400).json({ error: "This session is already verified. Please login again." });
+        }
+        
+        // Find the user
+        const user = await userModel.findById(decoded.userId);
+        
+        if (!user) {
+            return res.status(400).json({ error: "User not found" });
+        }
+        
+        // Generate new OTP
+        const otp = generateOTP();
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 2); // OTP expires in 2 minutes
+        
+        // Update verification record
+        verification.otp = {
+            code: otp,
+            expiresAt: expiresAt,
+            createdAt: new Date()
+        };
+        await verification.save();
+        
+        // Send OTP email
+        await sendOTPEmail(user.email, otp, user.name);
+        
+        // If in development mode, log the OTP (for testing)
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`Resent login OTP for ${user.email}: ${otp}`);
+        }
+        
+        // Return success
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('Error resending login OTP:', error);
+        return res.status(500).json({ error: "Error resending code. Please try again." });
     }
 });
   
