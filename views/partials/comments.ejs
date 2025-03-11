@@ -1,21 +1,9 @@
 <div class="mt-4 border-t pt-4">
-    <!-- Comment Form -->
-    <form class="mb-4 flex gap-2" onsubmit="addComment(event, '<%= post._id %>')">
-        <input type="text" 
-               placeholder="Write a comment..." 
-               class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-               required>
-        <button type="submit" 
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-            Comment
-        </button>
-    </form>
-
     <!-- Comments Section -->
     <div class="comments-section mt-4">
         <% if (post.comments && post.comments.length > 0) { %>
-            <div class="space-y-3 max-h-48 overflow-y-auto" id="comments-container-<%= post._id %>">
-                <% post.comments.forEach(comment => { %>
+            <div class="space-y-3 max-h-96 overflow-y-auto" id="comments-container-<%= post._id %>">
+                <% post.comments.forEach((comment, commentIndex) => { %>
                     <div class="flex space-x-2">
                         <img src="<%= comment.user.profileImage %>" 
                              alt="<%= comment.user.name %>" 
@@ -26,6 +14,62 @@
                                 <span class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(comment.createdAt).toLocaleDateString() %></span>
                             </div>
                             <p class="text-gray-600 dark:text-gray-300 text-sm"><%= comment.content %></p>
+                            
+                            <!-- Comment actions -->
+                            <div class="mt-2 flex items-center text-xs space-x-4">
+                                <button onclick="likeComment('<%= comment._id %>', this)" 
+                                        class="comment-like-btn <%= comment.likes && comment.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500">
+                                    <i class="fas fa-heart"></i>
+                                    <span class="like-count ml-1"><%= comment.likes ? comment.likes.length : 0 %></span>
+                                </button>
+                                <button onclick="toggleReplyForm('<%= post._id %>', '<%= comment._id %>')" 
+                                        class="text-gray-500 hover:text-blue-500">
+                                    Reply
+                                </button>
+                            </div>
+                            
+                            <!-- Hidden reply form, shown when reply button is clicked -->
+                            <div id="reply-form-<%= comment._id %>" class="hidden mt-2">
+                                <form class="flex items-center" onsubmit="addReply(event, '<%= comment._id %>')">
+                                    <input type="text" 
+                                           placeholder="Add a reply..." 
+                                           class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                           required>
+                                    <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Display replies if any -->
+                            <% if (comment.replies && comment.replies.length > 0) { %>
+                                <div class="mt-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-2">
+                                    <% comment.replies.forEach((reply, replyIndex) => { %>
+                                        <div class="reply">
+                                            <div class="flex items-start">
+                                                <div class="flex-shrink-0 mr-1">
+                                                    <img src="<%= reply.user.profileImage %>" 
+                                                         alt="<%= reply.user.name %>" 
+                                                         class="w-6 h-6 rounded-full object-cover">
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-xs">
+                                                        <span class="font-medium text-gray-800 dark:text-white"><%= reply.user.name %></span>
+                                                        <span class="text-gray-600 dark:text-gray-300"><%= reply.content %></span>
+                                                    </p>
+                                                    <div class="mt-1 flex items-center text-xs space-x-3">
+                                                        <button onclick="likeReply('<%= comment._id %>', '<%= replyIndex %>', this)" 
+                                                                class="reply-like-btn <%= reply.likes && reply.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500">
+                                                            <i class="fas fa-heart"></i>
+                                                            <span class="reply-like-count"><%= reply.likes ? reply.likes.length : 0 %></span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            <% } %>
                         </div>
                     </div>
                 <% }) %>
@@ -86,6 +130,32 @@ function addComment(event, postId) {
                         <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
                     </div>
                     <p class="text-gray-600 dark:text-gray-300 text-sm">${data.comment.content}</p>
+                    
+                    <!-- Comment actions -->
+                    <div class="mt-2 flex items-center text-xs space-x-4">
+                        <button onclick="likeComment('${data.comment._id}', this)" 
+                                class="comment-like-btn text-gray-500 hover:text-red-500">
+                            <i class="fas fa-heart"></i>
+                            <span class="like-count ml-1">0</span>
+                        </button>
+                        <button onclick="toggleReplyForm('${postId}', '${data.comment._id}')" 
+                                class="text-gray-500 hover:text-blue-500">
+                            Reply
+                        </button>
+                    </div>
+                    
+                    <!-- Hidden reply form -->
+                    <div id="reply-form-${data.comment._id}" class="hidden mt-2">
+                        <form class="flex items-center" onsubmit="addReply(event, '${data.comment._id}')">
+                            <input type="text" 
+                                   placeholder="Add a reply..." 
+                                   class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                   required>
+                            <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         `;
@@ -97,7 +167,7 @@ function addComment(event, postId) {
         if (!commentsContainer) {
             const newCommentsContainer = document.createElement('div');
             newCommentsContainer.id = `comments-container-${postId}`;
-            newCommentsContainer.className = 'space-y-3 max-h-48 overflow-y-auto';
+            newCommentsContainer.className = 'space-y-3 max-h-96 overflow-y-auto';
             newCommentsContainer.innerHTML = commentHTML;
             inputEl.closest('.comments-section').insertBefore(newCommentsContainer, inputEl.closest('form'));
         } else {
@@ -121,6 +191,148 @@ function addComment(event, postId) {
     });
 }
 
+// Toggle reply form visibility
+function toggleReplyForm(postId, commentId) {
+    const replyForm = document.getElementById(`reply-form-${commentId}`);
+    replyForm.classList.toggle('hidden');
+    
+    if (!replyForm.classList.contains('hidden')) {
+        replyForm.querySelector('input').focus();
+    }
+}
+
+// Add reply to a comment
+function addReply(event, commentId) {
+    event.preventDefault();
+    const input = event.target.querySelector('input');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    fetch(`/comment/${commentId}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to add reply');
+        }
+        return response.json();
+    })
+    .then(reply => {
+        // Create new reply HTML
+        const replyHTML = `
+            <div class="reply">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-1">
+                        <img src="${reply.user.profileImage}" 
+                             alt="${reply.user.name}" 
+                             class="w-6 h-6 rounded-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-xs">
+                            <span class="font-medium text-gray-800 dark:text-white">${reply.user.name}</span>
+                            <span class="text-gray-600 dark:text-gray-300">${reply.content}</span>
+                        </p>
+                        <div class="mt-1 flex items-center text-xs space-x-3">
+                            <button onclick="likeReply('${commentId}', '${reply.replyIndex || 0}', this)" 
+                                    class="reply-like-btn text-gray-500 hover:text-red-500">
+                                <i class="fas fa-heart"></i>
+                                <span class="reply-like-count">0</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Find or create the replies container
+        let repliesContainer = event.target.closest('.flex-1').querySelector('.pl-3');
+        
+        if (!repliesContainer) {
+            repliesContainer = document.createElement('div');
+            repliesContainer.className = 'mt-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-2';
+            event.target.closest('.flex-1').appendChild(repliesContainer);
+        }
+        
+        // Add the reply
+        repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
+        
+        // Clear the input and hide the form
+        input.value = '';
+        toggleReplyForm('', commentId);
+    })
+    .catch(error => {
+        console.error('Error adding reply:', error);
+        alert('Failed to add reply. Please try again.');
+    });
+}
+
+// Like/unlike a comment
+function likeComment(commentId, button) {
+    fetch(`/comment/${commentId}/like`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to process like');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const likeCountEl = button.querySelector('.like-count');
+        likeCountEl.textContent = data.likes;
+        
+        if (data.isLiked) {
+            button.classList.add('text-red-500');
+            button.classList.remove('text-gray-500');
+        } else {
+            button.classList.remove('text-red-500');
+            button.classList.add('text-gray-500');
+        }
+    })
+    .catch(error => {
+        console.error('Error liking comment:', error);
+    });
+}
+
+// Like/unlike a reply
+function likeReply(commentId, replyIndex, button) {
+    fetch(`/comment/${commentId}/reply/${replyIndex}/like`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to process like');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const likeCountEl = button.querySelector('.reply-like-count');
+        likeCountEl.textContent = data.likes;
+        
+        if (data.isLiked) {
+            button.classList.add('text-red-500');
+            button.classList.remove('text-gray-500');
+        } else {
+            button.classList.remove('text-red-500');
+            button.classList.add('text-gray-500');
+        }
+    })
+    .catch(error => {
+        console.error('Error liking reply:', error);
+    });
+}
+
 // Listen for new comments via socket
 if (typeof io !== 'undefined') {
     const socket = io();
@@ -138,6 +350,32 @@ if (typeof io !== 'undefined') {
                             <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
                         </div>
                         <p class="text-gray-600 dark:text-gray-300 text-sm">${data.comment.content}</p>
+                        
+                        <!-- Comment actions -->
+                        <div class="mt-2 flex items-center text-xs space-x-4">
+                            <button onclick="likeComment('${data.comment._id}', this)" 
+                                    class="comment-like-btn text-gray-500 hover:text-red-500">
+                                <i class="fas fa-heart"></i>
+                                <span class="like-count ml-1">0</span>
+                            </button>
+                            <button onclick="toggleReplyForm('${data.postId}', '${data.comment._id}')" 
+                                    class="text-gray-500 hover:text-blue-500">
+                                Reply
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden reply form -->
+                        <div id="reply-form-${data.comment._id}" class="hidden mt-2">
+                            <form class="flex items-center" onsubmit="addReply(event, '${data.comment._id}')">
+                                <input type="text" 
+                                       placeholder="Add a reply..." 
+                                       class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                       required>
+                                <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             `;

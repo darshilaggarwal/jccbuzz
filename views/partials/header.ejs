@@ -175,6 +175,42 @@
                     <% if (locals.user) { %>
                         <a href="/feed" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">Feed</a>
                         <a href="/profile" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">Profile</a>
+                        
+                        <!-- Notifications Button -->
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white relative">
+                                <i class="fas fa-bell text-xl"></i>
+                                <% if (locals.unreadNotifications && locals.unreadNotifications > 0) { %>
+                                    <span class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                        <% if (locals.unreadNotifications > 9) { %>9+<% } else { %><%= locals.unreadNotifications %><% } %>
+                                    </span>
+                                <% } %>
+                            </button>
+                            
+                            <!-- Notification Dropdown Panel -->
+                            <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-md shadow-lg py-1 z-50">
+                                <div class="flex justify-between items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                                    <h3 class="text-sm font-semibold">Notifications</h3>
+                                    <button id="markAllReadBtn" class="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
+                                        Mark all as read
+                                    </button>
+                                </div>
+                                
+                                <div id="notificationsContainer" class="max-h-96 overflow-y-auto">
+                                    <!-- Notifications will be loaded here via JavaScript -->
+                                    <div class="notification-loading px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i> Loading notifications...
+                                    </div>
+                                </div>
+                                
+                                <div class="border-t border-gray-200 dark:border-gray-700 p-2">
+                                    <a href="/notifications" class="block text-center text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
+                                        See all notifications
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <a href="/chats" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white relative">
                             <i class="fas fa-paper-plane text-xl"></i>
                             <% if (locals.unreadMessages && locals.unreadMessages > 0) { %>
@@ -200,6 +236,17 @@
                     <% if (locals.user) { %>
                         <a href="/feed" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900">Feed</a>
                         <a href="/profile" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900">Profile</a>
+                        
+                        <!-- Mobile Notifications Link -->
+                        <a href="/notifications" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 relative">
+                            <i class="fas fa-bell mr-2"></i> Notifications
+                            <% if (locals.unreadNotifications && locals.unreadNotifications > 0) { %>
+                                <span class="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                                    <% if (locals.unreadNotifications > 9) { %>9+<% } else { %><%= locals.unreadNotifications %><% } %>
+                                </span>
+                            <% } %>
+                        </a>
+                        
                         <a href="/chats" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 relative">
                             <i class="fas fa-paper-plane mr-2"></i> Messages
                             <% if (locals.unreadMessages && locals.unreadMessages > 0) { %>
@@ -264,6 +311,209 @@
                 document.documentElement.classList.add('dark');
             }
         });
+
+        // Handle notifications panel
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationBtn = document.getElementById('notificationBtn');
+            const notificationPanel = document.getElementById('notificationPanel');
+            const markAllReadBtn = document.getElementById('markAllReadBtn');
+            
+            if (notificationBtn) {
+                notificationBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationPanel.classList.toggle('hidden');
+                    
+                    // Load notifications if panel is visible
+                    if (!notificationPanel.classList.contains('hidden')) {
+                        loadNotifications();
+                    }
+                });
+                
+                // Close panel when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
+                        notificationPanel.classList.add('hidden');
+                    }
+                });
+                
+                // Mark all as read button
+                if (markAllReadBtn) {
+                    markAllReadBtn.addEventListener('click', function() {
+                        markAllNotificationsAsRead();
+                    });
+                }
+            }
+        });
+        
+        // Function to load notifications via AJAX
+        function loadNotifications() {
+            const container = document.getElementById('notificationsContainer');
+            
+            fetch('/api/notifications')
+                .then(response => response.json())
+                .then(data => {
+                    container.innerHTML = ''; // Clear loading indicator
+                    
+                    if (data.notifications.length === 0) {
+                        container.innerHTML = `
+                            <div class="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                                No notifications yet
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Render each notification
+                    data.notifications.forEach(notification => {
+                        const isUnread = !notification.read;
+                        container.innerHTML += `
+                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 ${isUnread ? 'bg-blue-50 dark:bg-blue-900/20' : ''}" data-id="${notification._id}">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mr-3">
+                                        <img src="${notification.sender.profileImage}" alt="${notification.sender.name}" class="w-10 h-10 rounded-full object-cover">
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm">
+                                            <span class="font-semibold">${notification.sender.name}</span> 
+                                            ${notification.text}
+                                        </p>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">${formatNotificationTime(notification.createdAt)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    // Add event listeners to notification items
+                    document.querySelectorAll('.notification-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const notificationId = this.dataset.id;
+                            markNotificationAsRead(notificationId);
+                            
+                            // Navigate to the relevant content based on notification type
+                            // This will need to be implemented based on your app's navigation structure
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    container.innerHTML = `
+                        <div class="px-4 py-3 text-center text-sm text-red-500">
+                            Failed to load notifications. Please try again.
+                        </div>
+                    `;
+                });
+        }
+        
+        // Format notification time to relative time (e.g., "2 hours ago")
+        function formatNotificationTime(timestamp) {
+            const now = new Date();
+            const notificationTime = new Date(timestamp);
+            const diffInSeconds = Math.floor((now - notificationTime) / 1000);
+            
+            if (diffInSeconds < 60) {
+                return 'just now';
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            } else if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diffInSeconds / 86400);
+                if (days === 1) {
+                    return 'yesterday';
+                } else if (days < 7) {
+                    return `${days} days ago`;
+                } else {
+                    return notificationTime.toLocaleDateString();
+                }
+            }
+        }
+        
+        // Mark a notification as read
+        function markNotificationAsRead(notificationId) {
+            fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update UI to reflect read status
+                const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                if (notificationItem) {
+                    notificationItem.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                }
+                
+                // Update notification badge count
+                updateNotificationBadge(data.unreadCount);
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+            });
+        }
+        
+        // Mark all notifications as read
+        function markAllNotificationsAsRead() {
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update UI
+                document.querySelectorAll('.notification-item').forEach(item => {
+                    item.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                });
+                
+                // Remove notification badge
+                updateNotificationBadge(0);
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+            });
+        }
+        
+        // Update notification badge count
+        function updateNotificationBadge(count) {
+            const badgeDesktop = document.querySelector('#notificationBtn > span');
+            const badgeMobile = document.querySelector('a[href="/notifications"] > span');
+            
+            if (count === 0) {
+                // Remove badges if they exist
+                if (badgeDesktop) badgeDesktop.remove();
+                if (badgeMobile) badgeMobile.remove();
+            } else {
+                const displayCount = count > 9 ? '9+' : count.toString();
+                
+                // Update or create desktop badge
+                if (badgeDesktop) {
+                    badgeDesktop.textContent = displayCount;
+                } else {
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center';
+                    newBadge.textContent = displayCount;
+                    document.getElementById('notificationBtn').appendChild(newBadge);
+                }
+                
+                // Update or create mobile badge
+                if (badgeMobile) {
+                    badgeMobile.textContent = displayCount;
+                } else {
+                    const mobileNotificationLink = document.querySelector('a[href="/notifications"]');
+                    if (mobileNotificationLink) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5';
+                        newBadge.textContent = displayCount;
+                        mobileNotificationLink.appendChild(newBadge);
+                    }
+                }
+            }
+        }
     </script>
 </body>
 </html> 
