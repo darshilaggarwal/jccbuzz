@@ -134,8 +134,8 @@
                                 <div class="swiper-button-prev"></div>
                             <% } %>
                         </div>
-                        <div class="heart-animation hidden absolute inset-0 flex items-center justify-center">
-                            <i class="fas fa-heart text-red-500"></i>
+                        <div class="heart-animation hidden">
+                            <i class="fas fa-heart"></i>
                         </div>
                     </div>
                 <% } %>
@@ -147,7 +147,7 @@
                         <div class="flex items-center space-x-4">
                             <button onclick="toggleLike('<%= post._id %>')" 
                                     id="like-btn-<%= post._id %>"
-                                    class="like-btn <%= post.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:scale-110 transform transition-transform">
+                                    class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-500' %> hover:scale-110 transform transition-transform">
                                 <i class="fas fa-heart text-2xl"></i>
                                 <span class="like-count ml-1 text-sm"><%= post.likes.length %></span>
                             </button>
@@ -352,13 +352,44 @@
 
 /* Animations */
 @keyframes like-animation {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
+    0% { transform: scale(0); opacity: 0; }
+    15% { transform: scale(1.5); opacity: 1; }
+    30% { transform: scale(0.8); opacity: 1; }
+    45% { transform: scale(1.2); opacity: 1; }
+    60% { transform: scale(0.9); opacity: 1; }
+    75% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+.heart-animation {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 120px;
+    color: white;
+    text-shadow: 0 0 30px rgba(0,0,0,0.4);
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+}
+
+.heart-animation.active {
+    animation: like-animation 1s ease-in-out forwards;
+}
+
+.like-btn {
+    transition: transform 0.2s, color 0.2s;
 }
 
 .like-btn.liked {
-    animation: like-animation 0.3s ease-in-out;
+    animation: like-button-animation 0.3s ease-in-out;
+}
+
+@keyframes like-button-animation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
 }
 
 /* Add this to your existing styles */
@@ -628,12 +659,7 @@ async function loadMorePosts() {
 
 // Add smooth animations for likes
 function toggleLike(postId) {
-    const likeButton = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
-    const isLiked = likeButton.classList.contains('text-red-500');
-
-    const url = isLiked ? `/post/${postId}/unlike` : `/post/${postId}/like`;
-
-    fetch(url, {
+    fetch(`/post/${postId}/like`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -641,18 +667,22 @@ function toggleLike(postId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (response.ok) {
-            // Update the like count and button state
-            const likeCount = likeButton.querySelector('.like-count');
-            likeCount.textContent = data.likes;
-            likeButton.classList.toggle('text-red-500');
+        const likeBtn = document.getElementById(`like-btn-${postId}`);
+        const likeCount = likeBtn.querySelector('.like-count');
+        
+        if (data.isLiked) {
+            likeBtn.classList.remove('text-gray-500');
+            likeBtn.classList.add('text-red-500');
+            likeBtn.classList.add('liked');
+            setTimeout(() => likeBtn.classList.remove('liked'), 300);
         } else {
-            alert(data.error);
+            likeBtn.classList.remove('text-red-500');
+            likeBtn.classList.add('text-gray-500');
         }
+        
+        likeCount.textContent = data.likes;
     })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+    .catch(error => console.error('Error:', error));
 }
 
 // Add these variables at the top of your script
@@ -983,15 +1013,17 @@ function toggleLike(postId) {
         const likeBtn = document.getElementById(`like-btn-${postId}`);
         const likeCount = likeBtn.querySelector('.like-count');
         
-        if (data.liked) {
+        if (data.isLiked) {
             likeBtn.classList.remove('text-gray-500');
             likeBtn.classList.add('text-red-500');
+            likeBtn.classList.add('liked');
+            setTimeout(() => likeBtn.classList.remove('liked'), 300);
         } else {
             likeBtn.classList.remove('text-red-500');
             likeBtn.classList.add('text-gray-500');
         }
         
-        likeCount.textContent = data.likeCount;
+        likeCount.textContent = data.likes;
     })
     .catch(error => console.error('Error:', error));
 }
@@ -1008,8 +1040,10 @@ function handleDoubleTap(postId) {
         
         // Show heart animation
         heartAnimation.classList.remove('hidden');
+        heartAnimation.classList.add('active');
         setTimeout(() => {
             heartAnimation.classList.add('hidden');
+            heartAnimation.classList.remove('active');
         }, 1000);
     }
 }
@@ -1191,6 +1225,38 @@ async function deleteCurrentStory() {
         console.error('Error:', error);
     }
 }
+
+// Add double tap detection
+document.addEventListener('DOMContentLoaded', () => {
+    // Setup double tap detection on post images
+    const postImages = document.querySelectorAll('.post-image');
+    postImages.forEach(img => {
+        let lastTap = 0;
+        img.addEventListener('touchend', function(e) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 500 && tapLength > 0) {
+                // Double tap detected
+                const postId = img.closest('.post-container').querySelector('.like-btn').id.replace('like-btn-', '');
+                handleDoubleTap(postId);
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        });
+        
+        // Add click event for faster testing on desktop (two clicks within 500ms)
+        img.addEventListener('click', function(e) {
+            const currentTime = new Date().getTime();
+            const clickLength = currentTime - lastTap;
+            if (clickLength < 500 && clickLength > 0) {
+                // Double click detected
+                const postId = this.closest('.post-container').querySelector('.like-btn').id.replace('like-btn-', '');
+                handleDoubleTap(postId);
+            }
+            lastTap = currentTime;
+        });
+    });
+});
 </script>
 
 <!-- Share Modal Template -->
