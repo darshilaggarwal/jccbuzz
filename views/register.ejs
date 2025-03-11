@@ -273,13 +273,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to mask email for privacy
     function maskEmail(email) {
         if (!email) return '';
-        const [username, domain] = email.split('@');
         
-        if (username.length <= 3) {
-            return `${username}***@${domain}`;
-        }
+        const parts = email.split('@');
+        if (parts.length !== 2) return email;
         
-        return `${username.substring(0, 3)}***@${domain}`;
+        const username = parts[0];
+        const domain = parts[1];
+        
+        // If username is too short, don't mask
+        if (username.length <= 2) return email;
+        
+        const firstChar = username.charAt(0);
+        const lastChar = username.charAt(username.length - 1);
+        const asterisks = '*'.repeat(username.length - 2);
+        
+        return `${firstChar}${asterisks}${lastChar}@${domain}`;
     }
     
     // Function to show toast

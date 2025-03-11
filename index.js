@@ -385,6 +385,50 @@ app.post("/register" ,async (req,res)=>{
     }
 })
 
+// Add this helper function for masking emails
+function maskEmail(email) {
+    try {
+        if (!email || typeof email !== 'string') {
+            console.log("Invalid email to mask:", email);
+            return '';
+        }
+        
+        console.log("Masking email:", email);
+        
+        // Split email at @ symbol
+        const atIndex = email.indexOf('@');
+        if (atIndex <= 0) {
+            console.log("Invalid email format (no @ symbol):", email);
+            return email;
+        }
+        
+        // Extract username and domain parts
+        const username = email.substring(0, atIndex);
+        const domain = email.substring(atIndex);
+        
+        console.log("Username part:", username, "Domain part:", domain);
+        
+        // Check if username is too short to mask
+        if (username.length <= 2) {
+            console.log("Username too short to mask");
+            return email;
+        }
+        
+        // Create masked version showing only first and last character
+        const firstChar = username.charAt(0);
+        const lastChar = username.charAt(username.length - 1);
+        const asterisks = '*'.repeat(username.length - 2);
+        
+        const masked = firstChar + asterisks + lastChar + domain;
+        console.log("Final masked email:", masked);
+        
+        return masked;
+    } catch (error) {
+        console.error("Error in maskEmail function:", error);
+        return email; // Return original email if any error occurs
+    }
+}
+
 app.post("/login", async (req, res) => {
     try {
         let { identifier, password } = req.body;
@@ -442,9 +486,15 @@ app.post("/login", async (req, res) => {
                         console.log(`Login OTP for ${user.email}: ${otp}`);
                     }
                     
+                    // Create masked email for display
+                    const maskedEmail = maskEmail(user.email);
+                    console.log("Email for template:", user.email);
+                    console.log("Masked email for template:", maskedEmail);
+                    
                     // Redirect to OTP verification page
                     return res.render("login-verify-otp", { 
                         email: user.email,
+                        maskedEmail: maskedEmail,
                         loginToken: loginToken
                     });
                 } catch (error) {
@@ -589,13 +639,19 @@ app.post("/resend-login-otp", async (req, res) => {
         // Send OTP email
         await sendOTPEmail(user.email, otp, user.name);
         
+        // Generate masked email for response
+        const maskedEmail = maskEmail(user.email);
+        
         // If in development mode, log the OTP (for testing)
         if (process.env.NODE_ENV !== 'production') {
             console.log(`Resent login OTP for ${user.email}: ${otp}`);
         }
         
         // Return success
-        return res.json({ success: true });
+        return res.json({ 
+            success: true,
+            maskedEmail: maskedEmail 
+        });
     } catch (error) {
         console.error('Error resending login OTP:', error);
         return res.status(500).json({ error: "Error resending code. Please try again." });

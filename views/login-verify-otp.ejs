@@ -9,9 +9,19 @@
             <p class="mt-2 text-center text-sm text-gray-600">
                 We've sent a verification code to your email
                 <span class="font-medium text-blue-600" id="userEmail">
-                    <%= email %>
+                    <% if (typeof maskedEmail === 'string' && maskedEmail) { %>
+                        <%= maskedEmail %>
+                    <% } else { %>
+                        <%= email %>
+                    <% } %>
                 </span>
             </p>
+            <% if (process.env.NODE_ENV !== 'production') { %>
+                <!-- Debug info - only visible in development mode -->
+                <p class="mt-2 text-center text-xs text-gray-400">
+                    Debug - Raw email: <%= email %> | Masked email: <%= typeof maskedEmail === 'string' ? maskedEmail : 'undefined' %>
+                </p>
+            <% } %>
         </div>
         
         <!-- Toast-style messages -->
