@@ -198,11 +198,40 @@ app.get("/" , (req,res)=>{
 })
 
 app.get("/profile" ,isLoggedIn ,  async (req,res)=>{
-    let user = await userModel.findOne({email : req.user.email}).populate("posts");
+    try {
+        // First try to find by ID if available
+        let user;
+        if (req.user._id) {
+            user = await userModel.findById(req.user._id);
+        }
+        
+        // If not found by ID, try email
+        if (!user && req.user.email) {
+            user = await userModel.findOne({email: req.user.email});
+        }
 
-    
-    res.render("profile" , {user})
-})
+        if (!user) {
+            return res.redirect("/login");
+        }
+
+        // Populate all necessary data
+        user = await userModel.findById(user._id)
+            .populate({
+                path: 'posts',
+                populate: {
+                    path: 'user',
+                    select: 'username name profileImage'
+                }
+            })
+            .populate('followers')
+            .populate('following');
+        
+        res.render("profile", {user});
+    } catch (error) {
+        console.error('Profile error:', error);
+        res.redirect("/login");
+    }
+});
 
 app.get("/edit/:id" ,isLoggedIn ,  async (req,res)=>{
     const id = req.params.id.trim();
@@ -688,19 +717,40 @@ app.get("/user/:username", isLoggedIn, async (req, res) => {
                     path: 'user',
                     select: 'username name profileImage'
                 }
-            });
+            })
+            .populate('followers', 'username name profileImage')
+            .populate('following', 'username name profileImage');
 
         if (!profileUser) {
             return res.status(404).send("User not found");
         }
 
-        const isOwnProfile = profileUser.email === req.user.email;
+        // Get current user by ID first, then by email if needed
+        let currentUser;
+        if (req.user._id) {
+            currentUser = await userModel.findById(req.user._id);
+        }
+        if (!currentUser && req.user.email) {
+            currentUser = await userModel.findOne({ email: req.user.email });
+        }
+
+        if (!currentUser) {
+            return res.redirect("/login");
+        }
+
+        // Populate current user's following to check follow status
+        currentUser = await userModel.findById(currentUser._id)
+            .populate('following', '_id');
+
+        const isOwnProfile = profileUser._id.equals(currentUser._id);
+        
         res.render("userProfile", { 
             profileUser, 
-            user: await userModel.findOne({ email: req.user.email }),
+            user: currentUser,
             isOwnProfile 
         });
     } catch (error) {
+        console.error('Profile error:', error);
         res.status(500).send("Error loading profile");
     }
 });
@@ -2143,5 +2193,101 @@ app.post('/admin/send-test-sms', async (req, res) => {
             message: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
+    }
+});
+
+// Follow/Unfollow route
+app.post('/user/:userId/follow', isLoggedIn, async (req, res) => {
+    try {
+        // First get both users with their current followers/following lists
+        const userToFollow = await userModel.findById(req.params.userId);
+        
+        // Get current user by ID first, then by email if needed
+        let currentUser;
+        if (req.user._id) {
+            currentUser = await userModel.findById(req.user._id);
+        }
+        if (!currentUser && req.user.email) {
+            currentUser = await userModel.findOne({ email: req.user.email });
+        }
+
+        if (!userToFollow || !currentUser) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Check if already following
+        const isFollowing = currentUser.following.some(id => id.equals(userToFollow._id));
+
+        if (isFollowing) {
+            // Unfollow
+            await userModel.findByIdAndUpdate(currentUser._id, {
+                $pull: { following: userToFollow._id }
+            });
+            await userModel.findByIdAndUpdate(userToFollow._id, {
+                $pull: { followers: currentUser._id }
+            });
+        } else {
+            // Follow
+            await userModel.findByIdAndUpdate(currentUser._id, {
+                $addToSet: { following: userToFollow._id }
+            });
+            await userModel.findByIdAndUpdate(userToFollow._id, {
+                $addToSet: { followers: currentUser._id }
+            });
+        }
+
+        // Get updated follower count
+        const updatedUser = await userModel.findById(userToFollow._id)
+            .populate('followers')
+            .populate('following');
+        
+        res.json({
+            success: true,
+            isFollowing: !isFollowing,
+            followersCount: updatedUser.followers.length
+        });
+    } catch (error) {
+        console.error('Follow error:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+// Get user's followers
+app.get('/user/:userId/followers', isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findById(req.params.userId)
+            .populate('followers', 'name username profileImage');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            followers: user.followers
+        });
+    } catch (error) {
+        console.error('Get followers error:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+// Get user's following
+app.get('/user/:userId/following', isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findById(req.params.userId)
+            .populate('following', 'name username profileImage');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            following: user.following
+        });
+    } catch (error) {
+        console.error('Get following error:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });

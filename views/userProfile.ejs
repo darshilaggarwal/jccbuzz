@@ -1,46 +1,73 @@
 <%- include('partials/header') %>
 
 <div class="max-w-4xl mx-auto mt-8 px-4">
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+    <div class="bg-white dark:bg-black rounded-lg shadow-md p-6 mb-8">
         <div class="flex items-center space-x-6">
             <img src="<%= profileUser.profileImage %>" 
                  alt="Profile" 
                  class="w-32 h-32 rounded-full object-cover">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800"><%= profileUser.name %></h1>
-                <p class="text-gray-500">@<%= profileUser.username %></p>
-                <p class="mt-2 text-gray-600"><%= profileUser.bio %></p>
-                <div class="mt-4 space-x-2">
-                    <% if (isOwnProfile) { %>
-                        <a href="/edit-profile" 
-                           class="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            Edit Profile
-                        </a>
-                    <% } else { %>
-                        <a href="/chat/<%= profileUser._id %>" 
-                           class="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            Message
-                        </a>
-                    <% } %>
+            <div class="flex-grow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white"><%= profileUser.name %></h1>
+                        <p class="text-gray-500 dark:text-gray-400">@<%= profileUser.username %></p>
+                    </div>
+                    <div class="space-x-2">
+                        <% if (isOwnProfile) { %>
+                            <a href="/edit-profile" 
+                               class="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                Edit Profile
+                            </a>
+                        <% } else { %>
+                            <button id="followButton"
+                                    onclick="toggleFollow('<%= profileUser._id %>')"
+                                    class="px-4 py-2 rounded-md transition-colors <%= user.following && user.following.includes(profileUser._id) ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600' : 'bg-blue-600 text-white hover:bg-blue-700' %>">
+                                <%= user.following && user.following.includes(profileUser._id) ? 'Following' : 'Follow' %>
+                            </button>
+                            <a href="/chat/<%= profileUser._id %>" 
+                               class="inline-block px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                Message
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <p class="mt-2 text-gray-600 dark:text-gray-300"><%= profileUser.bio %></p>
+                
+                <!-- Stats -->
+                <div class="mt-4 flex space-x-6">
+                    <div class="text-center">
+                        <span class="block text-xl font-bold text-gray-800 dark:text-white"><%= profileUser.posts.length %></span>
+                        <span class="text-gray-500 dark:text-gray-400">Posts</span>
+                    </div>
+                    <button onclick="showFollowers('<%= profileUser._id %>')" class="text-center">
+                        <span id="followersCount" class="block text-xl font-bold text-gray-800 dark:text-white"><%= profileUser.followers ? profileUser.followers.length : 0 %></span>
+                        <span class="text-gray-500 dark:text-gray-400">Followers</span>
+                    </button>
+                    <button onclick="showFollowing('<%= profileUser._id %>')" class="text-center">
+                        <span id="followingCount" class="block text-xl font-bold text-gray-800 dark:text-white"><%= profileUser.following ? profileUser.following.length : 0 %></span>
+                        <span class="text-gray-500 dark:text-gray-400">Following</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Posts Section -->
     <div class="space-y-6">
-        <h2 class="text-xl font-semibold text-gray-800">Posts</h2>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Posts</h2>
         <% profileUser.posts.forEach(post => { %>
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white dark:bg-black rounded-lg shadow-md p-6">
                 <div class="flex items-center space-x-3 mb-4">
                     <img src="<%= post.user.profileImage %>" 
                          alt="Profile" 
                          class="w-10 h-10 rounded-full object-cover">
                     <div>
-                        <h5 class="font-semibold text-gray-800"><%= post.user.name %></h5>
-                        <p class="text-sm text-gray-500">@<%= post.user.username %></p>
+                        <h5 class="font-semibold text-gray-800 dark:text-white"><%= post.user.name %></h5>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">@<%= post.user.username %></p>
                     </div>
                 </div>
-                <p class="text-gray-700"><%= post.content %></p>
+                <p class="text-gray-700 dark:text-gray-300"><%= post.content %></p>
                 <% if (isOwnProfile) { %>
                     <div class="mt-4 flex justify-end space-x-2">
                         <a href="/edit/<%= post._id %>" 
@@ -58,6 +85,141 @@
         <% }) %>
     </div>
 </div>
+
+<!-- Followers Modal -->
+<div id="followersModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md mx-auto mt-20 p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Followers</h3>
+            <button onclick="closeFollowersModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="followersList" class="max-h-96 overflow-y-auto">
+            <!-- Followers will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Following Modal -->
+<div id="followingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md mx-auto mt-20 p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Following</h3>
+            <button onclick="closeFollowingModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="followingList" class="max-h-96 overflow-y-auto">
+            <!-- Following users will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+async function toggleFollow(userId) {
+    try {
+        const response = await fetch(`/user/${userId}/follow`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const followButton = document.getElementById('followButton');
+            const followersCount = document.getElementById('followersCount');
+            
+            // Update button text and style
+            if (data.isFollowing) {
+                followButton.textContent = 'Following';
+                followButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+            } else {
+                followButton.textContent = 'Follow';
+                followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+                followButton.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+            }
+            
+            // Update followers count
+            followersCount.textContent = data.followersCount;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function showFollowers(userId) {
+    try {
+        const response = await fetch(`/user/${userId}/followers`);
+        const data = await response.json();
+        
+        const followersList = document.getElementById('followersList');
+        followersList.innerHTML = data.followers.map(follower => `
+            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <a href="/user/${follower.username}" class="flex items-center space-x-3">
+                    <img src="${follower.profileImage}" alt="${follower.name}" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-semibold text-gray-800 dark:text-white">${follower.name}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">@${follower.username}</p>
+                    </div>
+                </a>
+            </div>
+        `).join('');
+        
+        document.getElementById('followersModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function showFollowing(userId) {
+    try {
+        const response = await fetch(`/user/${userId}/following`);
+        const data = await response.json();
+        
+        const followingList = document.getElementById('followingList');
+        followingList.innerHTML = data.following.map(user => `
+            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <a href="/user/${user.username}" class="flex items-center space-x-3">
+                    <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</p>
+                    </div>
+                </a>
+            </div>
+        `).join('');
+        
+        document.getElementById('followingModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function closeFollowersModal() {
+    document.getElementById('followersModal').classList.add('hidden');
+}
+
+function closeFollowingModal() {
+    document.getElementById('followingModal').classList.add('hidden');
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+    const followersModal = document.getElementById('followersModal');
+    const followingModal = document.getElementById('followingModal');
+    
+    if (event.target === followersModal) {
+        closeFollowersModal();
+    }
+    if (event.target === followingModal) {
+        closeFollowingModal();
+    }
+});
+</script>
 
 </body>
 </html> 
