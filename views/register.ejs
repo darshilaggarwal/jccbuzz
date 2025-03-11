@@ -130,12 +130,27 @@
 
             <div class="flex items-center">
                 <div class="flex items-center">
-                    <div class="text-sm">
+                    <div class="text-sm w-full">
                         <p class="font-medium text-gray-700">Password requirements:</p>
-                        <ul class="list-disc pl-5 text-xs text-gray-500">
-                            <li>At least 8 characters long</li>
-                            <li>Include at least one uppercase letter</li>
-                            <li>Include at least one special character</li>
+                        <ul class="list-none pl-0 text-xs mt-2 space-y-2">
+                            <li id="length-check" class="flex items-center text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                At least 8 characters long
+                            </li>
+                            <li id="uppercase-check" class="flex items-center text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Include at least one uppercase letter
+                            </li>
+                            <li id="special-check" class="flex items-center text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Include at least one special character
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -211,6 +226,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // OTP countdown timer variables
     let countdownInterval;
     let timeLeft = 120; // 2 minutes
+    
+    // Password validation elements
+    const lengthCheck = document.getElementById('length-check');
+    const uppercaseCheck = document.getElementById('uppercase-check');
+    const specialCheck = document.getElementById('special-check');
     
     // Handle OTP input navigation
     otpInputs.forEach((input, index) => {
@@ -538,29 +558,111 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
-        // Validate password
-        if (!password.value) {
+        // Validate password requirements
+        const passwordValue = password.value;
+        let passwordValid = true;
+        
+        if (!passwordValue) {
             passwordError.textContent = 'Password is required.';
             passwordError.classList.remove('hidden');
             isValid = false;
-        } else if (password.value.length < 8) {
-            passwordError.textContent = 'Password must be at least 8 characters.';
-            passwordError.classList.remove('hidden');
-            isValid = false;
-        } else if (!/[A-Z]/.test(password.value)) {
-            passwordError.textContent = 'Password must include at least one uppercase letter.';
-            passwordError.classList.remove('hidden');
-            isValid = false;
-        } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password.value)) {
-            passwordError.textContent = 'Password must include at least one special character.';
-            passwordError.classList.remove('hidden');
-            isValid = false;
+            passwordValid = false;
+        } else {
+            // Check all password requirements
+            if (passwordValue.length < 8) {
+                passwordValid = false;
+            }
+            if (!/[A-Z]/.test(passwordValue)) {
+                passwordValid = false;
+            }
+            if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordValue)) {
+                passwordValid = false;
+            }
+            
+            if (!passwordValid) {
+                passwordError.textContent = 'Please meet all password requirements.';
+                passwordError.classList.remove('hidden');
+                isValid = false;
+            }
         }
         
         if (!isValid) {
             e.preventDefault();
         }
     });
+    
+    // Function to validate password in real-time
+    function validatePassword() {
+        const passwordValue = password.value;
+        
+        // Check length (at least 8 characters)
+        if (passwordValue.length >= 8) {
+            lengthCheck.classList.remove('text-red-500');
+            lengthCheck.classList.add('text-green-500');
+            lengthCheck.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                At least 8 characters long
+            `;
+        } else {
+            lengthCheck.classList.remove('text-green-500');
+            lengthCheck.classList.add('text-red-500');
+            lengthCheck.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                At least 8 characters long
+            `;
+        }
+        
+        // Check for uppercase letter
+        if (/[A-Z]/.test(passwordValue)) {
+            uppercaseCheck.classList.remove('text-red-500');
+            uppercaseCheck.classList.add('text-green-500');
+            uppercaseCheck.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Include at least one uppercase letter
+            `;
+        } else {
+            uppercaseCheck.classList.remove('text-green-500');
+            uppercaseCheck.classList.add('text-red-500');
+            uppercaseCheck.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Include at least one uppercase letter
+            `;
+        }
+        
+        // Check for special character
+        if (/[!@#$%^&*(),.?":{}|<>]/.test(passwordValue)) {
+            specialCheck.classList.remove('text-red-500');
+            specialCheck.classList.add('text-green-500');
+            specialCheck.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Include at least one special character
+            `;
+        } else {
+            specialCheck.classList.remove('text-green-500');
+            specialCheck.classList.add('text-red-500');
+            specialCheck.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Include at least one special character
+            `;
+        }
+    }
+    
+    // Add event listener for password input
+    if (password) {
+        password.addEventListener('input', validatePassword);
+    }
 });
 </script>
 
