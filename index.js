@@ -378,11 +378,18 @@ app.post("/register" ,async (req,res)=>{
 
 app.post("/login", async (req, res) => {
     try {
-        let { email, password } = req.body;
+        let { identifier, password } = req.body;
 
-        let user = await userModel.findOne({ email });
+        // Look for user by email or username
+        let user = await userModel.findOne({ 
+            $or: [
+                { email: identifier },
+                { username: identifier }
+            ]
+        });
+        
         if (!user) {
-            console.log('Login attempt with non-existent email:', email);
+            console.log('Login attempt with non-existent identifier:', identifier);
             return res.redirect("/login?error=invalid_credentials");
         }
 
@@ -401,7 +408,7 @@ app.post("/login", async (req, res) => {
                 return res.redirect("/profile");
             }
             
-            console.log('Failed login attempt for user:', email);
+            console.log('Failed login attempt for user:', identifier);
             res.redirect("/login?error=invalid_credentials");
         });
     } catch (error) {
