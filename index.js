@@ -1322,26 +1322,56 @@ app.post("/post/:postId/save", isLoggedIn, async (req, res) => {
 });
 
 // Get saved posts
-app.get('/savedPosts', isLoggedIn, async (req, res) => {
+app.get('/saved-posts', isLoggedIn, async (req, res) => {
     try {
-        const user = await userModel.findById(req.user._id).populate({
-            path: 'savedPosts',
-            populate: {
-                path: 'user',
-                select: 'name username profileImage'
-            }
-        });
+        console.log('User data from request:', req.user);
+        
+        let user;
+        
+        // First try to find by ID
+        if (req.user._id) {
+            user = await userModel.findById(req.user._id);
+        }
+        
+        // If no user found by ID, try to find by email
+        if (!user && req.user.email) {
+            user = await userModel.findOne({ email: req.user.email });
+        }
+        
+        // If we have a user, populate the savedPosts
+        if (user) {
+            user = await userModel.findById(user._id).populate({
+                path: 'savedPosts',
+                populate: [
+                    {
+                        path: 'user',
+                        select: 'name username profileImage'
+                    },
+                    {
+                        path: 'likes'
+                    },
+                    {
+                        path: 'comments',
+                        populate: {
+                            path: 'user',
+                            select: 'name username profileImage'
+                        }
+                    }
+                ]
+            });
+        }
 
         if (!user) {
+            console.error('User not found. Auth data:', req.user);
             return res.status(404).send('User not found');
         }
         
         res.render('savedPosts', { 
             savedPosts: user.savedPosts || [],
-            user: req.user
+            user: user
         });
     } catch (error) {
-        console.error(error);
+        console.error('Error retrieving saved posts:', error);
         res.status(500).send('Server error');
     }
 });
