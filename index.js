@@ -22,6 +22,7 @@ const session = require('express-session');
 const passport = require('./config/passport');
 const StudentVerification = require('./models/studentVerification');
 const axios = require('axios');
+const notificationModel = require("./models/notification");
 
 // Add this near the top of the file where other environment variables are setup
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
@@ -510,25 +511,29 @@ app.post("/post/:postId/like", isLoggedIn, async (req, res) => {
             return res.status(404).json({ error: "Post not found" });
         }
 
-        const userLiked = post.likes.includes(user._id);
-        
-        if (userLiked) {
-            // Unlike the post
-            post.likes = post.likes.filter(id => !id.equals(user._id));
+        const index = post.likes.indexOf(user._id);
+        const isLiked = index !== -1;
+
+        if (isLiked) {
+            // User has already liked the post, so unlike it
+            post.likes.splice(index, 1);
+            await post.save();
+            return res.json({ likes: post.likes.length, isLiked: false });
         } else {
-            // Like the post
+            // User hasn't liked the post, so add their like
             post.likes.push(user._id);
+            await post.save();
+            
+            // Create notification for post like
+            if (post.user.toString() !== user._id.toString()) {
+                await createNotification(post.user, user._id, 'like', post._id);
+            }
+            
+            return res.json({ likes: post.likes.length, isLiked: true });
         }
-        
-        await post.save();
-        
-        res.json({
-            liked: !userLiked,
-            likeCount: post.likes.length
-        });
     } catch (error) {
-        console.error('Like/unlike error:', error);
-        res.status(500).json({ error: 'An error occurred while processing your request' });
+        console.error('Error processing like:', error);
+        res.status(500).json({ error: "Error processing like" });
     }
 });
 
@@ -622,6 +627,32 @@ app.post("/post/:postId/comment", isLoggedIn, async (req, res) => {
 
         // Populate user details for the response
         await comment.populate('user', 'name username profileImage');
+        
+        // Create notification for comment
+        if (post.user.toString() !== user._id.toString()) {
+            await createNotification(post.user, user._id, 'comment', post._id, comment._id);
+        }
+        
+        // Check for mentions in the comment
+        const mentionRegex = /@(\w+)/g;
+        const mentions = content.match(mentionRegex);
+        
+        if (mentions) {
+            const usernames = mentions.map(mention => mention.substring(1));
+            
+            // Find mentioned users and notify them
+            const mentionedUsers = await userModel.find({
+                username: { $in: usernames }
+            });
+            
+            for (const mentionedUser of mentionedUsers) {
+                // Don't notify yourself or the post owner (who already gets a comment notification)
+                if (mentionedUser._id.toString() !== user._id.toString() && 
+                    mentionedUser._id.toString() !== post.user.toString()) {
+                    await createNotification(mentionedUser._id, user._id, 'mention', post._id, comment._id);
+                }
+            }
+        }
 
         // Emit socket event for real-time updates
         io.emit('newComment', {
@@ -665,7 +696,41 @@ app.post("/comment/:commentId/reply", isLoggedIn, async (req, res) => {
         await comment.save();
         await comment.populate('replies.user', 'name username profileImage');
         
-        res.json(comment.replies[comment.replies.length - 1]);
+        // Get the latest reply with its index
+        const replyIndex = comment.replies.length - 1;
+        const reply = comment.replies[replyIndex];
+        reply.replyIndex = replyIndex; // Add index for the client to use
+        
+        // Create notification for reply
+        if (comment.user.toString() !== user._id.toString()) {
+            // Get the post for context
+            const post = await postModel.findById(comment.post);
+            await createNotification(comment.user, user._id, 'reply', post._id, comment._id);
+        }
+        
+        // Check for mentions in the reply
+        const mentionRegex = /@(\w+)/g;
+        const mentions = content.match(mentionRegex);
+        
+        if (mentions) {
+            const usernames = mentions.map(mention => mention.substring(1));
+            
+            // Find mentioned users and notify them
+            const mentionedUsers = await userModel.find({
+                username: { $in: usernames }
+            });
+            
+            for (const mentionedUser of mentionedUsers) {
+                // Don't notify yourself or the comment owner (who already gets a reply notification)
+                if (mentionedUser._id.toString() !== user._id.toString() && 
+                    mentionedUser._id.toString() !== comment.user.toString()) {
+                    const post = await postModel.findById(comment.post);
+                    await createNotification(mentionedUser._id, user._id, 'mention', post._id, comment._id);
+                }
+            }
+        }
+        
+        res.json(reply);
     } catch (error) {
         res.status(500).json({ error: "Error adding reply" });
     }
@@ -683,6 +748,13 @@ app.post("/comment/:commentId/like", isLoggedIn, async (req, res) => {
             comment.likes = comment.likes.filter(id => id.toString() !== user._id.toString());
         } else {
             comment.likes.push(user._id);
+            
+            // Create notification for comment like
+            if (comment.user.toString() !== user._id.toString()) {
+                // Get the post for context
+                const post = await postModel.findById(comment.post);
+                await createNotification(comment.user, user._id, 'comment_like', post._id, comment._id);
+            }
         }
 
         await comment.save();
@@ -1302,6 +1374,34 @@ async function fetchUnreadMessagesCount(req, res, next) {
 
 // Apply the middleware after isLoggedIn
 app.use(fetchUnreadMessagesCount);
+
+// Add this after other middleware (where fetchUnreadMessagesCount is, if it exists)
+async function fetchUnreadNotificationsCount(req, res, next) {
+    if (!req.user) {
+        return next();
+    }
+    
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        if (!user) {
+            return next();
+        }
+        
+        const unreadCount = await notificationModel.countDocuments({
+            recipient: user._id,
+            read: false
+        });
+        
+        res.locals.unreadNotifications = unreadCount;
+        next();
+    } catch (error) {
+        console.error('Error fetching unread notifications count:', error);
+        next();
+    }
+}
+
+// Apply the middleware to all routes
+app.use(fetchUnreadNotificationsCount);
 
 // Send regular text message
 app.post("/chat/:chatId/message", isLoggedIn, async (req, res) => {
@@ -2296,5 +2396,190 @@ app.get('/user/:userId/following', isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Get following error:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+// Function to create a notification
+async function createNotification(recipientId, senderId, type, postId = null, commentId = null, storyId = null) {
+    try {
+        // Don't notify yourself
+        if (recipientId.toString() === senderId.toString()) {
+            return null;
+        }
+        
+        const notification = await notificationModel.create({
+            recipient: recipientId,
+            sender: senderId,
+            type,
+            post: postId,
+            comment: commentId,
+            story: storyId
+        });
+        
+        // Real-time notification via socket.io
+        const recipient = await userModel.findById(recipientId);
+        const sender = await userModel.findById(senderId);
+        
+        // Only emit if we have valid users
+        if (recipient && sender) {
+            // Populate relevant data based on notification type
+            if (postId) {
+                await notification.populate('post');
+            }
+            if (commentId) {
+                await notification.populate('comment');
+            }
+            if (storyId) {
+                await notification.populate('story');
+            }
+            
+            // Send to recipient's socket if they're online
+            io.to(recipient.email).emit('newNotification', {
+                notification: {
+                    ...notification.toObject(),
+                    sender: {
+                        _id: sender._id,
+                        name: sender.name,
+                        username: sender.username,
+                        profileImage: sender.profileImage
+                    }
+                }
+            });
+        }
+        
+        return notification;
+    } catch (error) {
+        console.error('Error creating notification:', error);
+        return null;
+    }
+}
+
+// Modify follow route to include notification
+app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        const userToFollow = await userModel.findOne({ username: req.params.username });
+
+        if (!userToFollow) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check if already following
+        const isFollowing = userToFollow.followers.includes(user._id);
+
+        if (isFollowing) {
+            // Unfollow
+            userToFollow.followers = userToFollow.followers.filter(id => id.toString() !== user._id.toString());
+            user.following = user.following.filter(id => id.toString() !== userToFollow._id.toString());
+        } else {
+            // Follow
+            userToFollow.followers.push(user._id);
+            user.following.push(userToFollow._id);
+            
+            // Create notification for new follower
+            await createNotification(userToFollow._id, user._id, 'follow');
+        }
+
+        await userToFollow.save();
+        await user.save();
+
+        res.json({
+            isFollowing: !isFollowing,
+            followerCount: userToFollow.followers.length
+        });
+    } catch (error) {
+        console.error('Error processing follow:', error);
+        res.status(500).json({ error: "Error processing follow request" });
+    }
+});
+
+// API endpoints for notifications
+// Get notifications
+app.get("/api/notifications", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        const notifications = await notificationModel.find({ recipient: user._id })
+            .sort({ createdAt: -1 })
+            .limit(20)
+            .populate('sender', 'name username profileImage')
+            .populate({
+                path: 'post',
+                select: 'images'
+            })
+            .populate('comment', 'content')
+            .populate('story');
+        
+        res.json({ notifications });
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ error: "Error fetching notifications" });
+    }
+});
+
+// Mark notification as read
+app.post("/api/notifications/:id/read", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        const notification = await notificationModel.findOneAndUpdate(
+            { _id: req.params.id, recipient: user._id },
+            { read: true },
+            { new: true }
+        );
+        
+        if (!notification) {
+            return res.status(404).json({ error: "Notification not found" });
+        }
+        
+        // Get updated unread count
+        const unreadCount = await notificationModel.countDocuments({
+            recipient: user._id,
+            read: false
+        });
+        
+        res.json({ success: true, unreadCount });
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ error: "Error marking notification as read" });
+    }
+});
+
+// Mark all notifications as read
+app.post("/api/notifications/mark-all-read", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        await notificationModel.updateMany(
+            { recipient: user._id, read: false },
+            { read: true }
+        );
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        res.status(500).json({ error: "Error marking all notifications as read" });
+    }
+});
+
+// Notifications page route
+app.get("/notifications", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        const notifications = await notificationModel.find({ recipient: user._id })
+            .sort({ createdAt: -1 })
+            .populate('sender', 'name username profileImage')
+            .populate({
+                path: 'post',
+                select: 'images'
+            })
+            .populate('comment', 'content')
+            .populate('story');
+        
+        res.render("notifications", { notifications });
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.redirect("/feed");
     }
 });

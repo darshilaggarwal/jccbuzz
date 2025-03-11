@@ -514,6 +514,93 @@
                 }
             }
         }
+
+        // Add socket.io notification handling
+        if (typeof io !== 'undefined') {
+            const socket = io();
+            
+            // Listen for new notifications
+            socket.on('newNotification', function(data) {
+                // Update the notification count
+                const currentBadge = document.querySelector('#notificationBtn > span');
+                const currentCount = currentBadge ? parseInt(currentBadge.textContent) : 0;
+                
+                // Only increment if the notification is truly new
+                if (data.notification && !data.notification.read) {
+                    updateNotificationBadge(isNaN(currentCount) ? 1 : currentCount + 1);
+                    
+                    // Show a toast notification if supported
+                    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                        const notification = new Notification('Pinspire', {
+                            body: `${data.notification.sender.name} ${data.notification.text}`,
+                            icon: data.notification.sender.profileImage
+                        });
+                        
+                        // Close after 5 seconds
+                        setTimeout(() => notification.close(), 5000);
+                        
+                        // Navigate to related content when clicked
+                        notification.onclick = function() {
+                            window.focus();
+                            // Navigate based on notification type
+                            if (data.notification.post) {
+                                window.location.href = `/post/${data.notification.post._id}`;
+                            } else if (data.notification.type === 'follow') {
+                                window.location.href = `/user/${data.notification.sender.username}`;
+                            } else {
+                                window.location.href = '/notifications';
+                            }
+                        };
+                    }
+                }
+                
+                // If notification panel is open, add the new notification at the top
+                const notificationPanel = document.getElementById('notificationPanel');
+                if (notificationPanel && !notificationPanel.classList.contains('hidden')) {
+                    const container = document.getElementById('notificationsContainer');
+                    if (container) {
+                        const emptyMessage = container.querySelector('.text-center');
+                        if (emptyMessage) {
+                            container.innerHTML = ''; // Remove "no notifications" message
+                        }
+                        
+                        const notificationHTML = `
+                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 bg-blue-50 dark:bg-blue-900/20" data-id="${data.notification._id}">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mr-3">
+                                        <img src="${data.notification.sender.profileImage}" 
+                                             alt="${data.notification.sender.name}" 
+                                             class="w-10 h-10 rounded-full object-cover">
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm">
+                                            <span class="font-semibold">${data.notification.sender.name}</span> 
+                                            ${data.notification.text}
+                                        </p>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Add at the top of the container
+                        container.insertAdjacentHTML('afterbegin', notificationHTML);
+                    }
+                }
+            });
+            
+            // Request notification permission
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                    // Ask for permission after user interacts with the page
+                    document.addEventListener('click', function askNotificationPermission() {
+                        Notification.requestPermission();
+                        // Remove this event listener
+                        document.removeEventListener('click', askNotificationPermission);
+                    });
+                }
+            });
+        }
     </script>
 </body>
 </html> 

@@ -1,0 +1,142 @@
+<%- include('partials/header') %>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-gray-800 dark:text-white">Notifications</h1>
+            <% if (notifications.length > 0) { %>
+                <button id="markAllReadBtn" class="text-sm text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
+                    Mark all as read
+                </button>
+            <% } %>
+        </div>
+        
+        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+            <% if (notifications.length === 0) { %>
+                <div class="p-6 text-center">
+                    <div class="text-5xl text-gray-300 dark:text-gray-700 mb-4">
+                        <i class="fas fa-bell-slash"></i>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400">No notifications yet</p>
+                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                        When you get notifications, they'll show up here
+                    </p>
+                </div>
+            <% } else { %>
+                <% notifications.forEach(notification => { %>
+                    <div class="notification-item p-4 hover:bg-gray-50 dark:hover:bg-gray-900 <%= !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : '' %>" 
+                         data-id="<%= notification._id %>"
+                         onclick="handleNotificationClick('<%= notification._id %>', '<%= notification.type %>', '<%= notification.post ? notification.post._id : '' %>', '<%= notification.comment ? notification.comment._id : '' %>', '<%= notification.story ? notification.story._id : '' %>')">
+                        <div class="flex">
+                            <div class="flex-shrink-0 mr-3">
+                                <img src="<%= notification.sender.profileImage %>" 
+                                     alt="<%= notification.sender.name %>" 
+                                     class="w-12 h-12 rounded-full object-cover">
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-800 dark:text-gray-200">
+                                    <span class="font-semibold"><%= notification.sender.name %></span> 
+                                    <%= notification.text %>
+                                    <% if (notification.type === 'like' || notification.type === 'comment') { %>
+                                        <span class="text-gray-500 dark:text-gray-400"> on your post</span>
+                                    <% } %>
+                                </p>
+                                <span class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(notification.createdAt).toLocaleString() %></span>
+                                
+                                <% if (notification.post && notification.post.images && notification.post.images.length > 0) { %>
+                                    <div class="mt-2">
+                                        <a href="/post/<%= notification.post._id %>" class="block w-16 h-16 rounded overflow-hidden">
+                                            <img src="<%= notification.post.images[0].url %>" 
+                                                alt="Post image" 
+                                                class="w-full h-full object-cover">
+                                        </a>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const markAllReadBtn = document.getElementById('markAllReadBtn');
+        
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                markAllNotificationsAsRead();
+            });
+        }
+    });
+    
+    function handleNotificationClick(notificationId, type, postId, commentId, storyId) {
+        // Mark as read
+        markNotificationAsRead(notificationId);
+        
+        // Navigate based on notification type
+        if (type === 'like' || type === 'comment' || type === 'comment_like') {
+            // For post-related notifications
+            if (postId) {
+                window.location.href = `/post/${postId}`;
+            }
+        } else if (type === 'follow') {
+            // Navigate to the follower's profile
+            // This requires getting the sender's username, which we would need to add to the data-attributes
+            // For now, we'll just reload the page to refresh the read status
+            window.location.reload();
+        } else if (type === 'story_view') {
+            // For story-related notifications
+            if (storyId) {
+                window.location.href = `/stories?highlight=${storyId}`;
+            }
+        } else {
+            // Default behavior - just reload to update read status
+            window.location.reload();
+        }
+    }
+    
+    function markNotificationAsRead(notificationId) {
+        fetch(`/api/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update UI to reflect read status
+            const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+            if (notificationItem) {
+                notificationItem.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+    
+    function markAllNotificationsAsRead() {
+        fetch('/api/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update UI
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+            });
+        })
+        .catch(error => {
+            console.error('Error marking all notifications as read:', error);
+        });
+    }
+</script>
+
+<%- include('partials/footer') %> 
