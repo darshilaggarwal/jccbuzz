@@ -1269,12 +1269,18 @@ app.post("/story", isLoggedIn, uploadStory, async (req, res) => {
             .jpeg({ quality: 85 })
             .toFile(imagePath);
 
+        // Parse text overlay and emojis from request
+        const textOverlay = req.body.textOverlay ? JSON.parse(req.body.textOverlay) : null;
+        const emojis = req.body.emojis ? JSON.parse(req.body.emojis) : [];
+
         const story = await storyModel.create({
             user: user._id,
             media: {
                 url: `/uploads/stories/${filename}`,
                 type: req.file.mimetype.startsWith('video/') ? 'video' : 'image'
-            }
+            },
+            textOverlay,
+            emojis
         });
 
         await story.populate('user', 'username name profileImage');
@@ -2807,5 +2813,95 @@ app.get("/notifications", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error fetching notifications:', error);
         res.redirect("/feed");
+    }
+});
+
+// Add this after the story view route
+app.post("/story/:storyId/view", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        const story = await storyModel.findById(req.params.storyId);
+
+        if (!story) {
+            return res.status(404).json({ error: "Story not found" });
+        }
+
+        // Check if user has already viewed the story
+        const hasViewed = story.viewers.some(viewer => viewer.user.toString() === user._id.toString());
+        
+        if (!hasViewed) {
+            // Add viewer
+            story.viewers.push({
+                user: user._id,
+                viewedAt: Date.now()
+            });
+            
+            // Update viewer count
+            story.viewerCount = story.viewers.length;
+            await story.save();
+
+            // Emit socket event to story owner
+            const storyOwnerSocketId = connectedUsers.get(story.user.toString());
+            if (storyOwnerSocketId) {
+                io.to(storyOwnerSocketId).emit('storyViewed', {
+                    storyId: story._id,
+                    viewerCount: story.viewerCount,
+                    viewer: {
+                        _id: user._id,
+                        name: user.name,
+                        username: user.username,
+                        profileImage: user.profileImage
+                    }
+                });
+            }
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error marking story as viewed:', error);
+        res.status(500).json({ error: "Error marking story as viewed" });
+    }
+});
+
+// Add this route to get story viewers
+app.get("/story/:storyId/viewers", isLoggedIn, async (req, res) => {
+    try {
+        // Get current user by email first
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        if (!currentUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const story = await storyModel.findById(req.params.storyId)
+            .populate({
+                path: 'viewers.user',
+                select: 'name username profileImage',
+                model: 'User'
+            });
+
+        if (!story) {
+            return res.status(404).json({ error: "Story not found" });
+        }
+
+        // Only allow story owner to view the viewers list
+        if (story.user.toString() !== currentUser._id.toString()) {
+            return res.status(403).json({ error: "Not authorized to view story viewers" });
+        }
+
+        // Filter out any viewers with invalid user data
+        const viewers = story.viewers
+            .filter(viewer => viewer.user) // Only include viewers with valid user data
+            .map(viewer => ({
+                _id: viewer.user._id,
+                name: viewer.user.name || viewer.user.username,
+                username: viewer.user.username,
+                profileImage: viewer.user.profileImage || '/images/default-profile.png',
+                viewedAt: viewer.viewedAt
+            }));
+
+        res.json({ viewers });
+    } catch (error) {
+        console.error('Error getting story viewers:', error);
+        res.status(500).json({ error: "Error getting story viewers" });
     }
 });

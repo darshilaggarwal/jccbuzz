@@ -14,6 +14,18 @@ const storySchema = new mongoose.Schema({
             default: 'image'
         }
     },
+    textOverlay: {
+        text: String,
+        position: {
+            x: Number,
+            y: Number
+        },
+        style: {
+            fontSize: Number,
+            color: String,
+            backgroundColor: String
+        }
+    },
     viewers: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,
@@ -29,6 +41,11 @@ const storySchema = new mongoose.Schema({
         default: Date.now,
         expires: 86400 // 24 hours in seconds
     }
+});
+
+// Virtual for viewer count
+storySchema.virtual('viewerCount').get(function() {
+    return this.viewers.length;
 });
 
 module.exports = mongoose.model('Story', storySchema); 

@@ -43,7 +43,7 @@
                            id="storyInput" 
                            class="hidden" 
                            accept="image/*,video/*" 
-                           onchange="uploadStory(event)">
+                           onchange="handleStoryUpload(event)">
                     <p class="text-xs mt-1 text-gray-600">Add Story</p>
                 </label>
             </div>
@@ -231,6 +231,22 @@
 
             <!-- Story Reply Section -->
             <div class="absolute bottom-4 left-4 right-4 z-20">
+                <div class="flex items-center justify-between mb-2">
+                    <!-- Viewers Button (Only visible for story owner) -->
+                    <div id="viewersButtonContainer" class="hidden">
+                        <button onclick="toggleViewersList()" 
+                                class="flex items-center space-x-2 px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20">
+                            <i class="fas fa-eye"></i>
+                            <span id="viewerCount" class="text-sm">0</span>
+                        </button>
+                    </div>
+                    <!-- Delete Story Button (Only visible for story owner) -->
+                    <button id="deleteStoryBtn" 
+                            onclick="deleteCurrentStory()" 
+                            class="hidden px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-red-500/50">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
                 <form onsubmit="replyToStory(event)" class="flex items-center gap-2">
                     <input type="text" 
                            id="storyReplyInput"
@@ -240,13 +256,22 @@
                             class="px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20">
                         <i class="fas fa-paper-plane"></i>
                     </button>
-                    <!-- Delete Story Button (Only visible for story owner) -->
-                    <button id="deleteStoryBtn" 
-                            onclick="deleteCurrentStory()" 
-                            class="hidden px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-red-500/50">
-                        <i class="fas fa-trash"></i>
-                    </button>
                 </form>
+            </div>
+
+            <!-- Viewers List Modal -->
+            <div id="viewersListModal" class="hidden absolute inset-0 bg-black bg-opacity-90 z-30">
+                <div class="p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-white text-lg font-semibold">Story Viewers</h3>
+                        <button onclick="closeViewersList()" class="text-white text-xl">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="viewersList" class="space-y-4 max-h-[70vh] overflow-y-auto">
+                        <!-- Viewers will be listed here -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -500,9 +525,200 @@
     transform: scale(0.95);
     transition: opacity 300ms, transform 300ms;
 }
+
+/* Story Preview Modal Styles */
+#storyPreviewModal {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.75);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+}
+
+#storyPreviewModal.hidden {
+    display: none !important;
+}
+
+#storyPreviewModal:not(.hidden) {
+    display: flex;
+}
+
+#storyPreviewModal .modal-content {
+    width: 100%;
+    max-width: 500px; /* Increased from 400px */
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+#storyPreviewContainer {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 177.78%; /* 16:9 aspect ratio */
+    background: black;
+    overflow: hidden;
+}
+
+#storyPreviewContainer img,
+#storyPreviewContainer video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Text Overlay Styles */
+.text-overlay {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 2rem; /* Increased from 1.5rem */
+    max-width: 80%;
+    word-wrap: break-word;
+    z-index: 10;
+    transform-origin: center;
+    min-width: 50px;
+    min-height: 50px;
+}
+
+/* Emoji Overlay Styles */
+.emoji-overlay {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    font-size: 3rem; /* Increased from 2rem */
+    z-index: 10;
+    transform-origin: center;
+    min-width: 50px;
+    min-height: 50px;
+}
+
+/* Controls Overlay */
+.story-controls {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    display: flex;
+    justify-content: space-between;
+    z-index: 20;
+}
+
+.control-button {
+    width: 3rem; /* Increased from 2.5rem */
+    height: 3rem; /* Increased from 2.5rem */
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.25rem; /* Added font size */
+}
+
+.control-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* Text Input Styles */
+#textOverlayInput {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    z-index: 30;
+}
+
+#storyText {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 1.25rem; /* Increased from 1rem */
+}
+
+#storyText::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Emoji Picker Styles */
+#emojiPicker {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    z-index: 30;
+}
+
+#emojiPicker .grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#emojiPicker button {
+    width: 3rem; /* Increased from 2.5rem */
+    height: 3rem; /* Increased from 2.5rem */
+    border: none;
+    background: none;
+    font-size: 2rem; /* Increased from 1.5rem */
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+#emojiPicker button:hover {
+    transform: scale(1.2);
+}
 </style>
 
 <script>
+// Add these variables at the very top of your script section
+let stories = [];
+let currentStoryIndex = 0;
+let currentStory = null;
+let storyInterval;
+let isPaused = false;
+let storyText = '';
+let storyEmojis = [];
+let storyFile = null;
+let isDragging = false;
+let currentX;
+let currentY;
+let initialX;
+let initialY;
+let xOffset = 0;
+let yOffset = 0;
+let storyTextPosition = { x: 50, y: 50 }; // Initialize text position
+
 const socket = io();
 
 socket.on('connect', () => {
@@ -760,59 +976,6 @@ function toggleLike(postId) {
     .catch(error => console.error('Error:', error));
 }
 
-// Add these variables at the top of your script
-let currentStory = null;
-let storyInterval;
-let isPaused = false;
-
-// Update the viewStory function
-function viewStory(index) {
-    isPaused = false;
-    currentStoryIndex = index;
-    currentStory = stories[index];
-    const modal = document.getElementById('storyModal');
-    const mediaContainer = document.getElementById('storyImage');
-    const userImage = document.getElementById('storyUserImage');
-    const username = document.getElementById('storyUsername');
-    const timeElement = document.getElementById('storyTime');
-    const deleteButton = document.getElementById('deleteStoryBtn');
-
-    // Show delete button only if the story belongs to current user
-    if (currentStory.user._id === '<%= user._id %>') {
-        deleteButton.classList.remove('hidden');
-    } else {
-        deleteButton.classList.add('hidden');
-    }
-
-    // Clear previous media
-    mediaContainer.innerHTML = '';
-
-    // Create appropriate media element
-    const mediaElement = currentStory.media.type === 'video' 
-        ? document.createElement('video')
-        : document.createElement('img');
-
-    mediaElement.src = currentStory.media.url;
-    mediaElement.className = 'w-full h-full object-contain';
-    
-    if (mediaElement.tagName === 'VIDEO') {
-        mediaElement.controls = false; // Hide default controls
-        mediaElement.autoplay = true;
-        mediaElement.muted = false;
-        mediaElement.loop = false;
-        mediaElement.playsInline = true;
-    }
-
-    mediaContainer.appendChild(mediaElement);
-    userImage.src = currentStory.user.profileImage || '/images/default-profile.png';
-    username.textContent = currentStory.user.username;
-    timeElement.textContent = getTimeAgo(new Date(currentStory.createdAt));
-
-    modal.classList.remove('hidden');
-    startStoryProgress();
-    markStoryAsViewed(currentStory._id);
-}
-
 // Add story reply function
 async function replyToStory(event) {
     event.preventDefault();
@@ -848,29 +1011,56 @@ async function replyToStory(event) {
     }
 }
 
-// Add at the top of your script section
-let stories = [];
-let currentStoryIndex = 0;
-
 // Function to load stories
 async function loadStories() {
     try {
+        console.log('Loading stories...');
         const response = await fetch('/stories');
-        stories = await response.json();
-        console.log('Loaded stories:', stories); // Debug log
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Received stories data:', data);
+        
+        if (!Array.isArray(data)) {
+            console.error('Received data is not an array:', data);
+            stories = [];
+            return;
+        }
+        
+        stories = data;
+        console.log('Stories loaded successfully:', stories);
         renderStories();
     } catch (error) {
         console.error('Error loading stories:', error);
+        stories = [];
+        renderStories();
     }
 }
 
 // Function to render stories
 function renderStories() {
+    console.log('Rendering stories:', stories);
     const storiesList = document.getElementById('storiesList');
+    if (!storiesList) {
+        console.error('Stories list element not found');
+        return;
+    }
+
     storiesList.innerHTML = '';
 
+    if (!Array.isArray(stories) || stories.length === 0) {
+        console.log('No stories to render');
+        return;
+    }
+
     stories.forEach((story, index) => {
-        const hasViewed = story.viewers.some(viewer => viewer.user === '<%= user._id %>');
+        if (!story || !story.user) {
+            console.error('Invalid story data at index:', index, story);
+            return;
+        }
+
+        const hasViewed = story.viewers && story.viewers.some(viewer => viewer.user === '<%= user._id %>');
         const storyHTML = `
             <div class="flex-shrink-0 text-center">
                 <div onclick="viewStory(${index})" 
@@ -888,6 +1078,111 @@ function renderStories() {
         `;
         storiesList.insertAdjacentHTML('beforeend', storyHTML);
     });
+}
+
+// Add the viewStory function after the loadStories function
+function viewStory(index) {
+    console.log('viewStory called with index:', index);
+    console.log('Current stories array:', stories);
+
+    // Validate stories array and index
+    if (!stories) {
+        console.error('Stories array is not initialized');
+        return;
+    }
+
+    if (!Array.isArray(stories)) {
+        console.error('Stories is not an array:', stories);
+        return;
+    }
+
+    if (index < 0 || index >= stories.length) {
+        console.error('Invalid story index:', index, 'Stories length:', stories.length);
+        return;
+    }
+
+    const story = stories[index];
+    console.log('Selected story:', story);
+    
+    // Validate story object and its properties
+    if (!story) {
+        console.error('Story object is null or undefined');
+        return;
+    }
+
+    if (!story.user) {
+        console.error('Story user is null or undefined:', story);
+        return;
+    }
+
+    if (!story.media) {
+        console.error('Story media is null or undefined:', story);
+        return;
+    }
+
+    isPaused = false;
+    currentStoryIndex = index;
+    currentStory = story;
+
+    const modal = document.getElementById('storyModal');
+    if (!modal) {
+        console.error('Story modal element not found');
+        return;
+    }
+
+    const mediaContainer = document.getElementById('storyImage');
+    const userImage = document.getElementById('storyUserImage');
+    const username = document.getElementById('storyUsername');
+    const timeElement = document.getElementById('storyTime');
+    const deleteButton = document.getElementById('deleteStoryBtn');
+    const viewersButtonContainer = document.getElementById('viewersButtonContainer');
+
+    // Show delete button and viewers button only if the story belongs to current user
+    if (currentStory.user._id.toString() === '<%= user._id %>') {
+        deleteButton.classList.remove('hidden');
+        viewersButtonContainer.classList.remove('hidden');
+        // Load viewers immediately for the story owner
+        loadStoryViewers(currentStory._id);
+    } else {
+        deleteButton.classList.add('hidden');
+        viewersButtonContainer.classList.add('hidden');
+    }
+
+    // Clear previous media
+    mediaContainer.innerHTML = '';
+
+    // Create appropriate media element
+    const mediaElement = currentStory.media.type === 'video' 
+        ? document.createElement('video')
+        : document.createElement('img');
+
+    mediaElement.src = currentStory.media.url;
+    mediaElement.className = 'w-full h-full object-contain';
+    
+    if (mediaElement.tagName === 'VIDEO') {
+        mediaElement.controls = false;
+        mediaElement.autoplay = true;
+        mediaElement.muted = false;
+        mediaElement.loop = false;
+        mediaElement.playsInline = true;
+    }
+
+    mediaContainer.appendChild(mediaElement);
+
+    // Set user info with fallbacks
+    userImage.src = currentStory.user.profileImage || '/images/default-profile.png';
+    username.textContent = currentStory.user.username || 'Unknown User';
+    timeElement.textContent = getTimeAgo(new Date(currentStory.createdAt));
+
+    // Update viewer count
+    const viewerCount = document.getElementById('viewerCount');
+    if (viewerCount) {
+        viewerCount.textContent = currentStory.viewerCount || '0';
+    }
+
+    modal.classList.remove('hidden');
+    startStoryProgress();
+    markStoryAsViewed(currentStory._id);
 }
 
 // Function to upload story
@@ -935,9 +1230,14 @@ socket.on('newStory', (data) => {
 // Function to mark story as viewed
 async function markStoryAsViewed(storyId) {
     try {
-        await fetch(`/story/${storyId}/view`, {
+        const response = await fetch(`/story/${storyId}/view`, {
             method: 'POST'
         });
+        
+        if (response.ok) {
+            // Emit socket event to notify story owner
+            socket.emit('viewStory', { storyId });
+        }
     } catch (error) {
         console.error('Error marking story as viewed:', error);
     }
@@ -1525,6 +1825,290 @@ function dataURLtoBlob(dataurl) {
     }
     return new Blob([u8arr], {type:mime});
 }
+
+function toggleTextOverlay() {
+    const input = document.getElementById('textOverlayInput');
+    input.classList.toggle('hidden');
+    if (!input.classList.contains('hidden')) {
+        document.getElementById('storyText').focus();
+    }
+}
+
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emojiPicker');
+    picker.classList.toggle('hidden');
+    if (!picker.classList.contains('hidden')) {
+        loadEmojiGrid();
+    }
+}
+
+function loadEmojiGrid() {
+    const emojis = ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
+    const grid = document.querySelector('#emojiPicker .grid');
+    grid.innerHTML = emojis.map(emoji => `
+        <button onclick="addEmoji('${emoji}')" class="text-2xl hover:scale-110 transition-transform">
+            ${emoji}
+        </button>
+    `).join('');
+}
+
+function addEmoji(emoji) {
+    const container = document.getElementById('storyPreviewContainer');
+    const rect = container.getBoundingClientRect();
+    
+    // Add new emoji at center position
+    storyEmojis.push({
+        emoji,
+        position: { x: 50, y: 50 },
+        scale: 1 // Add scale property
+    });
+    
+    updateStoryPreview();
+    
+    // Hide emoji picker after adding
+    document.getElementById('emojiPicker').classList.add('hidden');
+}
+
+function updateStoryPreview() {
+    const container = document.getElementById('storyPreviewContainer');
+    const mediaElement = container.querySelector('img, video');
+    if (!mediaElement) return;
+
+    // Remove existing text and emoji overlays
+    container.querySelectorAll('.text-overlay, .emoji-overlay').forEach(el => el.remove());
+
+    // Add text overlay if exists
+    if (storyText) {
+        const textOverlay = document.createElement('div');
+        textOverlay.className = 'text-overlay';
+        textOverlay.style.left = `${storyTextPosition.x}%`;
+        textOverlay.style.top = `${storyTextPosition.y}%`;
+        textOverlay.style.transform = 'translate(-50%, -50%)';
+        textOverlay.textContent = storyText;
+        textOverlay.draggable = true;
+        textOverlay.addEventListener('dragstart', dragStart);
+        textOverlay.addEventListener('drag', drag);
+        textOverlay.addEventListener('dragend', dragEnd);
+        container.appendChild(textOverlay);
+    }
+
+    // Add emoji overlays
+    storyEmojis.forEach(({ emoji, position, scale = 1 }) => {
+        const emojiOverlay = document.createElement('div');
+        emojiOverlay.className = 'emoji-overlay';
+        emojiOverlay.style.left = `${position.x}%`;
+        emojiOverlay.style.top = `${position.y}%`;
+        emojiOverlay.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        emojiOverlay.textContent = emoji;
+        emojiOverlay.draggable = true;
+        emojiOverlay.addEventListener('dragstart', dragStart);
+        emojiOverlay.addEventListener('drag', drag);
+        emojiOverlay.addEventListener('dragend', dragEnd);
+        container.appendChild(emojiOverlay);
+    });
+}
+
+function dragStart(e) {
+    initialX = e.clientX - xOffset;
+    initialY = e.clientY - yOffset;
+
+    if (e.target.classList.contains('emoji-overlay') || e.target.classList.contains('text-overlay')) {
+        isDragging = true;
+        e.target.style.zIndex = '100'; // Bring dragged element to front
+    }
+}
+
+function drag(e) {
+    if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+
+        xOffset = currentX;
+        yOffset = currentY;
+
+        setTranslate(currentX, currentY, e.target);
+    }
+}
+
+function setTranslate(xPos, yPos, el) {
+    const container = document.getElementById('storyPreviewContainer');
+    const rect = container.getBoundingClientRect();
+    const x = (xPos / rect.width) * 100;
+    const y = (yPos / rect.height) * 100;
+    
+    el.style.left = `${x}%`;
+    el.style.top = `${y}%`;
+    
+    // Update position in storyEmojis or storyTextPosition
+    if (el.classList.contains('emoji-overlay')) {
+        const index = Array.from(container.querySelectorAll('.emoji-overlay')).indexOf(el);
+        if (index !== -1) {
+            storyEmojis[index].position = { x, y };
+        }
+    } else if (el.classList.contains('text-overlay')) {
+        storyTextPosition = { x, y };
+    }
+}
+
+function dragEnd(e) {
+    initialX = currentX;
+    initialY = currentY;
+    isDragging = false;
+    e.target.style.zIndex = '10'; // Reset z-index
+}
+
+async function uploadStory() {
+    if (!storyFile) {
+        alert('Please select a file first');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('story', storyFile);
+    
+    // Add text overlay data if text exists
+    if (storyText) {
+        formData.append('textOverlay', JSON.stringify({
+            text: storyText,
+            position: storyTextPosition,
+            style: {
+                fontSize: 24,
+                color: '#ffffff',
+                backgroundColor: 'rgba(0,0,0,0.5)'
+            }
+        }));
+    }
+    
+    // Add emojis data if emojis exist
+    if (storyEmojis.length > 0) {
+        formData.append('emojis', JSON.stringify(storyEmojis));
+    }
+
+    try {
+        const response = await fetch('/story', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            closeStoryPreview();
+            stories.unshift(data.story);
+            renderStories();
+            
+            const successMsg = document.createElement('div');
+            successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+            successMsg.textContent = 'Story uploaded successfully!';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
+        } else {
+            throw new Error(data.error || 'Failed to upload story');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error uploading story: ' + error.message);
+    }
+}
+
+function closeStoryPreview() {
+    const modal = document.getElementById('storyPreviewModal');
+    const previewContainer = document.getElementById('storyPreviewContainer');
+    
+    // Clear the preview
+    previewContainer.innerHTML = '';
+    
+    // Hide the modal
+    modal.classList.add('hidden');
+    
+    // Reset the story data
+    storyFile = null;
+    storyText = '';
+    storyEmojis = [];
+    storyTextPosition = { x: 50, y: 50 }; // Reset text position
+    
+    // Hide any open overlays
+    document.getElementById('textOverlayInput').classList.add('hidden');
+    document.getElementById('emojiPicker').classList.add('hidden');
+}
+
+// Add event listener for story text input
+document.getElementById('storyText')?.addEventListener('input', function(e) {
+    storyText = e.target.value;
+    updateStoryPreview();
+});
+
+// Add these functions for viewers functionality
+function toggleViewersList() {
+    const viewersListModal = document.getElementById('viewersListModal');
+    viewersListModal.classList.toggle('hidden');
+}
+
+async function loadStoryViewers(storyId) {
+    try {
+        console.log('Loading viewers for story:', storyId);
+        const response = await fetch(`/story/${storyId}/viewers`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Received viewers data:', data);
+        
+        const viewersList = document.getElementById('viewersList');
+        if (!viewersList) {
+            console.error('Viewers list element not found');
+            return;
+        }
+
+        viewersList.innerHTML = '';
+        
+        if (data.viewers && data.viewers.length > 0) {
+            data.viewers.forEach(viewer => {
+                if (!viewer || !viewer.user) {
+                    console.error('Invalid viewer data:', viewer);
+                    return;
+                }
+                
+                const viewerElement = document.createElement('div');
+                viewerElement.className = 'flex items-center space-x-3 text-white';
+                viewerElement.innerHTML = `
+                    <img src="${viewer.user.profileImage || '/images/default-profile.png'}" 
+                         alt="${viewer.user.username}" 
+                         class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-semibold">${viewer.user.name || viewer.user.username}</p>
+                        <p class="text-sm opacity-75">@${viewer.user.username}</p>
+                        <p class="text-xs opacity-50">${getTimeAgo(new Date(viewer.viewedAt))}</p>
+                    </div>
+                `;
+                viewersList.appendChild(viewerElement);
+            });
+        } else {
+            viewersList.innerHTML = '<p class="text-white text-center">No viewers yet</p>';
+        }
+    } catch (error) {
+        console.error('Error loading story viewers:', error);
+        const viewersList = document.getElementById('viewersList');
+        if (viewersList) {
+            viewersList.innerHTML = '<p class="text-white text-center text-red-500">Error loading viewers</p>';
+        }
+    }
+}
+
+function showViewersList() {
+    if (currentStory && currentStory.user._id.toString() === '<%= user._id %>') {
+        document.getElementById('viewersListModal').classList.remove('hidden');
+        loadStoryViewers(currentStory._id);
+    }
+}
+
+function closeViewersList() {
+    document.getElementById('viewersListModal').classList.add('hidden');
+}
+
+// Update the viewStory function to show viewers button
+
 </script>
 
 <!-- Share Modal Template -->
@@ -1608,6 +2192,80 @@ function dataURLtoBlob(dataurl) {
                     <i class="fas fa-share mr-2"></i> Share Post
                 </button>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Story Preview Modal -->
+<div id="storyPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-content">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Preview Story</h3>
+                <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="relative">
+                    <div id="storyPreviewContainer">
+                        <!-- Media preview will be inserted here -->
+                    </div>
+                    <!-- Controls -->
+                    <div class="story-controls">
+                        <div class="flex space-x-2">
+                            <button onclick="toggleTextOverlay()" class="control-button">
+                                <i class="fas fa-text"></i>
+                            </button>
+                            <button onclick="toggleEmojiPicker()" class="control-button">
+                                <i class="fas fa-smile"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Text overlay input -->
+                    <div id="textOverlayInput" class="hidden">
+                        <input type="text" 
+                               id="storyText" 
+                               placeholder="Add text to your story..."
+                               class="w-full">
+                    </div>
+                    <!-- Emoji picker -->
+                    <div id="emojiPicker" class="hidden">
+                        <div class="grid">
+                            <!-- Emoji grid will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button onclick="closeStoryPreview()" 
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                        Cancel
+                    </button>
+                    <button onclick="uploadStory()" 
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Share Story
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this before the closing body tag -->
+<div id="viewersListModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full">
+            <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-semibold dark:text-white">Story Viewers</h3>
+                <button onclick="closeViewersList()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <div id="viewersList" class="space-y-4 max-h-[60vh] overflow-y-auto">
+                    <!-- Viewers will be loaded here -->
+                </div>
+            </div>
         </div>
     </div>
 </div>
