@@ -1007,7 +1007,7 @@ async function replyToStory(event) {
         }
     } catch (error) {
         console.error('Error sending reply:', error);
-        alert('Failed to send reply. Please try again.');
+        showToast('Failed to send reply. Please try again.');
     }
 }
 
@@ -1217,7 +1217,7 @@ async function uploadStory(event) {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error uploading story: ' + error.message);
+        showToast('Error uploading story: ' + error.message);
     }
 }
 
@@ -1656,9 +1656,9 @@ function closeCreatePostModal() {
 function handleImageSelect(event) {
     const files = Array.from(event.target.files);
     
-    // Limit to 10 images
-    if (files.length > 10) {
-        alert('You can upload a maximum of 10 images per post');
+    // Check if maximum number of images is reached
+    if (processedImages.filter(Boolean).length >= 10) {
+        showToast('You can upload a maximum of 10 images per post');
         return;
     }
     
@@ -1765,8 +1765,9 @@ document.getElementById('createPostForm').addEventListener('submit', async funct
     const formData = new FormData(this);
     const validImages = processedImages.filter(img => img !== null);
     
+    // Check if there are valid images
     if (validImages.length === 0) {
-        alert('Please add at least one image to your post');
+        showToast('Please add at least one image to your post');
         return;
     }
     
@@ -1801,11 +1802,11 @@ document.getElementById('createPostForm').addEventListener('submit', async funct
             }, 500);
         } else {
             const data = await response.json();
-            alert('Error creating post: ' + (data.error || 'Unknown error'));
+            showToast('Error creating post: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error creating post:', error);
-        alert('Error creating post. Please try again.');
+        showToast('Error creating post. Please try again.');
     } finally {
         // Reset button state
         const submitBtn = this.querySelector('button[type="submit"]');
@@ -1960,7 +1961,7 @@ function dragEnd(e) {
 
 async function uploadStory() {
     if (!storyFile) {
-        alert('Please select a file first');
+        showToast('Please select a file first');
         return;
     }
 
@@ -2008,7 +2009,7 @@ async function uploadStory() {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error uploading story: ' + error.message);
+        showToast('Error uploading story: ' + error.message);
     }
 }
 
@@ -2270,5 +2271,40 @@ function closeViewersList() {
     </div>
 </div>
 
+<!-- Add this at the very end of the file, just before </body> -->
+<script>
+// Toast notification function
+function showToast(message) {
+    // If toast exists, remove it
+    let toast = document.getElementById('toast');
+    if (toast) {
+        document.body.removeChild(toast);
+    }
+    
+    // Create new toast
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => {
+        toast.classList.add('opacity-100');
+    }, 100);
+    
+    // Hide toast after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        
+        // Remove after fade out
+        setTimeout(() => {
+            if (toast.parentNode) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
 </body>
 </html>

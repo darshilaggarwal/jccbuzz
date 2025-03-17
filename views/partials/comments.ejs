@@ -1,10 +1,27 @@
 <div class="mt-4 border-t pt-4">
-    <!-- Comments Section -->
-    <div class="comments-section mt-4">
+    <!-- Comments Section with toggle -->
+    <div class="comments-section mt-2">
+        <!-- View all comments button -->
         <% if (post.comments && post.comments.length > 0) { %>
-            <div class="space-y-3 max-h-96 overflow-y-auto" id="comments-container-<%= post._id %>">
+        <button 
+            onclick="toggleComments('<%= post._id %>')" 
+            class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2 flex items-center"
+            aria-expanded="false"
+            aria-controls="comments-container-<%= post._id %>"
+        >
+            <span id="comments-toggle-text-<%= post._id %>">View all <%= post.comments.length %> comments</span>
+            <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300" id="comments-toggle-icon-<%= post._id %>"></i>
+        </button>
+        
+        <!-- Collapsible comments container with animation classes -->
+        <div class="space-y-3 max-h-96 overflow-y-auto hidden opacity-0 transition-all duration-300 ease-in-out" 
+             id="comments-container-<%= post._id %>">
+        <% } else { %>
+        <div class="hidden" id="comments-container-<%= post._id %>">
+        <% } %>
+            <% if (post.comments && post.comments.length > 0) { %>
                 <% post.comments.forEach((comment, commentIndex) => { %>
-                    <div class="flex space-x-2">
+                    <div class="flex space-x-2 comment-item">
                         <% if (comment.user) { %>
                         <img src="<%= comment.user.profileImage %>" 
                              alt="<%= comment.user.name %>" 
@@ -97,10 +114,10 @@
                         </div>
                     </div>
                 <% }) %>
-            </div>
-        <% } %>
+            <% } %>
+        </div>
 
-        <!-- Comment Form -->
+        <!-- Comment Form - Keep this visible for quick commenting -->
         <form class="mt-3 flex items-center" onsubmit="addComment(event, '<%= post._id %>')">
             <img src="<%= user.profileImage %>" 
                  alt="Your profile" 
@@ -144,7 +161,7 @@ function addComment(event, postId) {
     .then(data => {
         // Create new comment HTML
         const commentHTML = `
-            <div class="flex space-x-2">
+            <div class="flex space-x-2 comment-item animate-fadeIn">
                 <img src="${data.comment.user.profileImage}" 
                      alt="${data.comment.user.name}" 
                      class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
@@ -187,16 +204,57 @@ function addComment(event, postId) {
         // Add the new comment to the DOM
         const commentsContainer = document.getElementById(`comments-container-${postId}`);
         
-        // If there are no comments yet, create the container
-        if (!commentsContainer) {
-            const newCommentsContainer = document.createElement('div');
-            newCommentsContainer.id = `comments-container-${postId}`;
-            newCommentsContainer.className = 'space-y-3 max-h-96 overflow-y-auto';
-            newCommentsContainer.innerHTML = commentHTML;
-            inputEl.closest('.comments-section').insertBefore(newCommentsContainer, inputEl.closest('form'));
+        // If there are no comments yet, create the container and toggle button
+        if (!commentsContainer || commentsContainer.children.length === 0) {
+            if (!commentsContainer) {
+                const newCommentsContainer = document.createElement('div');
+                newCommentsContainer.id = `comments-container-${postId}`;
+                newCommentsContainer.className = 'space-y-3 max-h-96 overflow-y-auto hidden opacity-0 transition-all duration-300 ease-in-out';
+                newCommentsContainer.innerHTML = commentHTML;
+                
+                // Create the toggle button if it doesn't exist
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'text-gray-500 dark:text-gray-400 text-sm font-medium mb-2 flex items-center';
+                toggleBtn.setAttribute('onclick', `toggleComments('${postId}')`);
+                toggleBtn.setAttribute('aria-expanded', 'false');
+                toggleBtn.setAttribute('aria-controls', `comments-container-${postId}`);
+                toggleBtn.innerHTML = `
+                    <span id="comments-toggle-text-${postId}">View 1 comment</span>
+                    <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300" id="comments-toggle-icon-${postId}"></i>
+                `;
+                
+                // Add the button and container to the DOM
+                const commentSection = inputEl.closest('.comments-section');
+                commentSection.insertBefore(toggleBtn, commentSection.firstChild);
+                commentSection.insertBefore(newCommentsContainer, inputEl.closest('form'));
+            } else {
+                commentsContainer.innerHTML = commentHTML;
+                
+                // Create or update the toggle button
+                let toggleBtn = document.querySelector(`button[aria-controls="comments-container-${postId}"]`);
+                if (!toggleBtn) {
+                    toggleBtn = document.createElement('button');
+                    toggleBtn.className = 'text-gray-500 dark:text-gray-400 text-sm font-medium mb-2 flex items-center';
+                    toggleBtn.setAttribute('onclick', `toggleComments('${postId}')`);
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                    toggleBtn.setAttribute('aria-controls', `comments-container-${postId}`);
+                    toggleBtn.innerHTML = `
+                        <span id="comments-toggle-text-${postId}">View 1 comment</span>
+                        <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300" id="comments-toggle-icon-${postId}"></i>
+                    `;
+                    
+                    const commentSection = inputEl.closest('.comments-section');
+                    commentSection.insertBefore(toggleBtn, commentSection.firstChild);
+                } else {
+                    document.getElementById(`comments-toggle-text-${postId}`).textContent = `View 1 comment`;
+                }
+            }
         } else {
             commentsContainer.insertAdjacentHTML('beforeend', commentHTML);
-            commentsContainer.scrollTop = commentsContainer.scrollHeight;
+            
+            // Update the toggle button text
+            const commentCount = commentsContainer.querySelectorAll('.comment-item').length;
+            document.getElementById(`comments-toggle-text-${postId}`).textContent = `View all ${commentCount} comments`;
         }
         
         // Clear the input
@@ -211,8 +269,42 @@ function addComment(event, postId) {
     })
     .catch(error => {
         console.error('Error adding comment:', error);
-        alert('Failed to add comment. Please try again.');
+        showToast('Failed to add comment. Please try again.');
     });
+}
+
+// Toggle comments visibility with animation
+function toggleComments(postId) {
+    const container = document.getElementById(`comments-container-${postId}`);
+    const toggleIcon = document.getElementById(`comments-toggle-icon-${postId}`);
+    const toggleText = document.getElementById(`comments-toggle-text-${postId}`);
+    const isHidden = container.classList.contains('hidden');
+    const commentCount = container.querySelectorAll('.comment-item').length;
+    
+    if (isHidden) {
+        // Show comments
+        container.classList.remove('hidden');
+        // Trigger reflow to make the transition work
+        void container.offsetWidth;
+        container.classList.add('opacity-100');
+        container.classList.add('max-h-96');
+        toggleIcon.style.transform = 'rotate(180deg)';
+        toggleText.textContent = `Hide comments`;
+    } else {
+        // Hide comments
+        container.classList.remove('opacity-100');
+        container.classList.remove('max-h-96');
+        container.classList.add('opacity-0');
+        container.classList.add('max-h-0');
+        
+        // Wait for transition to complete before hiding
+        setTimeout(() => {
+            container.classList.add('hidden');
+        }, 300);
+        
+        toggleIcon.style.transform = 'rotate(0deg)';
+        toggleText.textContent = `View all ${commentCount} comments`;
+    }
 }
 
 // Toggle reply form visibility
@@ -364,7 +456,7 @@ if (typeof io !== 'undefined') {
         const commentsContainer = document.getElementById(`comments-container-${data.postId}`);
         if (commentsContainer) {
             const commentHTML = `
-                <div class="flex space-x-2">
+                <div class="flex space-x-2 comment-item animate-fadeIn">
                     <img src="${data.comment.user.profileImage}" 
                          alt="${data.comment.user.name}" 
                          class="w-8 h-8 rounded-full flex-shrink-0 object-cover">

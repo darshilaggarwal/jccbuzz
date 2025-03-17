@@ -408,7 +408,8 @@
         })
         .then(data => {
             closeShareModal();
-            alert('Post shared successfully!');
+            navigator.clipboard.writeText(data.postUrl);
+            showToast('Post shared successfully!');
         })
         .catch(error => {
             errorElement.textContent = error.message;
@@ -424,6 +425,39 @@
             closeShareModal();
         }
     });
+
+    // Toast notification function
+    function showToast(message) {
+        // If toast exists, remove it
+        let toast = document.getElementById('toast');
+        if (toast) {
+            document.body.removeChild(toast);
+        }
+        
+        // Create new toast
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // Show toast
+        setTimeout(() => {
+            toast.classList.add('opacity-100');
+        }, 100);
+        
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('opacity-100');
+            
+            // Remove after fade out
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    document.body.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
+    }
 </script>
 
 </body>
