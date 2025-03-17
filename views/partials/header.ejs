@@ -27,9 +27,67 @@
                             800: '#075985',
                             900: '#0c4a6e',
                         }
+                    },
+                    lineClamp: {
+                        1: '1',
+                        2: '2',
+                        3: '3',
+                        4: '4',
+                        5: '5',
+                        6: '6',
+                        7: '7',
+                        8: '8',
+                        9: '9',
+                        10: '10'
                     }
                 }
-            }
+            },
+            plugins: [
+                function({ addUtilities }) {
+                    const newUtilities = {
+                        '.line-clamp-1': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '1',
+                        },
+                        '.line-clamp-2': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '2',
+                        },
+                        '.line-clamp-3': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '3',
+                        },
+                        '.line-clamp-4': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '4',
+                        },
+                        '.line-clamp-5': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '5',
+                        },
+                        '.line-clamp-6': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '6',
+                        },
+                        '.line-clamp-none': {
+                            '-webkit-line-clamp': 'unset',
+                        }
+                    }
+                    addUtilities(newUtilities);
+                }
+            ]
         }
     </script>
     <style>

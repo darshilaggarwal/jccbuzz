@@ -83,22 +83,35 @@
                                     <i class="fas fa-clone"></i>
                                 </div>
                             <% } %>
-                            
-                            <!-- Post Overlay on Hover -->
-                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-6 text-white">
-                                <div class="flex items-center">
-                                    <i class="fas fa-heart mr-2"></i>
-                                    <span><%= post.likes.length %></span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-comment mr-2"></i>
-                                    <span><%= post.comments.length %></span>
-                                </div>
-                            </div>
                         <% } else { %>
-                            <div class="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                                <i class="fas fa-image text-gray-400 dark:text-gray-500 text-3xl"></i>
+                            <!-- Show text content for posts without images -->
+                            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 p-4 text-white overflow-hidden">
+                                <p class="text-center text-sm md:text-base line-clamp-6 font-medium">
+                                    <%= post.content || post.title || 'No content' %>
+                                </p>
                             </div>
+                        <% } %>
+                        
+                        <!-- Post Overlay on Hover -->
+                        <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-6 text-white">
+                            <div class="flex items-center">
+                                <i class="fas fa-heart mr-2"></i>
+                                <span><%= post.likes.length %></span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-comment mr-2"></i>
+                                <span><%= post.comments.length %></span>
+                            </div>
+                        </div>
+                        
+                        <% if (isOwnProfile) { %>
+                        <!-- Three dots menu trigger -->
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="w-8 h-8 rounded-full bg-black bg-opacity-50 text-white flex items-center justify-center hover:bg-opacity-70 transition" 
+                                   onclick="event.preventDefault(); showPostMenu(event, '<%= post._id %>')">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                        </div>
                         <% } %>
                     </a>
                 <% }) %>
@@ -175,29 +188,53 @@
     </div>
 </div>
 
-<!-- Context Menu for Post Actions -->
-<div id="postContextMenu" class="fixed hidden bg-white dark:bg-gray-900 rounded-lg shadow-lg z-50 overflow-hidden">
-    <% if (isOwnProfile) { %>
+<!-- Post Options Menu -->
+<div id="postOptionsMenu" class="fixed hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl z-50 overflow-hidden w-48">
     <ul class="divide-y divide-gray-100 dark:divide-gray-800">
         <li>
-            <a href="#" id="editPostLink" class="px-4 py-3 flex items-center text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+            <a href="#" id="editPostOption" class="px-4 py-3 flex items-center text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                 <i class="fas fa-edit mr-3 text-blue-500"></i> Edit
             </a>
         </li>
         <li>
-            <button id="deletePostBtn" class="w-full px-4 py-3 flex items-center text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
-                <i class="fas fa-trash mr-3 text-red-500"></i> Delete
+            <button id="deletePostOption" class="w-full px-4 py-3 flex items-center text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                <i class="fas fa-trash mr-3"></i> Delete
             </button>
         </li>
     </ul>
-    <% } %>
 </div>
+
+<!-- Style tweaks for the profile page -->
+<style>
+.line-clamp-6 {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.post-menu-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+@media (max-width: 640px) {
+    .line-clamp-6 {
+        -webkit-line-clamp: 4;
+    }
+}
+</style>
 
 <!-- Add Swiper JS for image carousel -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
 <script>
+// Track the currently selected post
+let currentPostId = null;
+
 async function toggleFollow(userId) {
     try {
         // Check if currently following before making the request
@@ -393,83 +430,104 @@ function closeFollowingModal() {
     document.getElementById('followingModal').classList.add('hidden');
 }
 
+// Function to show post options menu
+function showPostMenu(event, postId) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Get elements
+    const menu = document.getElementById('postOptionsMenu');
+    const editOption = document.getElementById('editPostOption');
+    const deleteOption = document.getElementById('deletePostOption');
+    
+    // Set current post ID and update edit link
+    currentPostId = postId;
+    if (editOption) {
+        editOption.href = '/edit/' + postId;
+    }
+    
+    // Position the menu near the button that was clicked
+    const buttonRect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 192; // w-48 = 12rem = 192px
+    
+    // Calculate position (try to keep it within viewport)
+    const leftPosition = Math.min(
+        buttonRect.left,
+        window.innerWidth - menuWidth - 10
+    );
+    
+    menu.style.left = `${leftPosition}px`;
+    menu.style.top = `${buttonRect.bottom + 5}px`;
+    
+    // Add a backdrop that will close the menu when clicked
+    const backdrop = document.createElement('div');
+    backdrop.className = 'post-menu-backdrop';
+    backdrop.id = 'menuBackdrop';
+    backdrop.addEventListener('click', closePostMenu);
+    document.body.appendChild(backdrop);
+    
+    // Show the menu with animation
+    menu.style.opacity = '0';
+    menu.style.transform = 'translateY(-10px)';
+    menu.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    menu.classList.remove('hidden');
+    
+    // Trigger animation
+    setTimeout(() => {
+        menu.style.opacity = '1';
+        menu.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Set up event handlers for menu options
+    if (deleteOption) {
+        deleteOption.onclick = function(e) {
+            e.preventDefault();
+            closePostMenu();
+            showDeleteConfirmation(postId);
+        };
+    }
+}
+
+// Function to close post menu
+function closePostMenu() {
+    const menu = document.getElementById('postOptionsMenu');
+    const backdrop = document.getElementById('menuBackdrop');
+    
+    // Hide with animation
+    menu.style.opacity = '0';
+    menu.style.transform = 'translateY(-10px)';
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        menu.classList.add('hidden');
+        if (backdrop) {
+            document.body.removeChild(backdrop);
+        }
+    }, 200);
+}
+
 // Context menu for posts (Edit/Delete)
 document.addEventListener('DOMContentLoaded', function() {
-    const contextMenu = document.getElementById('postContextMenu');
-    const deleteBtn = document.getElementById('deletePostBtn');
-    const editLink = document.getElementById('editPostLink');
-    let currentPostId = null;
-    
-    // Setup long press for mobile
-    const postItems = document.querySelectorAll('[data-post-id]');
-    let longPressTimer;
-    const longPressDuration = 500; // ms
-    
-    postItems.forEach(item => {
-        // Right click for desktop
-        item.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            showContextMenu(e, this.dataset.postId);
-        });
-        
-        // Long press for mobile
-        item.addEventListener('touchstart', function(e) {
-            longPressTimer = setTimeout(() => {
-                showContextMenu(e, this.dataset.postId);
-            }, longPressDuration);
-        });
-        
-        item.addEventListener('touchend', function() {
-            clearTimeout(longPressTimer);
-        });
-        
-        item.addEventListener('touchmove', function() {
-            clearTimeout(longPressTimer);
-        });
-    });
-    
-    // Hide context menu when clicking elsewhere
-    document.addEventListener('click', function() {
-        contextMenu.classList.add('hidden');
-    });
-    
-    // Handle delete button in context menu
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', function() {
-            if (currentPostId) {
-                showDeleteConfirmation(currentPostId);
-                contextMenu.classList.add('hidden');
-            }
-        });
-    }
-    
-    // Handle edit link in context menu
-    if (editLink) {
-        editLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (currentPostId) {
-                window.location.href = '/edit/' + currentPostId;
-            }
-        });
-    }
-    
-    function showContextMenu(e, postId) {
-        // Set current post ID
-        currentPostId = postId;
-        
-        // Update edit link
-        if (editLink) {
-            editLink.href = '/edit/' + postId;
+    // Set up event delegation for the three-dots menu
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#postOptionsMenu')) {
+            // Clicks inside the menu should be handled by their own handlers
+            return;
         }
         
-        // Position the menu
-        const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-        
-        contextMenu.style.left = `${x}px`;
-        contextMenu.style.top = `${y}px`;
-        contextMenu.classList.remove('hidden');
-    }
+        // Close menu when clicking outside
+        if (document.getElementById('postOptionsMenu') && !document.getElementById('postOptionsMenu').classList.contains('hidden')) {
+            closePostMenu();
+        }
+    });
+    
+    // Set up event handlers for new posts that might be added dynamically
+    document.addEventListener('mouseover', function(e) {
+        const postItem = e.target.closest('[data-post-id]');
+        if (postItem) {
+            // Add hover class if needed
+        }
+    });
 });
 
 // Close modals when clicking outside
