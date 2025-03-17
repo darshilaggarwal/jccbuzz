@@ -1,18 +1,24 @@
 <%- include('partials/header') %>
 
 <div class="max-w-4xl mx-auto mt-8 px-4">
+    <!-- Profile Header - Instagram-like -->
     <div class="bg-white dark:bg-black rounded-lg shadow-md p-6 mb-8">
-        <div class="flex items-center space-x-6">
-            <img src="<%= profileUser.profileImage %>" 
-                 alt="Profile" 
-                 class="w-32 h-32 rounded-full object-cover">
+        <div class="flex flex-col md:flex-row md:items-center gap-6">
+            <!-- Profile Image -->
+            <div class="flex justify-center md:justify-start">
+                <img src="<%= profileUser.profileImage %>" 
+                     alt="Profile" 
+                     class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-2 border-gray-200 dark:border-gray-800">
+            </div>
+            
+            <!-- Profile Info -->
             <div class="flex-grow">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white"><%= profileUser.name %></h1>
+                        <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white"><%= profileUser.name %></h1>
                         <p class="text-gray-500 dark:text-gray-400">@<%= profileUser.username %></p>
                     </div>
-                    <div class="space-x-2">
+                    <div class="flex space-x-2">
                         <% if (!isOwnProfile) { %>
                             <button id="followButton"
                                     onclick="toggleFollow('<%= profileUser._id %>')"
@@ -20,7 +26,8 @@
                                 <%= user.following && user.following.some(id => id.toString() === profileUser._id.toString()) ? 'Following' : 'Follow' %>
                             </button>
                             <a href="/chat/<%= profileUser._id %>" 
-                               class="inline-block px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                               class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                <i class="fas fa-paper-plane mr-2"></i>
                                 Message
                             </a>
                         <% } %>
@@ -29,117 +36,116 @@
                 
                 <p class="mt-2 text-gray-600 dark:text-gray-300"><%= profileUser.bio %></p>
                 
-                <!-- Stats -->
-                <div class="mt-4 flex space-x-6">
-                    <div class="text-center">
-                        <span class="block text-xl font-bold text-gray-800 dark:text-white"><%= profileUser.posts.length %></span>
-                        <span class="text-gray-500 dark:text-gray-400">Posts</span>
+                <!-- Stats - Instagram Style -->
+                <div class="flex justify-around md:justify-start md:space-x-8 mt-4 py-3 border-t border-b border-gray-200 dark:border-gray-800">
+                    <div class="text-center md:text-left">
+                        <span class="block text-base md:text-lg font-bold text-gray-800 dark:text-white"><%= profileUser.posts.length %></span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">posts</span>
                     </div>
-                    <button onclick="showFollowers('<%= profileUser._id %>')" class="text-center">
-                        <span id="followersCount" class="block text-xl font-bold text-gray-800 dark:text-white"><%= profileUser.followers ? profileUser.followers.length : 0 %></span>
-                        <span class="text-gray-500 dark:text-gray-400">Followers</span>
+                    <button onclick="showFollowers('<%= profileUser._id %>')" class="text-center md:text-left hover:opacity-80 transition">
+                        <span id="followersCount" class="block text-base md:text-lg font-bold text-gray-800 dark:text-white"><%= profileUser.followers ? profileUser.followers.length : 0 %></span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">followers</span>
                     </button>
-                    <button onclick="showFollowing('<%= profileUser._id %>')" class="text-center">
-                        <span id="followingCount" class="block text-xl font-bold text-gray-800 dark:text-white"><%= profileUser.following ? profileUser.following.length : 0 %></span>
-                        <span class="text-gray-500 dark:text-gray-400">Following</span>
+                    <button onclick="showFollowing('<%= profileUser._id %>')" class="text-center md:text-left hover:opacity-80 transition">
+                        <span id="followingCount" class="block text-base md:text-lg font-bold text-gray-800 dark:text-white"><%= profileUser.following ? profileUser.following.length : 0 %></span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">following</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Posts Section -->
-    <div class="space-y-6">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Posts</h2>
-        <% profileUser.posts.forEach(post => { %>
-            <div class="bg-white dark:bg-black rounded-lg shadow-md p-6">
-                <div class="flex items-center space-x-3 mb-4">
-                    <img src="<%= post.user.profileImage %>" 
-                         alt="Profile" 
-                         class="w-10 h-10 rounded-full object-cover">
-                    <div>
-                        <h5 class="font-semibold text-gray-800 dark:text-white"><%= post.user.name %></h5>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">@<%= post.user.username %></p>
-                    </div>
+    <!-- Posts Section - Instagram Grid Style -->
+    <div class="bg-white dark:bg-black rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
+            <i class="fas fa-th mr-2"></i> Posts
+        </h2>
+        
+        <% if (profileUser.posts.length === 0) { %>
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                    <i class="fas fa-camera"></i>
                 </div>
-                
-                <% if (post.images && post.images.length > 0) { %>
-                    <div class="relative mb-4 overflow-hidden">
-                        <div class="swiper-container">
-                            <div class="swiper-wrapper">
-                                <% post.images.forEach(image => { %>
-                                    <div class="swiper-slide">
-                                        <img src="<%= image.url %>" 
-                                             alt="Post image"
-                                             class="w-full h-64 md:h-96 object-cover rounded-lg">
-                                    </div>
-                                <% }) %>
-                            </div>
+                <p class="text-gray-500 dark:text-gray-400 mb-2">No posts yet</p>
+                <p class="text-sm text-gray-400 dark:text-gray-500">When <%= isOwnProfile ? 'you share' : profileUser.name + ' shares' %> photos, they'll appear here.</p>
+            </div>
+        <% } else { %>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
+                <% profileUser.posts.forEach(post => { %>
+                    <a href="/post/<%= post._id %>" class="group relative aspect-square overflow-hidden rounded-md block transform transition hover:scale-[0.98]" data-post-id="<%= post._id %>">
+                        <% if (post.images && post.images.length > 0) { %>
+                            <img src="<%= post.images[0].url %>" 
+                                alt="Post thumbnail"
+                                class="w-full h-full object-cover">
+                                
                             <% if (post.images.length > 1) { %>
-                                <div class="swiper-pagination"></div>
-                                <div class="swiper-button-next"></div>
-                                <div class="swiper-button-prev"></div>
-                                <div class="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
-                                    <span class="current-slide">1</span>/<%= post.images.length %>
+                                <div class="absolute top-2 right-2 text-white">
+                                    <i class="fas fa-clone"></i>
                                 </div>
                             <% } %>
-                        </div>
-                    </div>
-                <% } %>
-                
-                <h3 class="font-semibold text-lg mb-2 text-gray-800 dark:text-white"><%= post.title %></h3>
-                <p class="text-gray-700 dark:text-gray-300"><%= post.content %></p>
-                <% if (isOwnProfile) { %>
-                    <div class="mt-4 flex justify-end space-x-2">
-                        <a href="/edit/<%= post._id %>" 
-                           class="text-blue-500 hover:text-blue-700">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <button 
-                            class="text-red-500 hover:text-red-700 bg-transparent border-none cursor-pointer"
-                            onclick="showDeleteConfirmation('<%= post._id %>')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                <% } %>
+                            
+                            <!-- Post Overlay on Hover -->
+                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-6 text-white">
+                                <div class="flex items-center">
+                                    <i class="fas fa-heart mr-2"></i>
+                                    <span><%= post.likes.length %></span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-comment mr-2"></i>
+                                    <span><%= post.comments.length %></span>
+                                </div>
+                            </div>
+                        <% } else { %>
+                            <div class="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                                <i class="fas fa-image text-gray-400 dark:text-gray-500 text-3xl"></i>
+                            </div>
+                        <% } %>
+                    </a>
+                <% }) %>
             </div>
-        <% }) %>
+        <% } %>
     </div>
 </div>
 
-<!-- Followers Modal -->
-<div id="followersModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md mx-auto mt-20 p-4">
-        <div class="flex justify-between items-center mb-4">
+<!-- Followers Modal - Instagram Style -->
+<div id="followersModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Followers</h3>
             <button onclick="closeFollowersModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div id="followersList" class="max-h-96 overflow-y-auto">
+        <div id="followersList" class="max-h-96 overflow-y-auto p-2">
             <!-- Followers will be loaded here -->
+            <div class="flex justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 dark:border-white"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Following Modal -->
-<div id="followingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md mx-auto mt-20 p-4">
-        <div class="flex justify-between items-center mb-4">
+<!-- Following Modal - Instagram Style -->
+<div id="followingModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Following</h3>
             <button onclick="closeFollowingModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div id="followingList" class="max-h-96 overflow-y-auto">
+        <div id="followingList" class="max-h-96 overflow-y-auto p-2">
             <!-- Following users will be loaded here -->
+            <div class="flex justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 dark:border-white"></div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Unfollow Confirmation Modal -->
-<div id="unfollowModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-4 p-4 flex flex-col items-center">
+<div id="unfollowModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4 p-4 flex flex-col items-center">
         <img id="unfollowUserImage" src="" alt="Profile" class="w-16 h-16 rounded-full object-cover mb-4">
         <p class="text-center mb-6 text-gray-800 dark:text-white">Unfollow <span id="unfollowUsername" class="font-semibold"></span>?</p>
         <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
@@ -154,21 +160,37 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
-    <div class="flex items-center justify-center min-h-screen px-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6">
-            <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Delete Post</h3>
-            <p class="mb-6 text-gray-600 dark:text-gray-300">Are you sure you want to delete this post? This action cannot be undone.</p>
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeDeleteConfirmModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-800 dark:text-white">
-                    Cancel
-                </button>
-                <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                    Delete
-                </button>
-            </div>
+<div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md mx-4 p-6">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Delete Post</h3>
+        <p class="mb-6 text-gray-600 dark:text-gray-300">Are you sure you want to delete this post? This action cannot be undone.</p>
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeDeleteConfirmModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-800 dark:text-white">
+                Cancel
+            </button>
+            <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                Delete
+            </button>
         </div>
     </div>
+</div>
+
+<!-- Context Menu for Post Actions -->
+<div id="postContextMenu" class="fixed hidden bg-white dark:bg-gray-900 rounded-lg shadow-lg z-50 overflow-hidden">
+    <% if (isOwnProfile) { %>
+    <ul class="divide-y divide-gray-100 dark:divide-gray-800">
+        <li>
+            <a href="#" id="editPostLink" class="px-4 py-3 flex items-center text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+                <i class="fas fa-edit mr-3 text-blue-500"></i> Edit
+            </a>
+        </li>
+        <li>
+            <button id="deletePostBtn" class="w-full px-4 py-3 flex items-center text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+                <i class="fas fa-trash mr-3 text-red-500"></i> Delete
+            </button>
+        </li>
+    </ul>
+    <% } %>
 </div>
 
 <!-- Add Swiper JS for image carousel -->
@@ -186,8 +208,8 @@ async function toggleFollow(userId) {
         if (isCurrentlyFollowing) {
             // Get user info
             const username = document.querySelector('p.text-gray-500').textContent.trim();
-            const profileImage = document.querySelector('.w-32.h-32.rounded-full').src;
-            const name = document.querySelector('h1.text-2xl.font-bold').textContent.trim();
+            const profileImage = document.querySelector('.rounded-full').src;
+            const name = document.querySelector('h1.text-xl').textContent.trim();
             
             // Set modal content
             document.getElementById('unfollowUserImage').src = profileImage;
@@ -242,6 +264,9 @@ async function performFollowToggle(userId) {
                 
                 // Save state to localStorage
                 localStorage.setItem(`following_${userId}`, 'true');
+                
+                // Show toast
+                showToast('You are now following ' + document.querySelector('h1').textContent.trim());
             } else {
                 followButton.textContent = 'Follow';
                 followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
@@ -249,13 +274,28 @@ async function performFollowToggle(userId) {
                 
                 // Update localStorage
                 localStorage.removeItem(`following_${userId}`);
+                
+                // Show toast
+                showToast('You unfollowed ' + document.querySelector('h1').textContent.trim());
             }
             
-            // Update followers count
-            followersCount.textContent = data.followersCount;
+            // Update followers count with animation
+            const oldCount = parseInt(followersCount.textContent);
+            const newCount = data.followersCount;
+            
+            if (oldCount !== newCount) {
+                followersCount.classList.add('scale-125', 'text-blue-500');
+                setTimeout(() => {
+                    followersCount.textContent = newCount;
+                    setTimeout(() => {
+                        followersCount.classList.remove('scale-125', 'text-blue-500');
+                    }, 300);
+                }, 300);
+            }
         }
     } catch (error) {
         console.error('Error:', error);
+        showToast('Something went wrong. Please try again.');
     }
 }
 
@@ -265,12 +305,24 @@ function closeUnfollowModal() {
 
 async function showFollowers(userId) {
     try {
+        document.getElementById('followersModal').classList.remove('hidden');
+        
         const response = await fetch(`/user/${userId}/followers`);
         const data = await response.json();
         
         const followersList = document.getElementById('followersList');
+        
+        if (data.followers.length === 0) {
+            followersList.innerHTML = `
+                <div class="py-8 text-center">
+                    <p class="text-gray-500 dark:text-gray-400">No followers yet</p>
+                </div>
+            `;
+            return;
+        }
+        
         followersList.innerHTML = data.followers.map(follower => `
-            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition">
                 <a href="/user/${follower.username}" class="flex items-center space-x-3">
                     <img src="${follower.profileImage}" alt="${follower.name}" class="w-10 h-10 rounded-full object-cover">
                     <div>
@@ -278,23 +330,40 @@ async function showFollowers(userId) {
                         <p class="text-sm text-gray-500 dark:text-gray-400">@${follower.username}</p>
                     </div>
                 </a>
+                <button 
+                    class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white"
+                    onclick="window.location.href='/user/${follower.username}'">
+                    View
+                </button>
             </div>
         `).join('');
         
-        document.getElementById('followersModal').classList.remove('hidden');
     } catch (error) {
         console.error('Error:', error);
+        showToast('Failed to load followers');
     }
 }
 
 async function showFollowing(userId) {
     try {
+        document.getElementById('followingModal').classList.remove('hidden');
+        
         const response = await fetch(`/user/${userId}/following`);
         const data = await response.json();
         
         const followingList = document.getElementById('followingList');
+        
+        if (data.following.length === 0) {
+            followingList.innerHTML = `
+                <div class="py-8 text-center">
+                    <p class="text-gray-500 dark:text-gray-400">Not following anyone yet</p>
+                </div>
+            `;
+            return;
+        }
+        
         followingList.innerHTML = data.following.map(user => `
-            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition">
                 <a href="/user/${user.username}" class="flex items-center space-x-3">
                     <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
                     <div>
@@ -302,12 +371,17 @@ async function showFollowing(userId) {
                         <p class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</p>
                     </div>
                 </a>
+                <button 
+                    class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white"
+                    onclick="window.location.href='/user/${user.username}'">
+                    View
+                </button>
             </div>
         `).join('');
         
-        document.getElementById('followingModal').classList.remove('hidden');
     } catch (error) {
         console.error('Error:', error);
+        showToast('Failed to load following list');
     }
 }
 
@@ -319,11 +393,91 @@ function closeFollowingModal() {
     document.getElementById('followingModal').classList.add('hidden');
 }
 
+// Context menu for posts (Edit/Delete)
+document.addEventListener('DOMContentLoaded', function() {
+    const contextMenu = document.getElementById('postContextMenu');
+    const deleteBtn = document.getElementById('deletePostBtn');
+    const editLink = document.getElementById('editPostLink');
+    let currentPostId = null;
+    
+    // Setup long press for mobile
+    const postItems = document.querySelectorAll('[data-post-id]');
+    let longPressTimer;
+    const longPressDuration = 500; // ms
+    
+    postItems.forEach(item => {
+        // Right click for desktop
+        item.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showContextMenu(e, this.dataset.postId);
+        });
+        
+        // Long press for mobile
+        item.addEventListener('touchstart', function(e) {
+            longPressTimer = setTimeout(() => {
+                showContextMenu(e, this.dataset.postId);
+            }, longPressDuration);
+        });
+        
+        item.addEventListener('touchend', function() {
+            clearTimeout(longPressTimer);
+        });
+        
+        item.addEventListener('touchmove', function() {
+            clearTimeout(longPressTimer);
+        });
+    });
+    
+    // Hide context menu when clicking elsewhere
+    document.addEventListener('click', function() {
+        contextMenu.classList.add('hidden');
+    });
+    
+    // Handle delete button in context menu
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function() {
+            if (currentPostId) {
+                showDeleteConfirmation(currentPostId);
+                contextMenu.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Handle edit link in context menu
+    if (editLink) {
+        editLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPostId) {
+                window.location.href = '/edit/' + currentPostId;
+            }
+        });
+    }
+    
+    function showContextMenu(e, postId) {
+        // Set current post ID
+        currentPostId = postId;
+        
+        // Update edit link
+        if (editLink) {
+            editLink.href = '/edit/' + postId;
+        }
+        
+        // Position the menu
+        const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        contextMenu.classList.remove('hidden');
+    }
+});
+
 // Close modals when clicking outside
 window.addEventListener('click', function(event) {
     const followersModal = document.getElementById('followersModal');
     const followingModal = document.getElementById('followingModal');
     const unfollowModal = document.getElementById('unfollowModal');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
     
     if (event.target === followersModal) {
         closeFollowersModal();
@@ -334,59 +488,16 @@ window.addEventListener('click', function(event) {
     if (event.target === unfollowModal) {
         closeUnfollowModal();
     }
+    if (event.target === deleteConfirmModal) {
+        closeDeleteConfirmModal();
+    }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Swiper for carousels
-    const swipers = document.querySelectorAll('.swiper-container');
-    swipers.forEach((container, index) => {
-        const swiper = new Swiper(container, {
-            pagination: {
-                el: '.swiper-pagination',
-                dynamicBullets: true,
-            },
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            grabCursor: true,
-            slideToClickedSlide: true,
-            keyboard: {
-                enabled: true,
-            },
-            on: {
-                slideChange: function() {
-                    const currentSlideIndicator = container.querySelector('.current-slide');
-                    if (currentSlideIndicator) {
-                        currentSlideIndicator.textContent = this.activeIndex + 1;
-                    }
-                }
-            }
-        });
+    // Add transitions for hover effects
+    document.querySelectorAll('[data-post-id]').forEach(post => {
+        post.classList.add('transition', 'duration-200');
     });
-    
-    // Adjust image heights for better consistency
-    const adjustPostImageHeights = () => {
-        const postImages = document.querySelectorAll('.post-img');
-        
-        if (window.innerWidth >= 768) { // md breakpoint in Tailwind
-            postImages.forEach(img => {
-                // Use a more reasonable height for desktop view
-                img.style.maxHeight = '600px';
-            });
-        } else {
-            // On mobile, use more compact dimensions
-            postImages.forEach(img => {
-                img.style.height = 'auto';
-            });
-        }
-    };
-    
-    // Run once on load
-    adjustPostImageHeights();
-    
-    // Update on window resize
-    window.addEventListener('resize', adjustPostImageHeights);
     
     // Check server-side rendered state
     const followButton = document.getElementById('followButton');
@@ -400,35 +511,108 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Custom style for Swiper
+// Add CSS transitions for followers/following counts
 document.head.insertAdjacentHTML('beforeend', `
 <style>
-/* Swiper Customization */
-.swiper-button-next,
-.swiper-button-prev {
-    color: white !important;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 20px;
-    border-radius: 50%;
-    width: 40px !important;
-    height: 40px !important;
+/* Transitions and animations */
+#followersCount, 
+#followingCount {
+    transition: all 0.3s ease;
 }
 
-.swiper-pagination-bullet {
-    background: white !important;
-    opacity: 0.8 !important;
+.grid-item {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.swiper-pagination-bullet-active {
-    background: #3B82F6 !important;
+.grid-item:hover {
+    transform: scale(0.98);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.swiper-container {
-    overflow: hidden;
-    border-radius: 0.5rem;
+/* Mobile optimizations */
+@media (max-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
+
+/* Dark mode enhancements */
+.dark .grid-item {
+    border-color: #333;
+}
+
 </style>
 `);
+
+// Delete confirmation functionality
+let postIdToDelete = null;
+
+function showDeleteConfirmation(postId) {
+    postIdToDelete = postId;
+    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+}
+
+function closeDeleteConfirmModal() {
+    document.getElementById('deleteConfirmModal').classList.add('hidden');
+    postIdToDelete = null;
+}
+
+// Set up the confirm delete button
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (!postIdToDelete) return;
+            
+            fetch(`/delete/${postIdToDelete}`, {
+                method: 'GET'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove the post from the UI
+                    const postElement = document.querySelector(`[data-post-id="${postIdToDelete}"]`);
+                    if (postElement) {
+                        postElement.classList.add('scale-0', 'opacity-0');
+                        setTimeout(() => {
+                            postElement.remove();
+                            
+                            // Update post count
+                            const postsCount = document.querySelector('span.block.text-base.md\\:text-lg.font-bold');
+                            if (postsCount) {
+                                const currentCount = parseInt(postsCount.textContent) - 1;
+                                postsCount.textContent = currentCount;
+                            }
+                            
+                            // Show empty state if no posts left
+                            const postGrid = document.querySelector('.grid');
+                            if (postGrid && postGrid.children.length === 0) {
+                                postGrid.parentElement.innerHTML = `
+                                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                                        <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                                            <i class="fas fa-camera"></i>
+                                        </div>
+                                        <p class="text-gray-500 dark:text-gray-400 mb-2">No posts yet</p>
+                                        <p class="text-sm text-gray-400 dark:text-gray-500">When you share photos, they'll appear here.</p>
+                                    </div>
+                                `;
+                            }
+                        }, 300);
+                    }
+                    
+                    showToast('Post deleted successfully');
+                } else {
+                    showToast('Failed to delete post');
+                }
+                closeDeleteConfirmModal();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred');
+                closeDeleteConfirmModal();
+            });
+        });
+    }
+});
 
 // Toast notification function
 function showToast(message) {
@@ -462,28 +646,6 @@ function showToast(message) {
         }, 300);
     }, 3000);
 }
-
-// Delete confirmation functionality
-let postIdToDelete = null;
-
-function showDeleteConfirmation(postId) {
-    postIdToDelete = postId;
-    document.getElementById('deleteConfirmModal').classList.remove('hidden');
-}
-
-function closeDeleteConfirmModal() {
-    document.getElementById('deleteConfirmModal').classList.add('hidden');
-    postIdToDelete = null;
-}
-
-// Set up the confirm delete button
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        if (!postIdToDelete) return;
-        
-        window.location.href = `/delete/${postIdToDelete}`;
-    });
-});
 </script>
 
 </body>
