@@ -1048,6 +1048,13 @@ app.post("/comment/:commentId/reply/:replyIndex/like", isLoggedIn, async (req, r
             reply.likes = reply.likes.filter(id => id.toString() !== user._id.toString());
         } else {
             reply.likes.push(user._id);
+            
+            // Create notification for reply like
+            if (reply.user.toString() !== user._id.toString()) {
+                // Get the post for context
+                const post = await postModel.findById(comment.post);
+                await createNotification(reply.user, user._id, 'comment_like', post._id, comment._id);
+            }
         }
 
         await comment.save();
@@ -2865,7 +2872,8 @@ app.post("/api/notifications/mark-all-read", isLoggedIn, async (req, res) => {
             { read: true }
         );
         
-        res.json({ success: true });
+        // Return 0 as the unread count since we just marked all as read
+        res.json({ success: true, unreadCount: 0 });
     } catch (error) {
         console.error('Error marking all notifications as read:', error);
         res.status(500).json({ error: "Error marking all notifications as read" });
