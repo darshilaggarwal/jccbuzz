@@ -477,6 +477,12 @@ app.post("/login", async (req, res) => {
                         }
                     });
                     
+                    // Log OTP in the terminal for both development and production
+                    console.log("=====================================================");
+                    console.log(`LOGIN OTP ${otp} generated for ${user.name} (${user.email})`);
+                    console.log("This OTP will expire at:", expiresAt);
+                    console.log("=====================================================");
+                    
                     // Send OTP email
                     await sendOTPEmail(user.email, otp, user.name);
                     
@@ -634,6 +640,12 @@ app.post("/resend-login-otp", async (req, res) => {
             createdAt: new Date()
         };
         await verification.save();
+        
+        // Log OTP in the terminal for both development and production
+        console.log("=====================================================");
+        console.log(`LOGIN OTP ${otp} generated for ${user.name} (${user.email})`);
+        console.log("This OTP will expire at:", expiresAt);
+        console.log("=====================================================");
         
         // Send OTP email
         await sendOTPEmail(user.email, otp, user.name);
@@ -2233,6 +2245,10 @@ app.post("/verify/request-otp", async (req, res) => {
         expiresAt.setMinutes(expiresAt.getMinutes() + 2); // OTP expires in 2 minutes
         
         console.log("Generated OTP for enrollment number:", enrollment_number, "OTP:", otp);
+        console.log("=====================================================");
+        console.log(`OTP ${otp} generated for ${student.name} (${student.email})`);
+        console.log("This OTP will expire at:", expiresAt);
+        console.log("=====================================================");
         
         // Try to send OTP to the student's email
         try {
@@ -2554,8 +2570,8 @@ app.post('/user/:userId/follow', isLoggedIn, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        // Check if already following
-        const isFollowing = currentUser.following.some(id => id.equals(userToFollow._id));
+        // Check if already following - use stringified IDs for more reliable comparison
+        const isFollowing = currentUser.following.some(id => id.toString() === userToFollow._id.toString());
 
         if (isFollowing) {
             // Unfollow
@@ -2573,6 +2589,9 @@ app.post('/user/:userId/follow', isLoggedIn, async (req, res) => {
             await userModel.findByIdAndUpdate(userToFollow._id, {
                 $addToSet: { followers: currentUser._id }
             });
+            
+            // Create notification for new follower
+            await createNotification(userToFollow._id, currentUser._id, 'follow');
         }
 
         // Get updated follower count
@@ -2697,27 +2716,38 @@ app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
         }
 
         // Check if already following
-        const isFollowing = userToFollow.followers.includes(user._id);
+        const isFollowing = user.following.some(id => id.toString() === userToFollow._id.toString());
 
         if (isFollowing) {
             // Unfollow
-            userToFollow.followers = userToFollow.followers.filter(id => id.toString() !== user._id.toString());
-            user.following = user.following.filter(id => id.toString() !== userToFollow._id.toString());
+            await userModel.findByIdAndUpdate(user._id, {
+                $pull: { following: userToFollow._id }
+            });
+            await userModel.findByIdAndUpdate(userToFollow._id, {
+                $pull: { followers: user._id }
+            });
         } else {
             // Follow
-            userToFollow.followers.push(user._id);
-            user.following.push(userToFollow._id);
+            await userModel.findByIdAndUpdate(user._id, {
+                $addToSet: { following: userToFollow._id }
+            });
+            await userModel.findByIdAndUpdate(userToFollow._id, {
+                $addToSet: { followers: user._id }
+            });
             
             // Create notification for new follower
             await createNotification(userToFollow._id, user._id, 'follow');
         }
 
-        await userToFollow.save();
-        await user.save();
+        // Get updated follower count
+        const updatedUser = await userModel.findById(userToFollow._id)
+            .populate('followers')
+            .populate('following');
 
         res.json({
+            success: true,
             isFollowing: !isFollowing,
-            followerCount: userToFollow.followers.length
+            followersCount: updatedUser.followers.length
         });
     } catch (error) {
         console.error('Error processing follow:', error);

@@ -21,8 +21,8 @@
                         <% } else { %>
                             <button id="followButton"
                                     onclick="toggleFollow('<%= profileUser._id %>')"
-                                    class="px-4 py-2 rounded-md transition-colors <%= user.following && user.following.includes(profileUser._id) ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600' : 'bg-blue-600 text-white hover:bg-blue-700' %>">
-                                <%= user.following && user.following.includes(profileUser._id) ? 'Following' : 'Follow' %>
+                                    class="px-4 py-2 rounded-md transition-colors <%= user.following && user.following.some(id => id.toString() === profileUser._id.toString()) ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600' : 'bg-blue-600 text-white hover:bg-blue-700' %>">
+                                <%= user.following && user.following.some(id => id.toString() === profileUser._id.toString()) ? 'Following' : 'Follow' %>
                             </button>
                             <a href="/chat/<%= profileUser._id %>" 
                                class="inline-block px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -142,6 +142,22 @@
     </div>
 </div>
 
+<!-- Unfollow Confirmation Modal -->
+<div id="unfollowModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-4 p-4 flex flex-col items-center">
+        <img id="unfollowUserImage" src="" alt="Profile" class="w-16 h-16 rounded-full object-cover mb-4">
+        <p class="text-center mb-6 text-gray-800 dark:text-white">Unfollow <span id="unfollowUsername" class="font-semibold"></span>?</p>
+        <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
+        <button id="confirmUnfollow" class="w-full py-3 text-red-500 font-medium">
+            Unfollow
+        </button>
+        <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
+        <button onclick="closeUnfollowModal()" class="w-full py-3 text-gray-800 dark:text-white">
+            Cancel
+        </button>
+    </div>
+</div>
+
 <!-- Add Swiper JS for image carousel -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
@@ -149,17 +165,60 @@
 <script>
 async function toggleFollow(userId) {
     try {
+        // Check if currently following before making the request
+        const followButton = document.getElementById('followButton');
+        const isCurrentlyFollowing = followButton.textContent.trim() === 'Following';
+        
+        // Show custom unfollow confirmation modal if trying to unfollow
+        if (isCurrentlyFollowing) {
+            // Get user info
+            const username = document.querySelector('p.text-gray-500').textContent.trim();
+            const profileImage = document.querySelector('.w-32.h-32.rounded-full').src;
+            const name = document.querySelector('h1.text-2xl.font-bold').textContent.trim();
+            
+            // Set modal content
+            document.getElementById('unfollowUserImage').src = profileImage;
+            document.getElementById('unfollowUsername').textContent = username;
+            
+            // Show the modal
+            document.getElementById('unfollowModal').classList.remove('hidden');
+            
+            // Set up confirmation button handler (using a promise to wait for user decision)
+            return new Promise((resolve) => {
+                document.getElementById('confirmUnfollow').onclick = async () => {
+                    // Close modal
+                    closeUnfollowModal();
+                    // Continue with unfollow logic
+                    await performFollowToggle(userId);
+                    resolve();
+                };
+            });
+        } else {
+            // Not unfollowing, proceed directly
+            await performFollowToggle(userId);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Function to actually perform the follow/unfollow action
+async function performFollowToggle(userId) {
+    try {
+        const followButton = document.getElementById('followButton');
+        const isCurrentlyFollowing = followButton.textContent.trim() === 'Following';
+        
         const response = await fetch(`/user/${userId}/follow`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            credentials: 'same-origin' // Ensure cookies are sent with the request
         });
         
         const data = await response.json();
         
         if (data.success) {
-            const followButton = document.getElementById('followButton');
             const followersCount = document.getElementById('followersCount');
             
             // Update button text and style
@@ -167,10 +226,16 @@ async function toggleFollow(userId) {
                 followButton.textContent = 'Following';
                 followButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+                
+                // Save state to localStorage
+                localStorage.setItem(`following_${userId}`, 'true');
             } else {
                 followButton.textContent = 'Follow';
                 followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
                 followButton.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                
+                // Update localStorage
+                localStorage.removeItem(`following_${userId}`);
             }
             
             // Update followers count
@@ -179,6 +244,10 @@ async function toggleFollow(userId) {
     } catch (error) {
         console.error('Error:', error);
     }
+}
+
+function closeUnfollowModal() {
+    document.getElementById('unfollowModal').classList.add('hidden');
 }
 
 async function showFollowers(userId) {
@@ -241,12 +310,16 @@ function closeFollowingModal() {
 window.addEventListener('click', function(event) {
     const followersModal = document.getElementById('followersModal');
     const followingModal = document.getElementById('followingModal');
+    const unfollowModal = document.getElementById('unfollowModal');
     
     if (event.target === followersModal) {
         closeFollowersModal();
     }
     if (event.target === followingModal) {
         closeFollowingModal();
+    }
+    if (event.target === unfollowModal) {
+        closeUnfollowModal();
     }
 });
 
@@ -301,6 +374,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update on window resize
     window.addEventListener('resize', adjustPostImageHeights);
+    
+    // Check server-side rendered state
+    const followButton = document.getElementById('followButton');
+    const profileUserId = '<%= profileUser._id %>';
+    
+    // Store current state in localStorage on page load to ensure consistency
+    if (followButton && followButton.textContent.trim() === 'Following') {
+        localStorage.setItem(`following_${profileUserId}`, 'true');
+    } else if (followButton) {
+        localStorage.removeItem(`following_${profileUserId}`);
+    }
 });
 
 // Custom style for Swiper
