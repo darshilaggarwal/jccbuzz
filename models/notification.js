@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['like', 'comment', 'follow', 'reply', 'comment_like', 'story_view', 'mention'],
+        enum: ['like', 'comment', 'follow', 'reply', 'comment_like', 'story_view', 'mention', 'new_post'],
         required: true
     },
     post: {
@@ -34,8 +34,7 @@ const notificationSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
-        default: Date.now,
-        expires: '30d' // Notifications expire after 30 days
+        default: Date.now
     }
 });
 
@@ -56,6 +55,8 @@ notificationSchema.virtual('text').get(function() {
             return 'viewed your story';
         case 'mention':
             return 'mentioned you in a comment';
+        case 'new_post':
+            return 'shared a new post';
         default:
             return 'interacted with your content';
     }

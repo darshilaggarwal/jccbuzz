@@ -292,6 +292,7 @@ app.post("/post", isLoggedIn, uploadPostImages, async (req, res) => {
         user.posts.push(post._id);
         await user.save();
         
+        // Send real-time update for feed
         io.emit('newPost', {
             post: {
                 _id: post._id,
@@ -304,6 +305,25 @@ app.post("/post", isLoggedIn, uploadPostImages, async (req, res) => {
                 createdAt: post.createdAt
             }
         });
+        
+        // Notify all followers about the new post
+        try {
+            // Get all followers of this user
+            const followers = await userModel.find({ following: user._id });
+            
+            // Create notifications for each follower
+            const notificationPromises = followers.map(follower => 
+                createNotification(follower._id, user._id, 'new_post', post._id)
+            );
+            
+            // Wait for all notifications to be created
+            await Promise.all(notificationPromises);
+            
+            console.log(`Notified ${followers.length} followers about new post`);
+        } catch (notificationError) {
+            console.error('Error sending follower notifications:', notificationError);
+            // Continue execution even if notifications fail
+        }
         
         res.status(200).json({ message: "Post created successfully" });
     } catch (error) {
@@ -2653,8 +2673,30 @@ app.get('/user/:userId/following', isLoggedIn, async (req, res) => {
 // Function to create a notification
 async function createNotification(recipientId, senderId, type, postId = null, commentId = null, storyId = null) {
     try {
+        // Verify parameters
+        if (!recipientId || !senderId) {
+            console.error('Missing required parameters for createNotification:', { recipientId, senderId, type });
+            return null;
+        }
+        
         // Don't notify yourself
         if (recipientId.toString() === senderId.toString()) {
+            return null;
+        }
+        
+        // Check if sender and recipient exist
+        const [recipient, sender] = await Promise.all([
+            userModel.findById(recipientId),
+            userModel.findById(senderId)
+        ]);
+        
+        if (!recipient || !sender) {
+            console.error('Recipient or sender not found:', { 
+                recipientFound: !!recipient, 
+                senderFound: !!sender,
+                recipientId,
+                senderId
+            });
             return null;
         }
         
@@ -2667,36 +2709,36 @@ async function createNotification(recipientId, senderId, type, postId = null, co
             story: storyId
         });
         
-        // Real-time notification via socket.io
-        const recipient = await userModel.findById(recipientId);
-        const sender = await userModel.findById(senderId);
+        // Populate relevant data based on notification type
+        const populatePromises = [];
         
-        // Only emit if we have valid users
-        if (recipient && sender) {
-            // Populate relevant data based on notification type
-            if (postId) {
-                await notification.populate('post');
-            }
-            if (commentId) {
-                await notification.populate('comment');
-            }
-            if (storyId) {
-                await notification.populate('story');
-            }
-            
-            // Send to recipient's socket if they're online
-            io.to(recipient.email).emit('newNotification', {
-                notification: {
-                    ...notification.toObject(),
-                    sender: {
-                        _id: sender._id,
-                        name: sender.name,
-                        username: sender.username,
-                        profileImage: sender.profileImage
-                    }
-                }
-            });
+        if (postId) {
+            populatePromises.push(notification.populate('post'));
         }
+        if (commentId) {
+            populatePromises.push(notification.populate('comment'));
+        }
+        if (storyId) {
+            populatePromises.push(notification.populate('story'));
+        }
+        
+        // Wait for all populate promises to complete
+        if (populatePromises.length > 0) {
+            await Promise.all(populatePromises);
+        }
+        
+        // Send to recipient's socket if they're online
+        io.to(recipient.email).emit('newNotification', {
+            notification: {
+                ...notification.toObject(),
+                sender: {
+                    _id: sender._id,
+                    name: sender.name,
+                    username: sender.username,
+                    profileImage: sender.profileImage
+                }
+            }
+        });
         
         return notification;
     } catch (error) {
@@ -2760,10 +2802,11 @@ app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
 app.get("/api/notifications", isLoggedIn, async (req, res) => {
     try {
         const user = await userModel.findOne({ email: req.user.email });
+        const limit = req.query.limit ? parseInt(req.query.limit) : 20;
         
-        const notifications = await notificationModel.find({ recipient: user._id })
+        let notifications = await notificationModel.find({ recipient: user._id })
             .sort({ createdAt: -1 })
-            .limit(20)
+            .limit(limit)
             .populate('sender', 'name username profileImage')
             .populate({
                 path: 'post',
@@ -2772,7 +2815,12 @@ app.get("/api/notifications", isLoggedIn, async (req, res) => {
             .populate('comment', 'content')
             .populate('story');
         
-        res.json({ notifications });
+        // Filter out notifications with missing senders except for specific types
+        const validNotifications = notifications.filter(notification => {
+            return notification.sender !== null || notification.type === 'new_post';
+        });
+        
+        res.json({ notifications: validNotifications });
     } catch (error) {
         console.error('Error fetching notifications:', error);
         res.status(500).json({ error: "Error fetching notifications" });
@@ -2829,7 +2877,7 @@ app.get("/notifications", isLoggedIn, async (req, res) => {
     try {
         const user = await userModel.findOne({ email: req.user.email });
         
-        const notifications = await notificationModel.find({ recipient: user._id })
+        let notifications = await notificationModel.find({ recipient: user._id })
             .sort({ createdAt: -1 })
             .populate('sender', 'name username profileImage')
             .populate({
@@ -2839,7 +2887,15 @@ app.get("/notifications", isLoggedIn, async (req, res) => {
             .populate('comment', 'content')
             .populate('story');
         
-        res.render("notifications", { notifications });
+        // Clean up notifications with missing senders
+        const validNotifications = notifications.filter(notification => {
+            // Keep notifications where sender exists or type is 'new_post'
+            return notification.sender !== null || notification.type === 'new_post';
+        });
+        
+        // Mark notifications as viewed when opening notifications page
+        // This doesn't mark them as "read" yet
+        res.render("notifications", { notifications: validNotifications });
     } catch (error) {
         console.error('Error fetching notifications:', error);
         res.redirect("/feed");
@@ -2933,5 +2989,139 @@ app.get("/story/:storyId/viewers", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error getting story viewers:', error);
         res.status(500).json({ error: "Error getting story viewers" });
+    }
+});
+
+// Debug endpoint for notifications - only available in development
+app.get("/api/debug/notifications", isLoggedIn, async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ error: 'Debug endpoints are not available in production' });
+    }
+    
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        // Get total count of notifications
+        const totalCount = await notificationModel.countDocuments({ recipient: user._id });
+        
+        // Get count of notifications with missing sender
+        const missingSenderCount = await notificationModel.countDocuments({ 
+            recipient: user._id,
+            sender: { $eq: null }
+        });
+        
+        // Get count by notification type
+        const typeCounts = await notificationModel.aggregate([
+            { $match: { recipient: user._id } },
+            { $group: { _id: '$type', count: { $sum: 1 } } }
+        ]);
+        
+        // Get 5 most recent notifications with full details for debugging
+        const recentNotifications = await notificationModel.find({ recipient: user._id })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .populate('sender', 'name username profileImage')
+            .populate('post')
+            .populate('comment')
+            .populate('story');
+        
+        // Create a test notification if requested
+        if (req.query.createTest === 'true') {
+            const testNotification = await createNotification(
+                user._id,
+                user._id, // Use self for test, will be filtered out
+                'test',
+                null,
+                null,
+                null
+            );
+            
+            return res.json({
+                status: 'Test notification attempted',
+                result: testNotification ? 'success' : 'failed',
+                totalCount,
+                missingSenderCount,
+                typeCounts,
+                recentNotifications
+            });
+        }
+        
+        res.json({
+            totalCount,
+            missingSenderCount,
+            typeCounts,
+            recentNotifications
+        });
+    } catch (error) {
+        console.error('Error in debug notifications endpoint:', error);
+        res.status(500).json({ error: 'Error debugging notifications', details: error.message });
+    }
+});
+
+// Endpoint to generate test notifications (only in development)
+app.get("/api/debug/generate-test-notifications", isLoggedIn, async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ error: 'Debug endpoints are not available in production' });
+    }
+    
+    try {
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        
+        // Find another user to use as sender for test notifications
+        const otherUser = await userModel.findOne({ 
+            _id: { $ne: currentUser._id },
+            isOnline: { $ne: null } // Just to find any valid user
+        });
+        
+        if (!otherUser) {
+            return res.status(404).json({ 
+                error: 'No other users found for generating test notifications',
+                suggestion: 'Create another user account to test notifications'
+            });
+        }
+        
+        // Find a post to use for test notifications
+        const somePost = await postModel.findOne();
+        
+        // Results of notification creation
+        const results = {};
+        
+        // Create one notification of each type
+        const notificationTypes = ['like', 'comment', 'follow', 'new_post'];
+        
+        for (const type of notificationTypes) {
+            try {
+                const notification = await createNotification(
+                    currentUser._id,
+                    otherUser._id,
+                    type,
+                    type !== 'follow' ? somePost?._id : null,
+                    null,
+                    null
+                );
+                
+                results[type] = notification ? 'success' : 'failed';
+            } catch (error) {
+                console.error(`Error creating ${type} notification:`, error);
+                results[type] = `error: ${error.message}`;
+            }
+        }
+        
+        res.json({
+            message: 'Test notifications generation attempted',
+            results,
+            sender: {
+                id: otherUser._id,
+                name: otherUser.name,
+                username: otherUser.username
+            },
+            post: somePost ? {
+                id: somePost._id,
+                title: somePost.title
+            } : 'No posts found'
+        });
+    } catch (error) {
+        console.error('Error generating test notifications:', error);
+        res.status(500).json({ error: 'Error generating test notifications', details: error.message });
     }
 });

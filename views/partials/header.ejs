@@ -181,30 +181,30 @@
                             <button id="notificationBtn" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white relative">
                                 <i class="fas fa-bell text-xl"></i>
                                 <% if (locals.unreadNotifications && locals.unreadNotifications > 0) { %>
-                                    <span class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                                        <% if (locals.unreadNotifications > 9) { %>9+<% } else { %><%= locals.unreadNotifications %><% } %>
+                                    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5">
+                                        <%= locals.unreadNotifications %>
                                     </span>
                                 <% } %>
                             </button>
                             
                             <!-- Notification Dropdown Panel -->
-                            <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-md shadow-lg py-1 z-50">
-                                <div class="flex justify-between items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                                    <h3 class="text-sm font-semibold">Notifications</h3>
+                            <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-96 bg-white dark:bg-gray-900 rounded-md shadow-lg py-1 z-50">
+                                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                                    <h3 class="text-base font-semibold">Notifications</h3>
                                     <button id="markAllReadBtn" class="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
                                         Mark all as read
                                     </button>
                                 </div>
                                 
-                                <div id="notificationsContainer" class="max-h-96 overflow-y-auto">
+                                <div id="notificationsContainer" class="max-h-[480px] overflow-y-auto">
                                     <!-- Notifications will be loaded here via JavaScript -->
                                     <div class="notification-loading px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
                                         <i class="fas fa-spinner fa-spin mr-2"></i> Loading notifications...
                                     </div>
                                 </div>
                                 
-                                <div class="border-t border-gray-200 dark:border-gray-700 p-2">
-                                    <a href="/notifications" class="block text-center text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
+                                <div class="border-t border-gray-200 dark:border-gray-700 p-3">
+                                    <a href="/notifications" class="block text-center text-sm text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
                                         See all notifications
                                     </a>
                                 </div>
@@ -242,7 +242,7 @@
                             <i class="fas fa-bell mr-2"></i> Notifications
                             <% if (locals.unreadNotifications && locals.unreadNotifications > 0) { %>
                                 <span class="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                                    <% if (locals.unreadNotifications > 9) { %>9+<% } else { %><%= locals.unreadNotifications %><% } %>
+                                    <%= locals.unreadNotifications %>
                                 </span>
                             <% } %>
                         </a>
@@ -293,6 +293,9 @@
         }
         
         function updateUserDarkModePreference(isDarkMode) {
+            /* eslint-disable */
+            // NOTE: The following EJS template syntax may trigger linter warnings
+            // These warnings can be safely ignored as EJS syntax is processed server-side
             <% if (locals.user) { %>
                 fetch('/user/preferences/theme', {
                     method: 'POST',
@@ -303,6 +306,7 @@
                 })
                 .catch(error => console.error('Error updating theme preference:', error));
             <% } %>
+            /* eslint-enable */
         }
         
         // Check if dark mode is enabled in localStorage on page load
@@ -348,29 +352,83 @@
         // Function to load notifications via AJAX
         function loadNotifications() {
             const container = document.getElementById('notificationsContainer');
+            if (!container) return;
             
-            fetch('/api/notifications')
+            fetch('/api/notifications?limit=10')
                 .then(response => response.json())
                 .then(data => {
-                    container.innerHTML = ''; // Clear loading indicator
+                    container.innerHTML = '';
                     
                     if (data.notifications.length === 0) {
                         container.innerHTML = `
-                            <div class="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
-                                No notifications yet
+                            <div class="p-6 text-center">
+                                <div class="text-5xl text-gray-300 dark:text-gray-700 mb-4">
+                                    <i class="fas fa-bell-slash"></i>
+                                </div>
+                                <p class="text-gray-500 dark:text-gray-400">No notifications yet</p>
+                                <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                                    When you get notifications, they'll show up here
+                                </p>
                             </div>
                         `;
                         return;
                     }
                     
-                    // Render each notification
                     data.notifications.forEach(notification => {
                         const isUnread = !notification.read;
+                        const notificationType = notification.type;
+                        
+                        // Generate action icon based on notification type
+                        let actionIcon = '';
+                        let actionClass = '';
+                        
+                        switch (notificationType) {
+                            case 'like':
+                                actionIcon = '<i class="fas fa-heart text-red-500"></i>';
+                                actionClass = 'bg-red-50 dark:bg-red-900/10';
+                                break;
+                            case 'comment':
+                            case 'reply':
+                                actionIcon = '<i class="fas fa-comment text-blue-500"></i>';
+                                actionClass = 'bg-blue-50 dark:bg-blue-900/10';
+                                break;
+                            case 'follow':
+                                actionIcon = '<i class="fas fa-user-plus text-green-500"></i>';
+                                actionClass = 'bg-green-50 dark:bg-green-900/10';
+                                break;
+                            case 'new_post':
+                                actionIcon = '<i class="fas fa-image text-purple-500"></i>';
+                                actionClass = 'bg-purple-50 dark:bg-purple-900/10';
+                                break;
+                            default:
+                                actionIcon = '<i class="fas fa-bell text-gray-500"></i>';
+                                actionClass = 'bg-gray-50 dark:bg-gray-900/10';
+                        }
+                        
+                        // Generate post thumbnail if available
+                        let postThumbnail = '';
+                        if (notification.post && notification.post.images && notification.post.images.length > 0) {
+                            postThumbnail = `
+                                <div class="ml-auto">
+                                    <a href="/post/${notification.post._id}" class="block w-12 h-12 rounded overflow-hidden">
+                                        <img src="${notification.post.images[0].url}" 
+                                             alt="Post" 
+                                             class="w-full h-full object-cover">
+                                    </a>
+                                </div>
+                            `;
+                        }
+                        
                         container.innerHTML += `
-                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 ${isUnread ? 'bg-blue-50 dark:bg-blue-900/20' : ''}" data-id="${notification._id}">
-                                <div class="flex items-start">
-                                    <div class="flex-shrink-0 mr-3">
-                                        <img src="${notification.sender.profileImage}" alt="${notification.sender.name}" class="w-10 h-10 rounded-full object-cover">
+                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 ${isUnread ? 'bg-blue-50 dark:bg-blue-900/20' : ''} group" data-id="${notification._id}">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 mr-3 relative">
+                                        <img src="${notification.sender.profileImage}" 
+                                             alt="${notification.sender.name}" 
+                                             class="w-10 h-10 rounded-full object-cover">
+                                        <div class="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full ${actionClass}">
+                                            ${actionIcon}
+                                        </div>
                                     </div>
                                     <div class="flex-1">
                                         <p class="text-sm">
@@ -379,19 +437,37 @@
                                         </p>
                                         <span class="text-xs text-gray-500 dark:text-gray-400">${formatNotificationTime(notification.createdAt)}</span>
                                     </div>
+                                    ${postThumbnail}
+                                </div>
+                                
+                                <!-- Interactive actions that appear on hover -->
+                                <div class="mt-2 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3" 
+                                            onclick="event.stopPropagation(); markNotificationAsRead('${notification._id}');">
+                                        Mark as ${isUnread ? 'read' : 'unread'}
+                                    </button>
                                 </div>
                             </div>
                         `;
                     });
                     
-                    // Add event listeners to notification items
+                    // Add event listeners to notification items for navigation
                     document.querySelectorAll('.notification-item').forEach(item => {
                         item.addEventListener('click', function() {
                             const notificationId = this.dataset.id;
                             markNotificationAsRead(notificationId);
                             
-                            // Navigate to the relevant content based on notification type
-                            // This will need to be implemented based on your app's navigation structure
+                            // Navigate based on notification type and data
+                            const notificationData = data.notifications.find(n => n._id === notificationId);
+                            if (notificationData) {
+                                if (notificationData.post) {
+                                    window.location.href = `/post/${notificationData.post._id}`;
+                                } else if (notificationData.type === 'follow') {
+                                    window.location.href = `/user/${notificationData.sender.username}`;
+                                } else {
+                                    window.location.href = '/notifications';
+                                }
+                            }
                         });
                     });
                 })
@@ -399,7 +475,7 @@
                     console.error('Error loading notifications:', error);
                     container.innerHTML = `
                         <div class="px-4 py-3 text-center text-sm text-red-500">
-                            Failed to load notifications. Please try again.
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Failed to load notifications
                         </div>
                     `;
                 });
@@ -488,14 +564,15 @@
                 if (badgeDesktop) badgeDesktop.remove();
                 if (badgeMobile) badgeMobile.remove();
             } else {
-                const displayCount = count > 9 ? '9+' : count.toString();
+                // Display the actual count, no longer limiting to 9+
+                const displayCount = count.toString();
                 
                 // Update or create desktop badge
                 if (badgeDesktop) {
                     badgeDesktop.textContent = displayCount;
                 } else {
                     const newBadge = document.createElement('span');
-                    newBadge.className = 'absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center';
+                    newBadge.className = 'absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5';
                     newBadge.textContent = displayCount;
                     document.getElementById('notificationBtn').appendChild(newBadge);
                 }
@@ -564,13 +641,57 @@
                             container.innerHTML = ''; // Remove "no notifications" message
                         }
                         
+                        // Generate action icon based on notification type
+                        let actionIcon = '';
+                        let actionClass = '';
+                        
+                        switch (data.notification.type) {
+                            case 'like':
+                                actionIcon = '<i class="fas fa-heart text-red-500"></i>';
+                                actionClass = 'bg-red-50 dark:bg-red-900/10';
+                                break;
+                            case 'comment':
+                            case 'reply':
+                                actionIcon = '<i class="fas fa-comment text-blue-500"></i>';
+                                actionClass = 'bg-blue-50 dark:bg-blue-900/10';
+                                break;
+                            case 'follow':
+                                actionIcon = '<i class="fas fa-user-plus text-green-500"></i>';
+                                actionClass = 'bg-green-50 dark:bg-green-900/10';
+                                break;
+                            case 'new_post':
+                                actionIcon = '<i class="fas fa-image text-purple-500"></i>';
+                                actionClass = 'bg-purple-50 dark:bg-purple-900/10';
+                                break;
+                            default:
+                                actionIcon = '<i class="fas fa-bell text-gray-500"></i>';
+                                actionClass = 'bg-gray-50 dark:bg-gray-900/10';
+                        }
+                        
+                        // Generate post thumbnail if available
+                        let postThumbnail = '';
+                        if (data.notification.post && data.notification.post.images && data.notification.post.images.length > 0) {
+                            postThumbnail = `
+                                <div class="ml-auto">
+                                    <a href="/post/${data.notification.post._id}" class="block w-12 h-12 rounded overflow-hidden">
+                                        <img src="${data.notification.post.images[0].url}" 
+                                             alt="Post" 
+                                             class="w-full h-full object-cover">
+                                    </a>
+                                </div>
+                            `;
+                        }
+                        
                         const notificationHTML = `
-                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 bg-blue-50 dark:bg-blue-900/20" data-id="${data.notification._id}">
-                                <div class="flex items-start">
-                                    <div class="flex-shrink-0 mr-3">
+                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 bg-blue-50 dark:bg-blue-900/20 group" data-id="${data.notification._id}">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 mr-3 relative">
                                         <img src="${data.notification.sender.profileImage}" 
                                              alt="${data.notification.sender.name}" 
                                              class="w-10 h-10 rounded-full object-cover">
+                                        <div class="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full ${actionClass}">
+                                            ${actionIcon}
+                                        </div>
                                     </div>
                                     <div class="flex-1">
                                         <p class="text-sm">
@@ -579,6 +700,7 @@
                                         </p>
                                         <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
                                     </div>
+                                    ${postThumbnail}
                                 </div>
                             </div>
                         `;
