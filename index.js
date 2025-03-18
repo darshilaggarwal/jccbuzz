@@ -755,26 +755,72 @@ app.get("/delete/:id", isLoggedIn, async (req, res) => {
 });
 
 app.get("/feed", isLoggedIn, async (req, res) => {
-    const posts = await postModel.find({ user: { $ne: null } })
-        .populate('user', 'username name profileImage')
-        .populate({
-            path: 'comments',
-            populate: [
-                {
-                    path: 'user',
-                    select: 'username name profileImage'
-                },
-                {
-                    path: 'replies.user',
-                    select: 'username name profileImage'
+    try {
+        // Find current user
+        let currentUser;
+        if (req.user._id) {
+            currentUser = await userModel.findById(req.user._id)
+                .populate('following', '_id');
+        } else if (req.user.email) {
+            currentUser = await userModel.findOne({ email: req.user.email })
+                .populate('following', '_id');
+        }
+
+        if (!currentUser) {
+            return res.redirect('/login');
+        }
+
+        // Get IDs of users the current user is following
+        const followingIds = currentUser.following.map(user => user._id);
+        
+        // Check if the user is following anyone
+        const isNewUser = followingIds.length === 0;
+        
+        // For new users, fetch suggested users
+        let suggestedUsers = [];
+        if (isNewUser) {
+            suggestedUsers = await userModel.find({ 
+                _id: { $ne: currentUser._id }
+            })
+            .select('username name profileImage bio')
+            .limit(10);
+        }
+        
+        // For users who follow people, fetch posts from those users
+        // Include the current user's posts in the feed as well
+        const followingIdsWithCurrentUser = [...followingIds, currentUser._id];
+        const posts = await postModel.find({ 
+                user: { 
+                    $in: isNewUser ? [] : followingIdsWithCurrentUser 
                 }
-            ]
-        })
-        .populate('likes')
-        .sort({ createdAt: -1 });
-    
-    const currentUser = await userModel.findOne({ email: req.user.email });
-    res.render("feed", { posts, user: currentUser });
+            })
+            .populate('user', 'username name profileImage hasActiveStory location')
+            .populate({
+                path: 'comments',
+                populate: [
+                    {
+                        path: 'user',
+                        select: 'username name profileImage'
+                    },
+                    {
+                        path: 'replies.user',
+                        select: 'username name profileImage'
+                    }
+                ]
+            })
+            .populate('likes')
+            .sort({ createdAt: -1 });
+        
+        res.render("feed", { 
+            posts, 
+            user: currentUser, 
+            isNewUser,
+            suggestedUsers
+        });
+    } catch (error) {
+        console.error("Error fetching feed:", error);
+        res.status(500).send("Failed to load feed");
+    }
 });
 
 app.post("/post/:postId/like", isLoggedIn, async (req, res) => {
@@ -3441,5 +3487,43 @@ app.get("/api/follow-status/:userId", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error("Error checking follow status:", error);
         res.status(500).json({ error: "Server error" });
+    }
+});
+
+// Explore route to discover new users
+app.get("/explore", isLoggedIn, async (req, res) => {
+    try {
+        // Find current user
+        let currentUser;
+        if (req.user._id) {
+            currentUser = await userModel.findById(req.user._id);
+        } else if (req.user.email) {
+            currentUser = await userModel.findOne({ email: req.user.email });
+        }
+
+        if (!currentUser) {
+            return res.redirect('/login');
+        }
+
+        // Get users that the current user doesn't follow
+        const following = currentUser.following || [];
+        
+        // Find users not already followed and not the current user
+        const suggestedUsers = await userModel.find({
+            _id: { 
+                $ne: currentUser._id,
+                $nin: following
+            }
+        })
+        .select('username name profileImage bio')
+        .limit(20);
+
+        res.render("explore", { 
+            user: currentUser,
+            suggestedUsers
+        });
+    } catch (error) {
+        console.error("Error fetching explore page:", error);
+        res.status(500).send("Failed to load explore page");
     }
 });

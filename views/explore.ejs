@@ -1,0 +1,144 @@
+<%- include('partials/header') %>
+
+<!-- Modern Toast Notification -->
+<div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-full transition-all duration-300 z-50 opacity-0">
+    <div class="bg-black bg-opacity-75 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-sm">
+        <span id="toast-message" class="font-medium text-sm"></span>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Discover People</h1>
+        <a href="/feed" class="text-blue-500 hover:text-blue-600 flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Feed
+        </a>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-6">
+        <div class="relative">
+            <input type="text" 
+                   id="searchInput" 
+                   placeholder="Search by username or name..." 
+                   class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" id="usersGrid">
+        <% suggestedUsers.forEach(suggestedUser => { %>
+            <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden user-card">
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <a href="/user/<%= suggestedUser.username %>" class="flex items-center group">
+                            <img src="<%= suggestedUser.profileImage %>" 
+                                 alt="<%= suggestedUser.name %>" 
+                                 class="w-12 h-12 rounded-full object-cover">
+                            <div class="ml-3">
+                                <h4 class="font-semibold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                    <%= suggestedUser.name %>
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">@<%= suggestedUser.username %></p>
+                            </div>
+                        </a>
+                        <button onclick="followUser('<%= suggestedUser._id %>')" 
+                                class="px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm follow-btn"
+                                data-user-id="<%= suggestedUser._id %>">
+                            Follow
+                        </button>
+                    </div>
+                    <% if (suggestedUser.bio) { %>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2"><%= suggestedUser.bio %></p>
+                    <% } %>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const userCards = document.querySelectorAll('.user-card');
+        
+        userCards.forEach(card => {
+            const name = card.querySelector('h4').textContent.toLowerCase();
+            const username = card.querySelector('p').textContent.toLowerCase();
+            
+            if (name.includes(searchTerm) || username.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    // Follow user functionality
+    function followUser(userId) {
+        const btn = document.querySelector(`.follow-btn[data-user-id="${userId}"]`);
+        
+        // Disable button during request and change text
+        btn.disabled = true;
+        btn.innerHTML = 'Following...';
+        
+        // Send request to follow user
+        fetch(`/user/${userId}/follow`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showToast(data.error);
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = 'Follow';
+            } else {
+                // Success - update button
+                if (data.followRequested) {
+                    btn.innerHTML = 'Requested';
+                    btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                    btn.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                } else {
+                    btn.innerHTML = 'Following';
+                    btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                    btn.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                }
+                showToast(data.followRequested ? 'Follow request sent' : 'Following user');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Failed to follow user');
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = 'Follow';
+        });
+    }
+
+    // Show toast notification
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        
+        toastMessage.innerHTML = message;
+        toast.classList.remove('translate-y-full', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-full', 'opacity-0');
+        }, 3000);
+    }
+</script>
+
+<%- include('partials/footer') %> 

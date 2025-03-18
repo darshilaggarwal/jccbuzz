@@ -92,132 +92,181 @@
         </button>
     </div> -->
     
-    <!-- Posts Feed -->
-    <div class="space-y-4">
-        <% posts.forEach(post => { 
-            // Additional safety check to filter out posts with null users at template level
-            if (!post || !post.user) {
-                return; // Skip this post entirely
-            }
-        %>
-            <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 sm:rounded-lg overflow-hidden transform transition-all post-container">
-                <!-- Post Header -->
-                <div class="p-3 flex items-center justify-between">
-                    <a href="/user/<%= post.user.username %>" class="flex items-center group">
-                        <div class="relative">
-                            <div class="<%= post.user.hasActiveStory ? 'story-ring p-[2px]' : '' %> rounded-full">
-                                <div class="bg-white dark:bg-black p-[1px] rounded-full">
-                            <img src="<%= post.user.profileImage %>" 
-                                 alt="Profile" 
-                                         class="w-8 h-8 rounded-full object-cover">
-                        </div>
-                            </div>
-                        </div>
-                        <div class="ml-2">
-                            <h5 class="font-semibold text-sm text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"><%= post.user.name %></h5>
-                            <p class="text-xs text-gray-500 dark:text-gray-400"><%= post.user.location ? post.user.location : '' %></p>
-                        </div>
-                    </a>
-                    <button onclick="showPostOptions('<%= post._id %>')" class="text-gray-600 dark:text-gray-400 p-1 hover:text-gray-800 dark:hover:text-gray-200 transition">
-                            <i class="fas fa-ellipsis-h"></i>
-                        </button>
-                </div>
-
-                <!-- Images -->
-                <% if (post.images && post.images.length > 0) { %>
-                    <div class="relative post-image" ondblclick="handleDoubleTap('<%= post._id %>')">
-                        <div class="swiper-container">
-                            <div class="swiper-wrapper">
-                                <% post.images.forEach(image => { %>
-                                    <div class="swiper-slide">
-                                        <img src="<%= image.url %>" 
-                                             alt="Post image"
-                                             class="w-full object-cover aspect-square sm:aspect-auto sm:max-h-[600px]">
-                                    </div>
-                                <% }) %>
-                            </div>
-                            <% if (post.images.length > 1) { %>
-                                <div class="swiper-pagination"></div>
-                                <div class="swiper-button-next"></div>
-                                <div class="swiper-button-prev"></div>
-                                <div class="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
-                                    <span class="current-slide">1</span>/<%= post.images.length %>
-                                </div>
-                            <% } %>
-                        </div>
-                        <div class="heart-animation hidden">
-                            <i class="fas fa-heart text-red-500"></i>
-                        </div>
-                    </div>
-                <% } %>
-
-                <!-- Post Content -->
-                <div class="px-4 pb-4">
-                    <!-- Actions -->
-                    <div class="flex items-center justify-between py-3">
-                        <div class="flex items-center space-x-4">
-                            <button onclick="toggleLike('<%= post._id %>')" 
-                                    id="like-btn-<%= post._id %>"
-                                    class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-800 dark:text-white' %> hover:scale-110 transform transition-transform">
-                                <% if (post.likes.some(id => id.toString() === user._id.toString())) { %>
-                                <i class="fas fa-heart text-2xl"></i>
-                                <% } else { %>
-                                    <i class="far fa-heart text-2xl"></i>
-                                <% } %>
-                            </button>
-                            <button onclick="showComments('<%= post._id %>')" 
-                                    class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
-                                <i class="far fa-comment text-2xl"></i>
-                            </button>
-                            <button onclick="sharePost('<%= post._id %>')" 
-                                    class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
-                                <i class="far fa-paper-plane text-2xl"></i>
-                            </button>
-                        </div>
-                        <button onclick="toggleSavePost('<%= post._id %>')"
-                                id="save-btn-<%= post._id %>"
-                                class="save-btn hover:scale-110 transform transition-transform">
-                            <% if (user.savedPosts && user.savedPosts.includes(post._id)) { %>
-                                <i class="fas fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
-                            <% } else { %>
-                                <i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
-                            <% } %>
-                        </button>
-                    </div>
-
-                    <!-- Likes Count -->
-                    <div class="mb-2">
-                        <p class="font-semibold text-sm text-gray-800 dark:text-white">
-                            <span class="like-count-<%= post._id %>"><%= post.likes.length %></span> likes
-                        </p>
-                    </div>
-
-                    <!-- Caption -->
-                    <div class="mb-2">
-                        <p class="text-sm text-gray-800 dark:text-white">
-                            <span class="font-semibold mr-1"><%= post.user.username %></span>
-                            <%= post.content %>
-                        </p>
-                    </div>
-
-                    <!-- Post Metadata -->
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        <%= new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
-                        <% if (post.comments && post.comments.length > 0) { %>
-                            • <button onclick="showComments('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:underline">
-                                View all <%= post.comments.length %> comments
-                            </button>
-                        <% } %>
-                    </div>
+    <% if (isNewUser && suggestedUsers && suggestedUsers.length > 0) { %>
+        <!-- New User Experience - Welcome and Suggested Users -->
+        <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 sm:rounded-lg overflow-hidden mb-4">
+            <div class="p-6 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-users text-5xl text-blue-500 mb-3"></i>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Welcome to Pinspire!</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mt-2">
+                        Follow some users to start seeing their posts in your feed.
+                    </p>
                 </div>
             </div>
-        <% }) %>
-    </div>
+        </div>
 
-    <!-- Loading Spinner -->
-    <div class="flex justify-center my-8 loading-spinner">
-        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
+        <!-- Suggested Users -->
+        <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 sm:rounded-lg overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                <h3 class="font-semibold text-gray-800 dark:text-white">Suggested for you</h3>
+            </div>
+            <div class="divide-y divide-gray-200 dark:divide-gray-800">
+                <% suggestedUsers.forEach(suggestedUser => { %>
+                    <div class="p-4 flex items-center justify-between">
+                        <a href="/user/<%= suggestedUser.username %>" class="flex items-center group">
+                            <img src="<%= suggestedUser.profileImage %>" 
+                                 alt="<%= suggestedUser.name %>" 
+                                 class="w-10 h-10 rounded-full object-cover">
+                            <div class="ml-3">
+                                <h4 class="font-semibold text-sm text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                    <%= suggestedUser.name %>
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">@<%= suggestedUser.username %></p>
+                            </div>
+                        </a>
+                        <button onclick="followUser('<%= suggestedUser._id %>')" 
+                                class="text-sm font-semibold text-blue-500 hover:text-blue-700 follow-btn"
+                                data-user-id="<%= suggestedUser._id %>">
+                            Follow
+                        </button>
+                    </div>
+                <% }) %>
+            </div>
+            <div class="p-4 text-center">
+                <a href="/explore" class="text-blue-500 hover:text-blue-700 text-sm font-semibold">
+                    See More
+                </a>
+            </div>
+        </div>
+    <% } else { %>
+        <!-- Posts Feed -->
+        <div class="space-y-4">
+            <% posts.forEach(post => { 
+                // Additional safety check to filter out posts with null users at template level
+                if (!post || !post.user) {
+                    return; // Skip this post entirely
+                }
+            %>
+                <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 sm:rounded-lg overflow-hidden transform transition-all post-container">
+                    <!-- Post Header -->
+                    <div class="p-3 flex items-center justify-between">
+                        <a href="/user/<%= post.user.username %>" class="flex items-center group">
+                            <div class="relative">
+                                <div class="<%= post.user.hasActiveStory ? 'story-ring p-[2px]' : '' %> rounded-full">
+                                    <div class="bg-white dark:bg-black p-[1px] rounded-full">
+                                <img src="<%= post.user.profileImage %>" 
+                                     alt="Profile" 
+                                             class="w-8 h-8 rounded-full object-cover">
+                            </div>
+                                </div>
+                            </div>
+                            <div class="ml-2">
+                                <h5 class="font-semibold text-sm text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"><%= post.user.name %></h5>
+                                <p class="text-xs text-gray-500 dark:text-gray-400"><%= post.user.location ? post.user.location : '' %></p>
+                            </div>
+                        </a>
+                        <button onclick="showPostOptions('<%= post._id %>')" class="text-gray-600 dark:text-gray-400 p-1 hover:text-gray-800 dark:hover:text-gray-200 transition">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                    </div>
+
+                    <!-- Images -->
+                    <% if (post.images && post.images.length > 0) { %>
+                        <div class="relative post-image" ondblclick="handleDoubleTap('<%= post._id %>')">
+                            <div class="swiper-container">
+                                <div class="swiper-wrapper">
+                                    <% post.images.forEach(image => { %>
+                                        <div class="swiper-slide">
+                                            <img src="<%= image.url %>" 
+                                                 alt="Post image"
+                                                 class="w-full object-cover aspect-square sm:aspect-auto sm:max-h-[600px]">
+                                        </div>
+                                    <% }) %>
+                                </div>
+                                <% if (post.images.length > 1) { %>
+                                    <div class="swiper-pagination"></div>
+                                    <div class="swiper-button-next"></div>
+                                    <div class="swiper-button-prev"></div>
+                                    <div class="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
+                                        <span class="current-slide">1</span>/<%= post.images.length %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="heart-animation hidden">
+                                <i class="fas fa-heart text-red-500"></i>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <!-- Post Content -->
+                    <div class="px-4 pb-4">
+                        <!-- Actions -->
+                        <div class="flex items-center justify-between py-3">
+                            <div class="flex items-center space-x-4">
+                                <button onclick="toggleLike('<%= post._id %>')" 
+                                        id="like-btn-<%= post._id %>"
+                                        class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-800 dark:text-white' %> hover:scale-110 transform transition-transform">
+                                    <% if (post.likes.some(id => id.toString() === user._id.toString())) { %>
+                                    <i class="fas fa-heart text-2xl"></i>
+                                    <% } else { %>
+                                        <i class="far fa-heart text-2xl"></i>
+                                    <% } %>
+                                </button>
+                                <button onclick="showComments('<%= post._id %>')" 
+                                        class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
+                                    <i class="far fa-comment text-2xl"></i>
+                                </button>
+                                <button onclick="sharePost('<%= post._id %>')" 
+                                        class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
+                                    <i class="far fa-paper-plane text-2xl"></i>
+                                </button>
+                            </div>
+                            <button onclick="toggleSavePost('<%= post._id %>')"
+                                    id="save-btn-<%= post._id %>"
+                                    class="save-btn hover:scale-110 transform transition-transform">
+                                <% if (user.savedPosts && user.savedPosts.includes(post._id)) { %>
+                                    <i class="fas fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
+                                <% } else { %>
+                                    <i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
+                                <% } %>
+                            </button>
+                        </div>
+
+                        <!-- Likes Count -->
+                        <div class="mb-2">
+                            <p class="font-semibold text-sm text-gray-800 dark:text-white">
+                                <span class="like-count-<%= post._id %>"><%= post.likes.length %></span> likes
+                            </p>
+                        </div>
+
+                        <!-- Caption -->
+                        <div class="mb-2">
+                            <p class="text-sm text-gray-800 dark:text-white">
+                                <span class="font-semibold mr-1"><%= post.user.username %></span>
+                                <%= post.content %>
+                            </p>
+                        </div>
+
+                        <!-- Post Metadata -->
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                            <%= new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                            <% if (post.comments && post.comments.length > 0) { %>
+                                • <button onclick="showComments('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:underline">
+                                    View all <%= post.comments.length %> comments
+                                </button>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="flex justify-center my-8 loading-spinner">
+            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+    <% } %>
 </div>
 
 <!-- Create Post Modal with Instagram-like UI -->
@@ -752,28 +801,19 @@ function toggleLike(postId) {
     
     // Optimistic UI update
     if (isLiked) {
+        likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
         likeBtn.classList.remove('text-red-500');
         likeBtn.classList.add('text-gray-800', 'dark:text-white');
-        likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
-        updateLikeCount(postId, -1);
-                } else {
-        likeBtn.classList.remove('text-gray-800', 'dark:text-white');
-        likeBtn.classList.add('text-red-500', 'liked');
+    } else {
         likeBtn.innerHTML = '<i class="fas fa-heart text-2xl"></i>';
-        updateLikeCount(postId, 1);
-        
-        // Show heart animation
-        const heartAnimation = likeBtn.closest('.post-container').querySelector('.heart-animation');
-        if (heartAnimation) {
-            heartAnimation.classList.remove('hidden');
-            heartAnimation.classList.add('active');
-            
-            setTimeout(() => {
-                heartAnimation.classList.remove('active');
-                heartAnimation.classList.add('hidden');
-            }, 1000);
-        }
+        likeBtn.classList.remove('text-gray-800', 'dark:text-white');
+        likeBtn.classList.add('text-red-500');
+        likeBtn.classList.add('liked');
+        setTimeout(() => likeBtn.classList.remove('liked'), 300);
     }
+    
+    // Update the like count in feed with animation
+    updateLikeCount(postId, isLiked ? -1 : 1);
     
     // Send request to server
     fetch(`/post/${postId}/like`, {
@@ -782,21 +822,69 @@ function toggleLike(postId) {
             'Content-Type': 'application/json'
         }
     })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            // Revert UI if request fails
+            showToast(data.error);
+            toggleLike(postId); // This will reverse the change
+        }
+    })
     .catch(error => {
         console.error('Error:', error);
-        
-        // Revert UI if request fails
-        if (isLiked) {
-            likeBtn.classList.add('text-red-500');
-            likeBtn.classList.remove('text-gray-800', 'dark:text-white');
-            likeBtn.innerHTML = '<i class="fas fa-heart text-2xl"></i>';
-            updateLikeCount(postId, 1);
-        } else {
-            likeBtn.classList.add('text-gray-800', 'dark:text-white');
-            likeBtn.classList.remove('text-red-500');
-            likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
-            updateLikeCount(postId, -1);
+        toggleLike(postId); // Revert on error
+    });
+}
+
+// Follow a suggested user
+function followUser(userId) {
+    const btn = document.querySelector(`.follow-btn[data-user-id="${userId}"]`);
+    
+    // Disable button during request and change text
+    btn.disabled = true;
+    btn.innerHTML = 'Following...';
+    
+    // Send request to follow user
+    fetch(`/user/${userId}/follow`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
         }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            showToast(data.error);
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = 'Follow';
+        } else {
+            // Success - update button
+            if (data.followRequested) {
+                btn.innerHTML = 'Requested';
+                btn.classList.add('text-gray-500');
+                btn.classList.remove('text-blue-500', 'hover:text-blue-700');
+            } else {
+                btn.innerHTML = 'Following';
+                btn.classList.add('text-gray-500');
+                btn.classList.remove('text-blue-500', 'hover:text-blue-700');
+                
+                // If the user followed someone for the first time, refresh feed to show posts
+                if (document.querySelector('.divide-y[data-user-id]')) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+            }
+            showToast(data.followRequested ? 'Follow request sent' : 'Following user');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to follow user');
+        // Reset button
+        btn.disabled = false;
+        btn.innerHTML = 'Follow';
     });
 }
 
