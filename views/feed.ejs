@@ -8,7 +8,7 @@
 </div>
 
 <!-- Comments Modal -->
-<div id="commentsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
+<div id="commentsModal" class="hidden fixed inset-0 bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
     <div class="bg-white dark:bg-gray-900 rounded-t-xl sm:rounded-xl max-w-md w-full mx-auto overflow-hidden animate-slideUp">
         <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <div></div>
@@ -76,6 +76,22 @@
 
 <!-- Main Content -->
 <div class="max-w-xl mx-auto mt-2 px-0 sm:px-2">
+    <!-- Create Post Button (Mobile) -->
+    <div class="fixed bottom-6 right-6 z-40 md:hidden">
+        <button onclick="openCreatePostModal()" 
+                class="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-lg flex items-center justify-center">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+    </div>
+
+    <!-- Create Post Button (Desktop) -->
+    <!-- <div class="fixed top-24 right-6 z-40 hidden md:block">
+        <button onclick="openCreatePostModal()" 
+                class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg px-4 py-2 shadow-md hover:shadow-lg transition-all flex items-center">
+            <i class="fas fa-plus mr-2"></i> Create Post
+        </button>
+    </div> -->
+    
     <!-- Posts Feed -->
     <div class="space-y-4">
         <% posts.forEach(post => { 
@@ -552,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Infinite scroll functionality
     let isLoading = false;
-let page = 1;
+    let page = 1;
 
     window.addEventListener('scroll', function() {
         if (isLoading) return;
@@ -563,15 +579,20 @@ let page = 1;
         
         if (scrollPosition >= pageHeight - 500 && loadingSpinner) {
             isLoading = true;
-        loadMorePosts();
-    }
-});
+            loadMorePosts();
+        }
+    });
 
     // Load stories on page load
     loadStories();
     
     // Initialize socket connection
     initializeSocketConnection();
+    
+    // Set up event listeners for post creation
+    if (document.getElementById('createPostForm')) {
+        document.getElementById('createPostForm').addEventListener('submit', handlePostSubmit);
+    }
 });
 
 // Show comments modal
@@ -1027,6 +1048,184 @@ function loadMorePosts() {
             isLoading = false;
             loadingSpinner.classList.add('hidden');
         });
+}
+
+// Create Post Modal Functions
+function openCreatePostModal() {
+    document.getElementById('createPostModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+}
+
+function closeCreatePostModal() {
+    document.getElementById('createPostModal').classList.add('hidden');
+    document.body.style.overflow = ''; // Re-enable scrolling
+    
+    // Reset form
+    const form = document.getElementById('createPostForm');
+    if (form) form.reset();
+    
+    // Clear image previews
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    if (previewContainer) {
+        previewContainer.innerHTML = '';
+        previewContainer.classList.add('hidden');
+    }
+    
+    // Reset processed images
+    processedImages = [];
+}
+
+// Variables for post creation
+let processedImages = [];
+
+// Handle image selection
+function handleImageSelect(event) {
+    const files = Array.from(event.target.files);
+    
+    // Check if maximum number of images is reached
+    if (processedImages.filter(Boolean).length >= 10) {
+        showToast('You can upload a maximum of 10 images per post');
+        return;
+    }
+    
+    // Get preview container
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    
+    // Process each file
+    files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Create temporary image for cropping
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.onload = function() {
+                // Show preview
+                const index = processedImages.length;
+                processedImages.push(null); // Reserve spot
+                
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'relative aspect-square overflow-hidden rounded-lg shadow-md';
+                previewDiv.innerHTML = `
+                    <img src="${e.target.result}" class="w-full h-full object-cover" />
+                    <button type="button" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600" onclick="removeImage(${index})">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                
+                previewContainer.appendChild(previewDiv);
+                previewContainer.classList.remove('hidden');
+                
+                // Process the image (convert to blob)
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Max size
+                const MAX_WIDTH = 1200;
+                const MAX_HEIGHT = 1200;
+                
+                let width = img.width;
+                let height = img.height;
+                
+                // Resize if needed
+                if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+                    if (width > height) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    } else {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and get as blob
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob(blob => {
+                    processedImages[index] = blob;
+                }, file.type, 0.85); // 85% quality
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Remove image from preview
+function removeImage(index) {
+    if (index >= 0 && index < processedImages.length) {
+        processedImages[index] = null;
+        
+        // Remove preview
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const previews = previewContainer.querySelectorAll('div');
+        if (previews[index]) {
+            previews[index].remove();
+        }
+        
+        // Hide container if empty
+        if (previewContainer.children.length === 0) {
+            previewContainer.classList.add('hidden');
+        }
+    }
+}
+
+// Handle post submission
+async function handlePostSubmit(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const form = e.target;
+    const formData = new FormData(form);
+    
+    // Check if there are valid images
+    const validImages = processedImages.filter(img => img !== null);
+    
+    if (validImages.length === 0) {
+        showToast('Please add at least one image to your post');
+        return;
+    }
+    
+    // Update submit button state
+    const submitBtn = document.getElementById('submitPostBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+    submitBtn.disabled = true;
+    
+    // Append processed images to form data
+    validImages.forEach((blob, index) => {
+        formData.append('processedImages', blob, `image-${index}.jpg`);
+    });
+
+    try {
+        const response = await fetch('/post', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // Parse the JSON response but don't display it directly
+            const data = await response.json();
+            showToast(data.message || 'Post created successfully!');
+            closeCreatePostModal();
+            
+            // Reload the page after a short delay to let user see the toast
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            const error = await response.text();
+            showToast('Error creating post: ' + error);
+        }
+    } catch (error) {
+        showToast('Network error. Please try again.');
+    } finally {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
 }
 </script>
 

@@ -601,7 +601,7 @@ async function handlePostSubmit(e) {
     
     // Append processed images to form data
     validImages.forEach((blob, index) => {
-        formData.append('images', blob, `image-${index}.jpg`);
+        formData.append('processedImages', blob, `image-${index}.jpg`);
     });
 
     try {
