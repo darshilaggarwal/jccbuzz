@@ -6,66 +6,63 @@ let transporter;
 
 // Initialize email transporter based on environment
 function initializeTransporter() {
-    if (process.env.NODE_ENV === 'production') {
-        console.log('Initializing email transporter in PRODUCTION mode');
-        
-        // Custom SMTP configuration for darshil.site domain
-        const domain = process.env.EMAIL_USER.split('@')[1];
-        console.log(`Setting up SMTP for domain: ${domain}`);
-        
-        // Configuration specifically for darshil.site
-        if (domain === 'darshil.site') {
-            console.log('Using dedicated configuration for darshil.site');
-            transporter = nodemailer.createTransport({
-                host: 'smtp.zoho.com',  // Zoho Mail SMTP server for custom domains
-                port: 465,
-                secure: true,  // Use SSL
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASSWORD
-                }
-            });
-        } 
-        // Gmail configuration
-        else if (domain === 'gmail.com') {
-            console.log('Using Gmail configuration');
-            transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASSWORD
-                }
-            });
-        }
-        // Generic configuration for other domains
-        else {
-            console.log('Using generic SMTP configuration');
-            transporter = nodemailer.createTransport({
-                host: `mail.${domain}`,
-                port: 587,
-                secure: false,
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASSWORD
-                },
-                tls: {
-                    rejectUnauthorized: false
-                }
-            });
-        }
-        
-        // Verify connection configuration
-        transporter.verify(function(error, success) {
-            if (error) {
-                console.error('Email transporter verification failed:', error);
-                console.error('Please check your email provider settings');
-            } else {
-                console.log('Email server is ready to send messages');
+    // Always initialize the email transporter for sending, regardless of environment
+    console.log('Initializing email transporter');
+    
+    // Custom SMTP configuration for darshil.site domain
+    const domain = process.env.EMAIL_USER ? process.env.EMAIL_USER.split('@')[1] : '';
+    console.log(`Setting up SMTP for domain: ${domain}`);
+    
+    // Configuration specifically for darshil.site
+    if (domain === 'darshil.site') {
+        console.log('Using dedicated configuration for darshil.site');
+        transporter = nodemailer.createTransport({
+            host: 'smtp.zoho.com',  // Zoho Mail SMTP server for custom domains
+            port: 465,
+            secure: true,  // Use SSL
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
             }
         });
-    } else {
-        console.log('Using development email mode - emails will be logged but not sent');
+    } 
+    // Gmail configuration
+    else if (domain === 'gmail.com') {
+        console.log('Using Gmail configuration');
+        transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            }
+        });
     }
+    // Generic configuration for other domains
+    else {
+        console.log('Using generic SMTP configuration');
+        transporter = nodemailer.createTransport({
+            host: domain ? `mail.${domain}` : 'localhost',
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+    }
+    
+    // Verify connection configuration
+    transporter.verify(function(error, success) {
+        if (error) {
+            console.error('Email transporter verification failed:', error);
+            console.error('Please check your email provider settings');
+        } else {
+            console.log('Email server is ready to send messages');
+        }
+    });
 }
 
 // Initialize the transporter when this module is loaded
@@ -74,22 +71,21 @@ initializeTransporter();
 // Function to send OTP email
 async function sendOTPEmail(to, otp, name) {
     try {
-        // In development mode, just log the email and return success
+        // Always attempt to send the email, but log it in development mode as a backup
         if (process.env.NODE_ENV !== 'production') {
             console.log('==================== DEVELOPMENT EMAIL ====================');
             console.log(`To: ${to}`);
             console.log(`Subject: Pinspire Registration: Your OTP Code`);
             console.log(`OTP for ${name}: ${otp}`);
             console.log('==========================================================');
-            return true;
         }
         
         // Log sending attempt (will be useful for debugging)
         console.log(`Attempting to send OTP email to: ${to}`);
         
-        // Define email options for production
+        // Define email options
         const mailOptions = {
-            from: `"Pinspire Verification" <${process.env.EMAIL_USER}>`,
+            from: `"Pinspire Verification" <${process.env.EMAIL_USER || 'noreply@pinspire.app'}>`,
             to: to,
             subject: 'Pinspire Registration: Your OTP Code',
             html: `
@@ -121,16 +117,18 @@ async function sendOTPEmail(to, otp, name) {
             text: `Hello ${name},\n\nYour OTP for Pinspire registration is: ${otp}\n\nThis OTP will expire in 2 minutes.\n\nIf you did not request this verification, please ignore this email.\n\n© ${new Date().getFullYear()} Pinspire`
         };
 
-        // Send email in production
+        // Send email
         const info = await transporter.sendMail(mailOptions);
         console.log('OTP Email sent successfully to', to);
-        console.log('Message ID:', info.messageId);
+        if (info && info.messageId) {
+            console.log('Message ID:', info.messageId);
+        }
         return true;
     } catch (error) {
         console.error('Error sending OTP email to', to, ':', error);
         
         // For darshil.site specifically, provide focused troubleshooting
-        if (process.env.EMAIL_USER.includes('darshil.site')) {
+        if (process.env.EMAIL_USER && process.env.EMAIL_USER.includes('darshil.site')) {
             console.error('\nEmail sending for darshil.site failed. Please check:');
             console.error('1. Confirm your Zoho Mail credentials are correct');
             console.error('2. Verify that POP/IMAP access is enabled in your Zoho Mail account');
