@@ -7,7 +7,7 @@
     </div>
 </div>
 
-<div class="max-w-6xl mx-auto mt-8 px-4">
+<div class="max-w-6xl mx-auto mt-8 px-4 bg-white dark:bg-black">
     <!-- Page Header -->
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Explore</h1>
@@ -43,29 +43,47 @@
 
     <!-- Explore Posts Grid (Instagram-like) -->
     <div id="posts-grid" class="mb-10">
-        <div class="grid grid-cols-3 gap-1 md:gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 sm:gap-2 md:gap-3">
             <% if (explorePosts && explorePosts.length > 0) { %>
-                <% explorePosts.forEach(post => { %>
-                    <div class="aspect-square relative group cursor-pointer post-card">
+                <% explorePosts.forEach((post, index) => { %>
+                    <div class="aspect-square relative group cursor-pointer post-card overflow-hidden rounded-md border border-gray-200 dark:border-gray-800">
                         <a href="/post/<%= post._id %>" class="block w-full h-full">
                             <% if (post.images && post.images.length > 0) { %>
                                 <img src="<%= post.images[0].url %>" alt="Post by <%= post.user.username %>" 
                                     class="w-full h-full object-cover">
-                                
-                                <!-- Hover Overlay -->
-                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
-                                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center text-white space-x-4">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-heart mr-2"></i>
-                                            <span><%= post.likes.length %></span>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <i class="fas fa-comment mr-2"></i>
-                                            <span><%= post.comments ? post.comments.length : 0 %></span>
-                                        </div>
+                            <% } else { %>
+                                <% 
+                                // Generate a varied background color based on post ID or index
+                                const colors = [
+                                    'bg-blue-100 dark:bg-blue-900', 
+                                    'bg-pink-100 dark:bg-pink-900',
+                                    'bg-green-100 dark:bg-green-900', 
+                                    'bg-purple-100 dark:bg-purple-900',
+                                    'bg-yellow-100 dark:bg-yellow-900',
+                                    'bg-red-100 dark:bg-red-900'
+                                ];
+                                const colorClass = colors[index % colors.length];
+                                %>
+                                <div class="w-full h-full flex items-center justify-center <%= colorClass %> p-4 overflow-hidden">
+                                    <div class="bg-white dark:bg-gray-800 bg-opacity-70 dark:bg-opacity-70 p-3 rounded-lg shadow-sm w-full">
+                                        <p class="text-gray-800 dark:text-gray-200 text-sm line-clamp-6 overflow-hidden font-medium"><%= post.content %></p>
                                     </div>
                                 </div>
                             <% } %>
+                                
+                            <!-- Hover Overlay -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+                                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center text-white space-x-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-heart mr-2"></i>
+                                        <span><%= post.likes.length %></span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-comment mr-2"></i>
+                                        <span><%= post.comments ? post.comments.length : 0 %></span>
+                                    </div>
+                                </div>
+                            </div>
                         </a>
                         
                         <!-- User info on hover -->
@@ -122,6 +140,16 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Ensure correct background color in light mode */
+    body {
+        background-color: rgb(243 244 246); /* bg-gray-100 equivalent */
+    }
+    body.dark {
+        background-color: black;
+    }
+</style>
 
 <script>
     // Tab switching
