@@ -351,7 +351,7 @@ function closeCreatePostModal() {
             </a>
         </li>
         <li>
-            <button id="deletePostOption" class="w-full px-4 py-3 flex items-center text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <button id="deletePostOption" onclick="deletePostClicked()" class="w-full px-4 py-3 flex items-center text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                 <i class="fas fa-trash mr-3"></i> Delete
             </button>
         </li>
@@ -410,7 +410,7 @@ function closeCreatePostModal() {
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
+<div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[9999] flex items-center justify-center">
     <div class="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md mx-4 p-6">
         <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Delete Post</h3>
         <p class="mb-6 text-gray-600 dark:text-gray-300">Are you sure you want to delete this post? This action cannot be undone.</p>
@@ -418,7 +418,7 @@ function closeCreatePostModal() {
             <button onclick="closeDeleteConfirmModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-800 dark:text-white">
                 Cancel
             </button>
-            <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+            <button onclick="confirmDeletePost()" id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
                 Delete
             </button>
         </div>
@@ -447,9 +447,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Set up event listeners for post deletion
-    if (document.getElementById('confirmDeleteBtn')) {
-        document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeletePost);
-    }
+    // Note: We're now using direct onclick handlers instead of this event listener approach
+    // if (document.getElementById('confirmDeleteBtn')) {
+    //     document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeletePost);
+    // }
 
     // Add drag and drop functionality for images
     const dropZone = document.getElementById('imageUploadPlaceholder');
@@ -553,61 +554,114 @@ function closePostMenu() {
 
 // Handle post form submission
 async function handlePostSubmit(e) {
+    console.log('Form submission started');
     e.preventDefault();
+    e.stopPropagation();
     
     // Get form data
     const form = e.target;
-    const formData = new FormData(form);
+    console.log('Form element:', form.id);
+    
+    // Prevent multiple submissions
+    const submitBtn = document.getElementById('submitPostBtn');
+    if (submitBtn.disabled) {
+        console.log('Preventing duplicate submission - button already disabled');
+        return;
+    }
     
     // Check if there are images selected
     const imageInput = document.getElementById('imageInput');
     const files = imageInput.files;
     
+    console.log('Selected files:', files ? files.length : 0);
+    
     if (!files || files.length === 0) {
+        console.log('No files selected');
         showToast('Please add at least one image to your post');
         return;
     }
     
     // Update submit button state
-    const submitBtn = document.getElementById('submitPostBtn');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="inline-block animate-pulse">Sharing...</span>';
     submitBtn.disabled = true;
     submitBtn.classList.add('opacity-70');
+    console.log('Submit button disabled to prevent duplicate submission');
     
-    // Append image files to form data (already done through the FormData constructor)
+    // Create a new FormData instance
+    const formData = new FormData();
+    
+    // Add the caption content
+    const contentField = form.querySelector('textarea[name="content"]');
+    const titleField = form.querySelector('input[name="title"]');
+    
+    if (contentField) {
+        formData.append('content', contentField.value);
+        console.log('Added content to form data:', contentField.value.substring(0, 30) + '...');
+    }
+    
+    if (titleField) {
+        formData.append('title', titleField.value);
+        console.log('Added title to form data:', titleField.value);
+    }
+    
+    // Append image files to form data
     Array.from(files).forEach((file, index) => {
         // Rename files for better organization on server
         const newFile = new File([file], `image-${index}.${file.name.split('.').pop()}`, {
             type: file.type
         });
         formData.append('processedImages', newFile);
+        console.log(`Added image ${index+1} (${file.name}) to form data`);
     });
+    
+    // Clone the form and replace it to prevent duplicate submissions
+    console.log('Cloning form to prevent duplicate submissions');
+    const oldForm = form;
+    const newForm = oldForm.cloneNode(true);
+    oldForm.parentNode.replaceChild(newForm, oldForm);
+    
+    // Reattach the event listener to the new form
+    newForm.addEventListener('submit', handlePostSubmit);
+    console.log('Reattached event listener to new form');
 
     try {
+        console.log('Sending POST request to /post endpoint');
         const response = await fetch('/post', {
             method: 'POST',
             body: formData
         });
         
+        console.log('Response received:', response.status);
+        
         if (response.ok) {
             // Parse the JSON response
             const data = await response.json();
+            console.log('Success response:', data);
             showToast(data.message || 'Post shared successfully!');
             closeCreatePostModal();
             
             // Reload the page after a short delay
+            console.log('Will reload page in 1.5 seconds');
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
         } else {
-            const errorData = await response.json();
-            showToast('Error: ' + (errorData.message || 'Could not create post'));
+            console.error('Error response:', response.status);
+            let errorData;
+            try {
+                errorData = await response.json();
+                console.error('Error data:', errorData);
+            } catch (e) {
+                console.error('Could not parse error response as JSON:', e);
+            }
+            showToast('Error: ' + (errorData?.message || 'Could not create post'));
         }
     } catch (error) {
-        console.error('Error creating post:', error);
+        console.error('Network error creating post:', error);
         showToast('Network error. Please try again.');
     } finally {
+        console.log('Resetting button state');
         // Reset button state
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
@@ -784,28 +838,54 @@ function closeStoryPreview() {
 
 // Delete confirmation functionality
 function showDeleteConfirmation(postId) {
+    console.log('Showing delete confirmation for post:', postId);
     currentPostId = postId;
-    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+    
+    // Get the modal and ensure it has the correct display properties
+    const modal = document.getElementById('deleteConfirmModal');
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+    
+    // Prevent body scrolling when modal is open
+    document.body.style.overflow = 'hidden';
 }
 
 function closeDeleteConfirmModal() {
-    document.getElementById('deleteConfirmModal').classList.add('hidden');
+    console.log('Closing delete confirmation modal');
+    const modal = document.getElementById('deleteConfirmModal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    
+    // Re-enable body scrolling
+    document.body.style.overflow = '';
     currentPostId = null;
 }
 
 // Confirm delete post action
 async function confirmDeletePost() {
-    if (!currentPostId) return;
+    console.log('Confirming delete for post ID:', currentPostId);
+    
+    if (!currentPostId) {
+        console.error('No post ID found for deletion');
+        return;
+    }
     
     try {
-        const response = await fetch(`/delete/${currentPostId}`, {
-            method: 'GET'
+        console.log(`Sending DELETE request to /post/${currentPostId}/delete`);
+        const response = await fetch(`/post/${currentPostId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
+        
+        console.log('Delete response status:', response.status);
         
         if (response.ok) {
             // Remove from DOM with animation
             const postElement = document.querySelector(`[data-post-id="${currentPostId}"]`);
             if (postElement) {
+                console.log('Found post element, removing from DOM');
                 postElement.classList.add('scale-0', 'opacity-0');
                 setTimeout(() => {
                     postElement.remove();
@@ -831,16 +911,26 @@ async function confirmDeletePost() {
                         `;
                     }
                 }, 300);
+            } else {
+                console.error('Post element not found in DOM');
             }
             
             showToast('Post deleted successfully');
         } else {
-            showToast('Failed to delete post');
+            console.error('Error in delete response:', response.status);
+            let errorData;
+            try {
+                errorData = await response.json();
+                console.error('Error data:', errorData);
+            } catch (e) {
+                console.error('Could not parse error response as JSON');
+            }
+            showToast(errorData?.error || 'Failed to delete post');
         }
         closeDeleteConfirmModal();
     } catch (error) {
-        console.error('Error:', error);
-        showToast('An error occurred');
+        console.error('Exception in delete post:', error);
+        showToast('An error occurred while deleting the post');
         closeDeleteConfirmModal();
     }
 }
@@ -926,6 +1016,13 @@ function handleDrop(e) {
         document.getElementById('imageInput').files = files;
         handleImageSelect({target: {files: files}});
     }
+}
+
+// Function to handle direct delete button click
+function deletePostClicked() {
+    console.log('Delete button clicked directly, current post ID:', currentPostId);
+    closePostMenu();
+    showDeleteConfirmation(currentPostId);
 }
 </script>
 

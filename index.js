@@ -3614,3 +3614,40 @@ app.get("/post/:postId/comments", isLoggedIn, async (req, res) => {
         res.status(500).json({ error: "Error fetching comments" });
     }
 });
+
+// Delete post
+app.delete('/post/:postId/delete', isLoggedIn, async (req, res) => {
+    try {
+        const postId = req.params.postId;
+        const user = await userModel.findOne({ email: req.user.email });
+        const post = await postModel.findById(postId);
+        
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        
+        // Check if user owns the post
+        if (post.user.toString() !== user._id.toString()) {
+            return res.status(403).json({ error: "You can only delete your own posts" });
+        }
+        
+        // Delete all comments associated with the post
+        await commentModel.deleteMany({ post: postId });
+        
+        // Delete post images from cloud storage
+        if (post.images && post.images.length > 0) {
+            for (const image of post.images) {
+                // If using cloudinary or similar service, delete the image
+                // Example: await cloudinary.uploader.destroy(image.public_id);
+            }
+        }
+        
+        // Delete the post itself
+        await postModel.findByIdAndDelete(postId);
+        
+        res.json({ success: true, message: "Post deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting post:", error);
+        res.status(500).json({ error: "Error deleting post" });
+    }
+});
