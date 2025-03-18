@@ -54,6 +54,20 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
+    isPrivate: {
+        type: Boolean,
+        default: false
+    },
+    followRequests: [{
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     hasActiveStory: {
         type: Boolean,
         default: false

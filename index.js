@@ -232,7 +232,11 @@ app.get("/profile" ,isLoggedIn ,  async (req,res)=>{
                 }
             })
             .populate('followers')
-            .populate('following');
+            .populate('following')
+            .populate({
+                path: 'followRequests.user',
+                select: 'name username profileImage'
+            });
         
         res.render("profile", {user});
     } catch (error) {
@@ -1122,12 +1126,14 @@ app.get("/edit-profile", isLoggedIn, async (req, res) => {
 // Update profile
 app.post("/update-profile", isLoggedIn, async (req, res) => {
     try {
-        const { name, username, bio } = req.body;
+        const { name, username, bio, isPrivate } = req.body;
         const user = await userModel.findOne({ email: req.user.email });
         
         user.name = name;
         user.username = username;
         user.bio = bio;
+        // Handle privacy settings (checkbox will be undefined if unchecked)
+        user.isPrivate = isPrivate === 'on';
         
         await user.save();
         res.redirect("/profile");
@@ -1619,33 +1625,32 @@ async function fetchUnreadMessagesCount(req, res, next) {
 // Apply the middleware after isLoggedIn
 app.use(fetchUnreadMessagesCount);
 
-// Add this after other middleware (where fetchUnreadMessagesCount is, if it exists)
-async function fetchUnreadNotificationsCount(req, res, next) {
+// Middleware to fetch follow requests count
+async function fetchFollowRequestsCount(req, res, next) {
     if (!req.user) {
         return next();
     }
     
     try {
-        const user = await userModel.findOne({ email: req.user.email });
-        if (!user) {
-            return next();
+        // Find the user by ID or email
+        let user;
+        if (req.user._id) {
+            user = await userModel.findById(req.user._id);
+        } else if (req.user.email) {
+            user = await userModel.findOne({ email: req.user.email });
         }
         
-        const unreadCount = await notificationModel.countDocuments({
-            recipient: user._id,
-            read: false
-        });
-        
-        res.locals.unreadNotifications = unreadCount;
-        next();
+        if (user && user.followRequests) {
+            res.locals.followRequestsCount = user.followRequests.length;
+        }
     } catch (error) {
-        console.error('Error fetching unread notifications count:', error);
-        next();
+        console.error('Error fetching follow requests count:', error);
     }
+    next();
 }
 
-// Apply the middleware to all routes
-app.use(fetchUnreadNotificationsCount);
+// Apply this middleware after other middleware
+app.use(fetchFollowRequestsCount);
 
 // Send regular text message
 app.post("/chat/:chatId/message", isLoggedIn, async (req, res) => {
@@ -1689,91 +1694,6 @@ app.post("/chat/:chatId/message", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error sending message:', error);
         res.status(500).json({ error: "Error sending message" });
-    }
-});
-
-// Save post
-app.post("/post/:postId/save", isLoggedIn, async (req, res) => {
-    try {
-        const post = await postModel.findById(req.params.postId);
-        const user = await userModel.findOne({ email: req.user.email });
-
-        if (!post) {
-            return res.status(404).json({ error: "Post not found" });
-        }
-
-        // Check if post is already saved
-        const postIndex = user.savedPosts.indexOf(post._id);
-        
-        if (postIndex === -1) {
-            // Add post to saved posts
-            user.savedPosts.push(post._id);
-            await user.save();
-            res.json({ message: "Post saved", saved: true });
-        } else {
-            // Remove post from saved posts
-            user.savedPosts.splice(postIndex, 1);
-            await user.save();
-            res.json({ message: "Post unsaved", saved: false });
-        }
-    } catch (error) {
-        console.error('Error saving post:', error);
-        res.status(500).json({ error: "Error saving post" });
-    }
-});
-
-// Get saved posts
-app.get('/saved-posts', isLoggedIn, async (req, res) => {
-    try {
-        console.log('User data from request:', req.user);
-        
-        let user;
-        
-        // First try to find by ID
-        if (req.user._id) {
-            user = await userModel.findById(req.user._id);
-        }
-        
-        // If no user found by ID, try to find by email
-        if (!user && req.user.email) {
-            user = await userModel.findOne({ email: req.user.email });
-        }
-        
-        // If we have a user, populate the savedPosts
-        if (user) {
-            user = await userModel.findById(user._id).populate({
-                path: 'savedPosts',
-                populate: [
-                    {
-                        path: 'user',
-                        select: 'name username profileImage'
-                    },
-                    {
-                        path: 'likes'
-                    },
-                    {
-                        path: 'comments',
-                        populate: {
-                            path: 'user',
-                            select: 'name username profileImage'
-                        }
-                    }
-                ]
-            });
-        }
-
-        if (!user) {
-            console.error('User not found. Auth data:', req.user);
-            return res.status(404).send('User not found');
-        }
-        
-        res.render('savedPosts', { 
-            savedPosts: user.savedPosts || [],
-            user: user
-        });
-    } catch (error) {
-        console.error('Error retrieving saved posts:', error);
-        res.status(500).send('Server error');
     }
 });
 
@@ -2608,32 +2528,84 @@ app.post('/user/:userId/follow', isLoggedIn, async (req, res) => {
             await userModel.findByIdAndUpdate(userToFollow._id, {
                 $pull: { followers: currentUser._id }
             });
-        } else {
-            // Follow
-            await userModel.findByIdAndUpdate(currentUser._id, {
-                $addToSet: { following: userToFollow._id }
-            });
-            await userModel.findByIdAndUpdate(userToFollow._id, {
-                $addToSet: { followers: currentUser._id }
-            });
             
-            // Create notification for new follower
-            await createNotification(userToFollow._id, currentUser._id, 'follow');
+            return res.json({
+                success: true,
+                following: false,
+                followRequested: false,
+                followers: userToFollow.followers.length - 1
+            });
+        } else {
+            // Check if the user has already requested to follow
+            const hasRequestedFollow = userToFollow.followRequests && 
+                userToFollow.followRequests.some(request => 
+                    request.user && request.user.toString() === currentUser._id.toString()
+                );
+            
+            if (hasRequestedFollow) {
+                return res.json({
+                    success: true,
+                    following: false,
+                    followRequested: true,
+                    followers: userToFollow.followers.length
+                });
+            }
+            
+            // If account is private, add a follow request instead of following directly
+            if (userToFollow.isPrivate) {
+                // Check if the request already exists
+                const alreadyRequested = userToFollow.followRequests && 
+                    userToFollow.followRequests.some(req => 
+                        req.user && req.user.toString() === currentUser._id.toString()
+                    );
+                
+                if (!alreadyRequested) {
+                    // Add follow request
+                    await userModel.findByIdAndUpdate(userToFollow._id, {
+                        $push: { 
+                            followRequests: {
+                                user: currentUser._id,
+                                createdAt: new Date()
+                            }
+                        }
+                    });
+                    
+                    // Create notification for follow request
+                    await createNotification(userToFollow._id, currentUser._id, 'followRequest');
+                }
+                
+                return res.json({
+                    success: true,
+                    following: false,
+                    followRequested: true,
+                    followers: userToFollow.followers.length
+                });
+            } else {
+                // Public account - follow directly
+                await userModel.findByIdAndUpdate(currentUser._id, {
+                    $addToSet: { following: userToFollow._id }
+                });
+                await userModel.findByIdAndUpdate(userToFollow._id, {
+                    $addToSet: { followers: currentUser._id }
+                });
+                
+                // Create notification for new follower
+                await createNotification(userToFollow._id, currentUser._id, 'follow');
+                
+                // Get updated follower count
+                const updatedUser = await userModel.findById(userToFollow._id);
+                
+                return res.json({
+                    success: true,
+                    following: true,
+                    followRequested: false,
+                    followers: updatedUser.followers.length
+                });
+            }
         }
-
-        // Get updated follower count
-        const updatedUser = await userModel.findById(userToFollow._id)
-            .populate('followers')
-            .populate('following');
-        
-        res.json({
-            success: true,
-            isFollowing: !isFollowing,
-            followersCount: updatedUser.followers.length
-        });
     } catch (error) {
-        console.error('Follow error:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
+        console.error('Error following/unfollowing user:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
@@ -3131,5 +3103,94 @@ app.get("/api/debug/generate-test-notifications", isLoggedIn, async (req, res) =
     } catch (error) {
         console.error('Error generating test notifications:', error);
         res.status(500).json({ error: 'Error generating test notifications', details: error.message });
+    }
+});
+
+// Follow Requests Page
+app.get("/follow-requests", isLoggedIn, async (req, res) => {
+    try {
+        // Get the current user with fully populated follow requests
+        const user = await userModel.findOne({ email: req.user.email })
+            .populate({
+                path: 'followRequests.user',
+                select: 'name username profileImage'
+            });
+        
+        if (!user) {
+            return res.redirect("/login");
+        }
+        
+        res.render("followRequests", { user });
+    } catch (error) {
+        console.error('Error fetching follow requests:', error);
+        res.status(500).send("Error fetching follow requests");
+    }
+});
+
+// Accept follow request
+app.post("/follow-request/:userId/accept", isLoggedIn, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        
+        // Check if request exists
+        const requestIndex = currentUser.followRequests.findIndex(
+            request => request.user.toString() === userId
+        );
+        
+        if (requestIndex === -1) {
+            return res.status(404).json({ error: 'Follow request not found' });
+        }
+        
+        // Remove from follow requests
+        currentUser.followRequests.splice(requestIndex, 1);
+        
+        // Add to followers
+        if (!currentUser.followers.includes(userId)) {
+            currentUser.followers.push(userId);
+        }
+        
+        await currentUser.save();
+        
+        // Add the user to the requester's following list
+        const requester = await userModel.findById(userId);
+        if (!requester.following.includes(currentUser._id)) {
+            requester.following.push(currentUser._id);
+            await requester.save();
+        }
+        
+        // Create notification
+        await createNotification(userId, currentUser._id, 'followAccepted');
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error accepting follow request:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Reject follow request
+app.post("/follow-request/:userId/reject", isLoggedIn, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        
+        // Check if request exists
+        const requestIndex = currentUser.followRequests.findIndex(
+            request => request.user.toString() === userId
+        );
+        
+        if (requestIndex === -1) {
+            return res.status(404).json({ error: 'Follow request not found' });
+        }
+        
+        // Remove from follow requests
+        currentUser.followRequests.splice(requestIndex, 1);
+        await currentUser.save();
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error rejecting follow request:', error);
+        res.status(500).json({ error: 'Server error' });
     }
 });

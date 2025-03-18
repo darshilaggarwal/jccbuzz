@@ -1,0 +1,196 @@
+<%- include('partials/header') %>
+
+<div class="max-w-4xl mx-auto mt-8 px-4">
+    <!-- Follow Requests Header -->
+    <div class="bg-white dark:bg-black rounded-lg shadow-md p-6 mb-4">
+        <div class="flex items-center justify-between">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Follow Requests</h1>
+            <a href="/profile" class="text-sm text-blue-500 hover:underline">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Follow Requests List -->
+    <div class="bg-white dark:bg-black rounded-lg shadow-md p-6">
+        <% if (user.followRequests && user.followRequests.length > 0) { %>
+            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                <% user.followRequests.forEach(request => { %>
+                    <div class="flex items-center justify-between py-4 followRequest" data-request-id="<%= request._id %>">
+                        <a href="/user/<%= request.user.username %>" class="flex items-center space-x-3">
+                            <img src="<%= request.user.profileImage %>" alt="<%= request.user.name %>" class="w-12 h-12 rounded-full object-cover">
+                            <div>
+                                <p class="font-semibold text-gray-800 dark:text-white"><%= request.user.name %></p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">@<%= request.user.username %></p>
+                            </div>
+                        </a>
+                        <div class="flex space-x-2">
+                            <button 
+                                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors accept-btn"
+                                data-user-id="<%= request.user._id %>">
+                                Accept
+                            </button>
+                            <button 
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors reject-btn"
+                                data-user-id="<%= request.user._id %>">
+                                Reject
+                            </button>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 mb-2">No pending follow requests</p>
+                <p class="text-sm text-gray-400 dark:text-gray-500">When someone requests to follow you, it will appear here.</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div id="toast" class="fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 opacity-0 translate-y-10 bg-green-500 text-white">
+    <span id="toastMessage"></span>
+</div>
+
+<script>
+    // Function to show toast notification
+    function showToast(message, isSuccess = true) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 ${isSuccess ? 'bg-green-500' : 'bg-red-500'} text-white`;
+        toastMessage.textContent = message;
+        
+        // Show toast
+        toast.classList.remove('opacity-0', 'translate-y-10');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-10');
+            toast.classList.remove('opacity-100', 'translate-y-0');
+        }, 3000);
+    }
+
+    // Handle accept button click
+    document.querySelectorAll('.accept-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const userId = this.getAttribute('data-user-id');
+            const requestElement = this.closest('.followRequest');
+            
+            try {
+                const response = await fetch(`/follow-request/${userId}/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Remove the request from the list with animation
+                    requestElement.style.height = requestElement.offsetHeight + 'px';
+                    requestElement.style.overflow = 'hidden';
+                    requestElement.style.transition = 'all 0.3s ease';
+                    
+                    setTimeout(() => {
+                        requestElement.style.height = '0';
+                        requestElement.style.padding = '0';
+                        requestElement.style.margin = '0';
+                        
+                        setTimeout(() => {
+                            requestElement.remove();
+                            
+                            // If no more requests, show "no requests" message
+                            const remaining = document.querySelectorAll('.followRequest');
+                            if (remaining.length === 0) {
+                                const container = document.querySelector('.divide-y');
+                                container.innerHTML = `
+                                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                                        <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                                            <i class="fas fa-user-check"></i>
+                                        </div>
+                                        <p class="text-gray-500 dark:text-gray-400 mb-2">No pending follow requests</p>
+                                        <p class="text-sm text-gray-400 dark:text-gray-500">When someone requests to follow you, it will appear here.</p>
+                                    </div>
+                                `;
+                            }
+                        }, 300);
+                    }, 50);
+                    
+                    showToast('Follow request accepted');
+                } else {
+                    showToast(data.message || 'Error accepting request', false);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to accept request', false);
+            }
+        });
+    });
+
+    // Handle reject button click
+    document.querySelectorAll('.reject-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const userId = this.getAttribute('data-user-id');
+            const requestElement = this.closest('.followRequest');
+            
+            try {
+                const response = await fetch(`/follow-request/${userId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Remove the request from the list with animation
+                    requestElement.style.height = requestElement.offsetHeight + 'px';
+                    requestElement.style.overflow = 'hidden';
+                    requestElement.style.transition = 'all 0.3s ease';
+                    
+                    setTimeout(() => {
+                        requestElement.style.height = '0';
+                        requestElement.style.padding = '0';
+                        requestElement.style.margin = '0';
+                        
+                        setTimeout(() => {
+                            requestElement.remove();
+                            
+                            // If no more requests, show "no requests" message
+                            const remaining = document.querySelectorAll('.followRequest');
+                            if (remaining.length === 0) {
+                                const container = document.querySelector('.divide-y');
+                                container.innerHTML = `
+                                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                                        <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                                            <i class="fas fa-user-check"></i>
+                                        </div>
+                                        <p class="text-gray-500 dark:text-gray-400 mb-2">No pending follow requests</p>
+                                        <p class="text-sm text-gray-400 dark:text-gray-500">When someone requests to follow you, it will appear here.</p>
+                                    </div>
+                                `;
+                            }
+                        }, 300);
+                    }, 50);
+                    
+                    showToast('Follow request rejected');
+                } else {
+                    showToast(data.message || 'Error rejecting request', false);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to reject request', false);
+            }
+        });
+    });
+</script>
+
+<%- include('partials/footer') %> 

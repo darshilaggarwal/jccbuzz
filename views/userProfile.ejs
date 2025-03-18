@@ -16,14 +16,40 @@
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white"><%= profileUser.name %></h1>
-                        <p class="text-gray-500 dark:text-gray-400">@<%= profileUser.username %></p>
+                        <div class="flex items-center">
+                            <p class="text-gray-500 dark:text-gray-400">@<%= profileUser.username %></p>
+                            <% if (profileUser.isPrivate) { %>
+                                <span class="ml-2 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full flex items-center">
+                                    <i class="fas fa-lock text-xs mr-1"></i> Private
+                                </span>
+                            <% } %>
+                        </div>
                     </div>
                     <div class="flex space-x-2">
                         <% if (!isOwnProfile) { %>
+                            <% 
+                                let followBtnText = 'Follow';
+                                let followBtnClass = 'bg-blue-600 text-white hover:bg-blue-700';
+                                
+                                // Current following status check
+                                const isFollowing = user.following && user.following.some(id => id.toString() === profileUser._id.toString());
+                                
+                                // Check if there's a pending follow request
+                                const hasRequestedFollow = profileUser.followRequests && 
+                                    profileUser.followRequests.some(req => req.user && req.user.toString() === user._id.toString());
+                                
+                                if (isFollowing) {
+                                    followBtnText = 'Following';
+                                    followBtnClass = 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600';
+                                } else if (hasRequestedFollow) {
+                                    followBtnText = 'Requested';
+                                    followBtnClass = 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600';
+                                }
+                            %>
                             <button id="followButton"
                                     onclick="toggleFollow('<%= profileUser._id %>')"
-                                    class="px-4 py-2 rounded-md transition-colors <%= user.following && user.following.some(id => id.toString() === profileUser._id.toString()) ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600' : 'bg-blue-600 text-white hover:bg-blue-700' %>">
-                                <%= user.following && user.following.some(id => id.toString() === profileUser._id.toString()) ? 'Following' : 'Follow' %>
+                                    class="px-4 py-2 rounded-md transition-colors <%= followBtnClass %>">
+                                <%= followBtnText %>
                             </button>
                             <a href="/chat/<%= profileUser._id %>" 
                                class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -61,7 +87,23 @@
             <i class="fas fa-th mr-2"></i> Posts
         </h2>
         
-        <% if (profileUser.posts.length === 0) { %>
+        <% 
+        // Check if user should be allowed to see posts
+        const canViewPosts = isOwnProfile || 
+                           !profileUser.isPrivate || 
+                           (user.following && user.following.some(id => id.toString() === profileUser._id.toString()));
+        %>
+        
+        <% if (profileUser.isPrivate && !canViewPosts) { %>
+            <!-- Private account notice -->
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">This account is private</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Follow this account to see their photos and videos.</p>
+            </div>
+        <% } else if (profileUser.posts.length === 0) { %>
             <div class="flex flex-col items-center justify-center py-12 text-center">
                 <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
                     <i class="fas fa-camera"></i>
@@ -294,7 +336,7 @@ async function performFollowToggle(userId) {
             const followersCount = document.getElementById('followersCount');
             
             // Update button text and style
-            if (data.isFollowing) {
+            if (data.following) {
                 followButton.textContent = 'Following';
                 followButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
@@ -304,6 +346,16 @@ async function performFollowToggle(userId) {
                 
                 // Show toast
                 showToast('You are now following ' + document.querySelector('h1').textContent.trim());
+            } else if (data.followRequested) {
+                followButton.textContent = 'Requested';
+                followButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+                
+                // Save state to localStorage
+                localStorage.setItem(`requested_${userId}`, 'true');
+                
+                // Show toast
+                showToast('Follow request sent to ' + document.querySelector('h1').textContent.trim());
             } else {
                 followButton.textContent = 'Follow';
                 followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
@@ -311,6 +363,7 @@ async function performFollowToggle(userId) {
                 
                 // Update localStorage
                 localStorage.removeItem(`following_${userId}`);
+                localStorage.removeItem(`requested_${userId}`);
                 
                 // Show toast
                 showToast('You unfollowed ' + document.querySelector('h1').textContent.trim());
@@ -318,7 +371,7 @@ async function performFollowToggle(userId) {
             
             // Update followers count with animation
             const oldCount = parseInt(followersCount.textContent);
-            const newCount = data.followersCount;
+            const newCount = data.followers;
             
             if (oldCount !== newCount) {
                 followersCount.classList.add('scale-125', 'text-blue-500');
