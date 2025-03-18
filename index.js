@@ -3517,10 +3517,42 @@ app.get("/explore", isLoggedIn, async (req, res) => {
         })
         .select('username name profileImage bio')
         .limit(20);
+        
+        // Get posts from all users for the explore grid
+        // First fetch posts from all users, we'll filter private accounts after populating
+        const explorePosts = await postModel.find({})
+        .populate({
+            path: 'user',
+            select: 'username name profileImage private'
+        })
+        .populate({
+            path: 'likes',
+            select: 'username'
+        })
+        .populate({
+            path: 'comments'
+        })
+        .sort({ createdAt: -1 })
+        .limit(50);
+        
+        // Filter posts to only show public posts or posts from users the current user follows
+        const filteredPosts = explorePosts.filter(post => {
+            // Skip posts with null user
+            if (!post.user) return false;
+            
+            // Allow posts if:
+            // 1. The post is from a user with a public account
+            // 2. Current user follows the post's creator
+            // 3. The post is from the current user
+            return !post.user.private || 
+                   following.includes(post.user._id.toString()) || 
+                   post.user._id.toString() === currentUser._id.toString();
+        });
 
         res.render("explore", { 
             user: currentUser,
-            suggestedUsers
+            suggestedUsers,
+            explorePosts: filteredPosts
         });
     } catch (error) {
         console.error("Error fetching explore page:", error);
