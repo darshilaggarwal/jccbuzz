@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb://127.0.0.1:27017/pinspire")
+mongoose.connect("mongodb://127.0.0.1:27017/jccbuzz")
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
     },
     bio: {
         type: String,
-        default: "Hey there! I'm using Pinspire"
+        default: "Hey there! I'm using JCCbuzz"
     },
     isOnline: {
         type: Boolean,

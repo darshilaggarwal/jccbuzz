@@ -33,7 +33,8 @@ const io = new Server(server);
 // Add this near the top of the file where other environment variables are setup
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
 
-// mongoose.connect('mongodb://localhost:27017/pinspire')
+// Update commented MongoDB connection string
+// mongoose.connect('mongodb://localhost:27017/jccbuzz')
 //     .then(() => console.log('Connected to MongoDB'))
 //     .catch(err => console.error('MongoDB connection error:', err));
 
@@ -2213,7 +2214,7 @@ async function sendOTP(phoneNumber, otp) {
             : `+91${phoneNumber}`;
         
         // Prepare the message
-        const message = `Your verification code for Pinspire is: ${otp}. Valid for 2 minutes.`;
+        const message = `Your verification code for JCCbuzz is: ${otp}. Valid for 2 minutes.`;
         
         // Send the SMS
         const response = await twilio.messages.create({
@@ -2481,11 +2482,7 @@ app.get("/admin/test-sms", async (req, res) => {
 });
 
 // SMS Test Page - Useful for debugging SMS issues
-app.get('/admin/sms-test', async (req, res) => {
-    if (process.env.NODE_ENV === 'production') {
-        return res.status(403).send('This tool is not available in production');
-    }
-    
+app.get('/admin/sms-test', isLoggedIn, (req, res) => {
     // Check if Twilio credentials are configured
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
@@ -2497,9 +2494,9 @@ app.get('/admin/sms-test', async (req, res) => {
     }
     
     res.render('test-sms', {
-        defaultPhone: req.query.phone || '',
-        defaultMessage: 'This is a test message from Pinspire.',
-        apiKeyStatus,
+        defaultPhone: req.user?.phone || process.env.MY_PHONE || req.query.phone || '+919971790378',
+        defaultMessage: 'This is a test message from JCCbuzz.',
+        apiKeyStatus: apiKeyStatus,
         twilioPhone: twilioPhone || 'Not configured'
     });
 });

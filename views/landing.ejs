@@ -3,114 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>JCCbuzz - Social Media for Jagannath University Students</title>
+    <!-- Include additional fonts for a more modern appearance -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .hero-gradient {
+            background: linear-gradient(120deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .bg-grid-pattern {
+            background-image: linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                            linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
 </head>
 <body>
 
 <%- include('partials/header') %>
 
 <div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-    <!-- Hero Section -->
+    <!-- Hero Section with more modern design -->
     <div class="relative overflow-hidden">
         <!-- Background Pattern -->
         <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
         
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="relative z-10 py-16 md:py-28 lg:py-32">
-                <div class="lg:grid lg:grid-cols-12 lg:gap-8">
-                    <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
-                        <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                            <span class="block xl:inline">Share your story with</span>
-                            <span class="block text-blue-600 xl:inline"> Pinspire</span>
+        <div class="hero-gradient text-white py-20 relative z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
+                    <div class="sm:text-center lg:text-left lg:col-span-6">
+                        <h1 class="text-4xl tracking-tight font-extrabold sm:text-5xl md:text-6xl">
+                            <span class="block">Connect with</span>
+                            <span class="block text-indigo-200">Jagannath University</span>
                         </h1>
-                        <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                            Connect with friends, share your moments, and discover amazing stories from people around the world.
+                        <p class="mt-3 text-base text-indigo-100 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                            JCCbuzz is the exclusive social platform for Jagannath University students. Share moments, connect with classmates, and stay updated with campus life.
                         </p>
                         <div class="mt-8 sm:flex sm:justify-center lg:justify-start">
                             <div class="rounded-md shadow">
-                                <a href="/register" 
-                                   class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10 transform transition duration-200 hover:scale-105">
+                                <a href="/register" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 md:py-4 md:text-lg md:px-10">
                                     Get Started
                                 </a>
                             </div>
                             <div class="mt-3 sm:mt-0 sm:ml-3">
-                                <a href="/login" 
-                                   class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg md:px-10 transform transition duration-200 hover:scale-105">
+                                <a href="/login" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 bg-opacity-60 hover:bg-opacity-70 md:py-4 md:text-lg md:px-10">
                                     Sign In
                                 </a>
                             </div>
                         </div>
                     </div>
                     <div class="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-                        <div class="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
-                            <img class="w-full rounded-lg transform transition duration-500 hover:scale-105" 
-                                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80" 
-                                 alt="People sharing content">
+                        <div class="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md animate-float">
+                            <img class="w-full" src="/placeholder/JccBUZZ logo.svg" alt="JCCbuzz">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+        
+        <!-- Features Section with visual cards -->
+        <div class="py-16 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="lg:text-center">
+                    <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Features</h2>
+                    <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                        Everything you need to connect
+                    </p>
+                    <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                        JCCbuzz offers features designed specifically for university students.
+                    </p>
+                </div>
 
-    <!-- Features Section -->
-    <div class="py-16 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Features</h2>
-                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                    Everything you need to express yourself
-                </p>
-            </div>
-
-            <div class="mt-20">
-                <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                    <!-- Feature 1 -->
-                    <div class="pt-6 transform transition duration-500 hover:scale-105">
-                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8 h-full">
-                            <div class="-mt-6">
-                                <div>
-                                    <span class="inline-flex items-center justify-center p-3 bg-blue-500 rounded-md shadow-lg">
-                                        <i class="fas fa-users text-white text-2xl"></i>
-                                    </span>
+                <div class="mt-16">
+                    <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                        <!-- Feature 1 -->
+                        <div class="feature-card bg-white overflow-hidden shadow rounded-lg border border-gray-100">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="bg-indigo-500 rounded-md p-3">
+                                        <i class="fas fa-users text-white text-xl"></i>
+                                    </div>
+                                    <h3 class="ml-3 text-lg font-medium text-gray-900">Campus Community</h3>
                                 </div>
-                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">Connect with Others</h3>
-                                <p class="mt-5 text-base text-gray-500">
-                                    Build meaningful connections with people who share your interests and passions.
+                                <p class="mt-4 text-base text-gray-500">
+                                    Connect with classmates, professors, and alumni in a secure, university-verified environment.
                                 </p>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Feature 2 -->
-                    <div class="pt-6 transform transition duration-500 hover:scale-105">
-                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8 h-full">
-                            <div class="-mt-6">
-                                <div>
-                                    <span class="inline-flex items-center justify-center p-3 bg-blue-500 rounded-md shadow-lg">
-                                        <i class="fas fa-comment-dots text-white text-2xl"></i>
-                                    </span>
+                        <!-- Feature 2 -->
+                        <div class="feature-card bg-white overflow-hidden shadow rounded-lg border border-gray-100">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="bg-blue-500 rounded-md p-3">
+                                        <i class="fas fa-calendar-alt text-white text-xl"></i>
+                                    </div>
+                                    <h3 class="ml-3 text-lg font-medium text-gray-900">Events & Activities</h3>
                                 </div>
-                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">Real-time Chat</h3>
-                                <p class="mt-5 text-base text-gray-500">
-                                    Stay connected with instant messaging and see when your friends are online.
+                                <p class="mt-4 text-base text-gray-500">
+                                    Stay updated with campus events, club activities, and academic announcements.
                                 </p>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Feature 3 -->
-                    <div class="pt-6 transform transition duration-500 hover:scale-105">
-                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8 h-full">
-                            <div class="-mt-6">
-                                <div>
-                                    <span class="inline-flex items-center justify-center p-3 bg-blue-500 rounded-md shadow-lg">
-                                        <i class="fas fa-heart text-white text-2xl"></i>
-                                    </span>
+                        <!-- Feature 3 -->
+                        <div class="feature-card bg-white overflow-hidden shadow rounded-lg border border-gray-100">
+                            <div class="p-6">
+                                <div class="flex items-center">
+                                    <div class="bg-purple-500 rounded-md p-3">
+                                        <i class="fas fa-lock text-white text-xl"></i>
+                                    </div>
+                                    <h3 class="ml-3 text-lg font-medium text-gray-900">University Verified</h3>
                                 </div>
-                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">Interactive Posts</h3>
-                                <p class="mt-5 text-base text-gray-500">
-                                    Share, like, and comment on posts to engage with your community.
+                                <p class="mt-4 text-base text-gray-500">
+                                    Only students with valid university credentials can join, ensuring a trusted network.
                                 </p>
                             </div>
                         </div>
@@ -118,67 +141,92 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Stats Section -->
-    <div class="bg-blue-600">
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:py-16 sm:px-6 lg:px-8 lg:py-20">
-            <div class="max-w-4xl mx-auto text-center">
+        <!-- Testimonials/Social Proof section -->
+        <div class="bg-gray-50 py-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-3xl mx-auto text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900">
+                        Loved by Jagannath University Students
+                    </h2>
+                    <p class="mt-4 text-lg text-gray-500">
+                        See what your fellow students are saying about JCCbuzz
+                    </p>
+                </div>
+                <div class="mt-12 max-w-lg mx-auto grid gap-8 lg:grid-cols-3 lg:max-w-none">
+                    <!-- Testimonial 1 -->
+                    <div class="flex flex-col rounded-lg shadow-lg overflow-hidden">
+                        <div class="flex-1 bg-white p-6 flex flex-col justify-between">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-indigo-600">Computer Science</p>
+                                <div class="block mt-2">
+                                    <p class="text-xl font-semibold text-gray-900">Rahul Sharma</p>
+                                    <p class="mt-3 text-base text-gray-500">"JCCbuzz has completely transformed how I connect with other students on campus. The events feature helped me discover so many activities I would have missed otherwise!"</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <div class="text-yellow-400">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 2 -->
+                    <div class="flex flex-col rounded-lg shadow-lg overflow-hidden">
+                        <div class="flex-1 bg-white p-6 flex flex-col justify-between">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-indigo-600">Business Administration</p>
+                                <div class="block mt-2">
+                                    <p class="text-xl font-semibold text-gray-900">Priya Patel</p>
+                                    <p class="mt-3 text-base text-gray-500">"As a club organizer, JCCbuzz makes it so easy to reach out to students and promote our events. The engagement we've seen has increased dramatically!"</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <div class="text-yellow-400">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 3 -->
+                    <div class="flex flex-col rounded-lg shadow-lg overflow-hidden">
+                        <div class="flex-1 bg-white p-6 flex flex-col justify-between">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-indigo-600">Electrical Engineering</p>
+                                <div class="block mt-2">
+                                    <p class="text-xl font-semibold text-gray-900">Arjun Singh</p>
+                                    <p class="mt-3 text-base text-gray-500">"I love that JCCbuzz is exclusively for our university. It creates a safe space where we can share academic resources and connect with peers in our field."</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <div class="text-yellow-400">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action Section -->
+        <div class="bg-indigo-700">
+            <div class="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
                 <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
-                    Trusted by users worldwide
+                    <span class="block">Ready to connect with your campus?</span>
                 </h2>
-                <p class="mt-3 text-xl text-blue-200 sm:mt-4">
-                    Join our growing community of creators and storytellers
+                <p class="mt-4 text-lg leading-6 text-indigo-200">
+                    Join thousands of Jagannath University students already on JCCbuzz.
                 </p>
-            </div>
-            <dl class="mt-10 text-center sm:max-w-3xl sm:mx-auto sm:grid sm:grid-cols-3 sm:gap-8">
-                <div class="flex flex-col">
-                    <dt class="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
-                        Active Users
-                    </dt>
-                    <dd class="order-1 text-5xl font-extrabold text-white">
-                        100K+
-                    </dd>
-                </div>
-                <div class="flex flex-col mt-10 sm:mt-0">
-                    <dt class="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
-                        Daily Posts
-                    </dt>
-                    <dd class="order-1 text-5xl font-extrabold text-white">
-                        50K+
-                    </dd>
-                </div>
-                <div class="flex flex-col mt-10 sm:mt-0">
-                    <dt class="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
-                        Countries
-                    </dt>
-                    <dd class="order-1 text-5xl font-extrabold text-white">
-                        150+
-                    </dd>
-                </div>
-            </dl>
-        </div>
-    </div>
-
-    <!-- CTA Section -->
-    <div class="bg-gray-50">
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-            <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                <span class="block">Ready to dive in?</span>
-                <span class="block text-blue-600">Start your journey today.</span>
-            </h2>
-            <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
-                <div class="inline-flex rounded-md shadow">
-                    <a href="/register" 
-                       class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transform transition duration-200 hover:scale-105">
-                        Get started
-                    </a>
-                </div>
+                <a href="/register" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto">
+                    Sign up today
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="bg-white">
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
             <div class="flex justify-center space-x-6 md:order-2">
@@ -197,21 +245,12 @@
             </div>
             <div class="mt-8 md:mt-0 md:order-1">
                 <p class="text-center text-base text-gray-400">
-                    &copy; 2024 Pinspire. All rights reserved.
+                    &copy; 2024 JCCbuzz. All rights reserved.
                 </p>
             </div>
         </div>
     </footer>
 </div>
-
-<!-- Add this to your header.ejs or in a <style> tag -->
-<style>
-.bg-grid-pattern {
-    background-image: linear-gradient(to right, #f0f0f0 1px, transparent 1px),
-                      linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
-    background-size: 20px 20px;
-}
-</style>
 
 </body>
 </html>

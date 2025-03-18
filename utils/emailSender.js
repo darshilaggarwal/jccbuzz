@@ -75,7 +75,7 @@ async function sendOTPEmail(to, otp, name) {
         if (process.env.NODE_ENV !== 'production') {
             console.log('==================== DEVELOPMENT EMAIL ====================');
             console.log(`To: ${to}`);
-            console.log(`Subject: Pinspire Registration: Your OTP Code`);
+            console.log(`Subject: JCCbuzz Registration: Your OTP Code`);
             console.log(`OTP for ${name}: ${otp}`);
             console.log('==========================================================');
         }
@@ -85,36 +85,27 @@ async function sendOTPEmail(to, otp, name) {
         
         // Define email options
         const mailOptions = {
-            from: `"Pinspire Verification" <${process.env.EMAIL_USER || 'noreply@pinspire.app'}>`,
+            from: `"JCCbuzz Verification" <${process.env.EMAIL_USER || 'noreply@jccbuzz.edu'}>`,
             to: to,
-            subject: 'Pinspire Registration: Your OTP Code',
+            subject: 'JCCbuzz Registration: Your OTP Code',
             html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <h1 style="color: #3b82f6;">Pinspire</h1>
-                    <p style="font-size: 18px; color: #4b5563;">Verify your enrollment</p>
+                    <h1 style="color: #4f46e5;">JCCbuzz</h1>
                 </div>
-                
-                <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <p>Hello ${name},</p>
-                    <p>Thank you for registering with Pinspire. Please use the following One-Time Password (OTP) to verify your enrollment:</p>
-                    
-                    <div style="text-align: center; margin: 30px 0;">
-                        <div style="font-size: 30px; letter-spacing: 6px; font-weight: bold; color: #1f2937; background-color: #e5e7eb; padding: 15px; border-radius: 5px; display: inline-block;">
-                            ${otp}
-                        </div>
-                    </div>
-                    
-                    <p>This OTP will expire in 2 minutes.</p>
-                    <p>If you did not request this verification, please ignore this email.</p>
+                <p>Hello,</p>
+                <p>Thank you for registering with JCCbuzz. Your verification code is:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <div style="font-size: 24px; font-weight: bold; letter-spacing: 5px; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">${otp}</div>
                 </div>
-                
-                <div style="text-align: center; color: #6b7280; font-size: 14px;">
-                    <p>&copy; ${new Date().getFullYear()} Pinspire. All rights reserved.</p>
+                <p>This code will expire in 2 minutes.</p>
+                <p>If you did not request this code, please ignore this email.</p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #777; font-size: 12px;">
+                    &copy; ${new Date().getFullYear()} JCCbuzz. All rights reserved.
                 </div>
             </div>
             `,
-            text: `Hello ${name},\n\nYour OTP for Pinspire registration is: ${otp}\n\nThis OTP will expire in 2 minutes.\n\nIf you did not request this verification, please ignore this email.\n\n© ${new Date().getFullYear()} Pinspire`
+            text: `Your JCCbuzz verification code is: ${otp}. This code will expire in 2 minutes.`
         };
 
         // Send email
