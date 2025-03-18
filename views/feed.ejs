@@ -1,50 +1,68 @@
 <%- include('partials/header') %>
 
-<!-- Add this near the top of the body -->
-<div id="toast" class="fixed top-4 right-4 z-50 transform transition-transform duration-300 translate-x-full">
-    <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
-        <span class="mr-2"><i class="fas fa-check-circle"></i></span>
-        <span id="toast-message"></span>
+<!-- Modern Toast Notification -->
+<div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-full transition-all duration-300 z-50 opacity-0">
+    <div class="bg-black bg-opacity-75 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-sm">
+        <span id="toast-message" class="font-medium text-sm"></span>
     </div>
 </div>
 
-<!-- Search Bar -->
-<div class="max-w-4xl mx-auto mt-6 px-4">
-    <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden mb-6">
-        <form action="/search" method="GET" class="flex items-center p-2">
-            <div class="relative flex-grow">
-                <input type="text" 
-                       name="q" 
-                       placeholder="Search users..." 
-                       class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
-                </div>
-            </div>
-            <button type="submit" class="ml-2 px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex-shrink-0">
-                Search
+<!-- Comments Modal -->
+<div id="commentsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-t-xl sm:rounded-xl max-w-md w-full mx-auto overflow-hidden animate-slideUp">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div></div>
+            <h3 class="text-base font-semibold text-gray-800 dark:text-white">Comments</h3>
+            <button onclick="closeCommentsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
             </button>
+                </div>
+        
+        <div id="modalCommentsContainer" class="p-4 max-h-[70vh] overflow-y-auto">
+            <!-- Comments will be loaded here -->
+            </div>
+        
+        <div class="p-3 border-t border-gray-200 dark:border-gray-700">
+            <form class="flex items-center" id="modalCommentForm">
+                <img id="modalUserImage" src="<%= user.profileImage %>" 
+                     alt="Your profile" 
+                     class="w-8 h-8 rounded-full object-cover mr-2">
+                <div class="relative flex-1">
+                    <input type="text" 
+                           id="modalCommentInput" 
+                           placeholder="Add a comment..." 
+                           class="w-full py-2 px-3 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white text-sm"
+                           required>
+                    <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-600">
+                        <i class="fas fa-paper-plane"></i>
+            </button>
+                </div>
         </form>
+        </div>
     </div>
 </div>
 
-<!-- Stories Section -->
-<div class="max-w-4xl mx-auto mt-8 px-4">
-    <!-- Stories Section -->
-    <div class="bg-white rounded-lg shadow-md p-4 mb-8 overflow-x-auto">
-        <div class="flex space-x-4">
+<!-- Top Navigation Bar with Story Bubbles -->
+<div class="sticky top-0 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 z-30 pb-2">
+    <div class="max-w-xl mx-auto px-2">
+        
+
+        <!-- Stories List -->
+        <div class="flex space-x-4 overflow-x-auto py-4 scrollbar-hide">
             <!-- Add Story Button -->
             <div class="flex-shrink-0 text-center">
                 <label class="cursor-pointer block">
-                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-blue-500 hover:bg-gray-200 transition-colors">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-white dark:border-black">
+                        <div class="w-14 h-14 rounded-full bg-white dark:bg-black flex items-center justify-center">
                         <i class="fas fa-plus text-blue-500"></i>
+                        </div>
                     </div>
                     <input type="file" 
                            id="storyInput" 
                            class="hidden" 
                            accept="image/*,video/*" 
                            onchange="handleStoryUpload(event)">
-                    <p class="text-xs mt-1 text-gray-600">Add Story</p>
+                    <p class="text-xs mt-1 text-gray-600 dark:text-gray-400 font-medium">Your story</p>
                 </label>
             </div>
 
@@ -53,66 +71,40 @@
                 <!-- Stories will be loaded dynamically -->
             </div>
         </div>
-    </div>
-
-    <!-- Create Post Card -->
-    <div class="bg-white rounded-lg shadow-md p-4 mb-8">
-        <div class="flex items-center space-x-4">
-            <img src="<%= user.profileImage %>" 
-                 alt="Profile" 
-                 class="w-10 h-10 rounded-full object-cover">
-            <button onclick="openCreatePostModal()" 
-                    class="flex-1 px-4 py-2 bg-gray-100 rounded-full text-left text-gray-500 hover:bg-gray-200 transition-colors">
-                What's on your mind, <%= user.name.split(' ')[0] %>?
-            </button>
-        </div>
-        <div class="flex justify-around mt-4 pt-4 border-t">
-            <button onclick="openCreatePostModal()" 
-                    class="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
-                <i class="fas fa-image text-green-500"></i>
-                <span>Photo/Video</span>
-            </button>
-            <button onclick="openCreatePostModal()" 
-                    class="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
-                <i class="fas fa-smile text-yellow-500"></i>
-                <span>Feeling/Activity</span>
-            </button>
-            <button onclick="openCreatePostModal()" 
-                    class="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
-                <i class="fas fa-map-marker-alt text-red-500"></i>
-                <span>Location</span>
-            </button>
         </div>
     </div>
 
+<!-- Main Content -->
+<div class="max-w-xl mx-auto mt-2 px-0 sm:px-2">
     <!-- Posts Feed -->
-    <div class="space-y-8">
+    <div class="space-y-4">
         <% posts.forEach(post => { 
             // Additional safety check to filter out posts with null users at template level
             if (!post || !post.user) {
                 return; // Skip this post entirely
             }
         %>
-            <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden transform hover:shadow-lg transition-shadow duration-200 post-container">
+            <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 sm:rounded-lg overflow-hidden transform transition-all post-container">
                 <!-- Post Header -->
-                <div class="p-4 flex items-center justify-between">
+                <div class="p-3 flex items-center justify-between">
                     <a href="/user/<%= post.user.username %>" class="flex items-center group">
                         <div class="relative">
+                            <div class="<%= post.user.hasActiveStory ? 'story-ring p-[2px]' : '' %> rounded-full">
+                                <div class="bg-white dark:bg-black p-[1px] rounded-full">
                             <img src="<%= post.user.profileImage %>" 
                                  alt="Profile" 
-                                 class="w-10 h-10 rounded-full object-cover group-hover:opacity-90">
-                            <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"></div>
+                                         class="w-8 h-8 rounded-full object-cover">
                         </div>
-                        <div class="ml-3">
-                            <h5 class="font-semibold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"><%= post.user.name %></h5>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">@<%= post.user.username %></p>
+                            </div>
+                        </div>
+                        <div class="ml-2">
+                            <h5 class="font-semibold text-sm text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"><%= post.user.name %></h5>
+                            <p class="text-xs text-gray-500 dark:text-gray-400"><%= post.user.location ? post.user.location : '' %></p>
                         </div>
                     </a>
-                    <div class="flex space-x-2">
-                        <button onclick="showPostOptions('<%= post._id %>')" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">
+                    <button onclick="showPostOptions('<%= post._id %>')" class="text-gray-600 dark:text-gray-400 p-1 hover:text-gray-800 dark:hover:text-gray-200 transition">
                             <i class="fas fa-ellipsis-h"></i>
                         </button>
-                    </div>
                 </div>
 
                 <!-- Images -->
@@ -124,7 +116,7 @@
                                     <div class="swiper-slide">
                                         <img src="<%= image.url %>" 
                                              alt="Post image"
-                                             class="w-full object-cover post-img md:max-h-[600px] h-auto aspect-square md:aspect-auto">
+                                             class="w-full object-cover aspect-square sm:aspect-auto sm:max-h-[600px]">
                                     </div>
                                 <% }) %>
                             </div>
@@ -138,59 +130,124 @@
                             <% } %>
                         </div>
                         <div class="heart-animation hidden">
-                            <i class="fas fa-heart"></i>
+                            <i class="fas fa-heart text-red-500"></i>
                         </div>
                     </div>
                 <% } %>
 
                 <!-- Post Content -->
-                <div class="p-4">
+                <div class="px-4 pb-4">
                     <!-- Actions -->
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between py-3">
                         <div class="flex items-center space-x-4">
                             <button onclick="toggleLike('<%= post._id %>')" 
                                     id="like-btn-<%= post._id %>"
-                                    class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-500' %> hover:scale-110 transform transition-transform">
+                                    class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-800 dark:text-white' %> hover:scale-110 transform transition-transform">
+                                <% if (post.likes.some(id => id.toString() === user._id.toString())) { %>
                                 <i class="fas fa-heart text-2xl"></i>
-                                <span class="like-count ml-1 text-sm"><%= post.likes.length %></span>
+                                <% } else { %>
+                                    <i class="far fa-heart text-2xl"></i>
+                                <% } %>
                             </button>
-                            <button onclick="focusComment('<%= post._id %>')" 
-                                    class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
-                                <i class="fas fa-comment text-2xl"></i>
-                                <span class="ml-1 text-sm"><%= post.comments.length %></span>
+                            <button onclick="showComments('<%= post._id %>')" 
+                                    class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
+                                <i class="far fa-comment text-2xl"></i>
                             </button>
                             <button onclick="sharePost('<%= post._id %>')" 
-                                    class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
-                                <i class="fas fa-share text-2xl"></i>
+                                    class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
+                                <i class="far fa-paper-plane text-2xl"></i>
                             </button>
                         </div>
                         <button onclick="toggleSavePost('<%= post._id %>')"
                                 id="save-btn-<%= post._id %>"
-                                class="save-btn <%= user.savedPosts && user.savedPosts.includes(post._id) ? 'text-blue-500' : 'text-gray-500' %> dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
-                            <i class="fas fa-bookmark text-2xl"></i>
+                                class="save-btn hover:scale-110 transform transition-transform">
+                            <% if (user.savedPosts && user.savedPosts.includes(post._id)) { %>
+                                <i class="fas fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
+                            <% } else { %>
+                                <i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
+                            <% } %>
                         </button>
                     </div>
 
-                    <h3 class="font-semibold text-lg mb-2 text-gray-800 dark:text-white"><%= post.title %></h3>
-                    <p class="text-gray-700 dark:text-gray-300 mb-2"><%= post.content %></p>
-                    
-                    <!-- Post Metadata -->
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                        <span><%= new Date(post.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) %></span>
-                        • <span><%= post.likes.length %> likes</span>
-                        • <span><%= post.comments.length %> comments</span>
+                    <!-- Likes Count -->
+                    <div class="mb-2">
+                        <p class="font-semibold text-sm text-gray-800 dark:text-white">
+                            <span class="like-count-<%= post._id %>"><%= post.likes.length %></span> likes
+                        </p>
                     </div>
 
-                    <!-- Comments Section -->
-                    <%- include('partials/comments', { post, user }) %>
+                    <!-- Caption -->
+                    <div class="mb-2">
+                        <p class="text-sm text-gray-800 dark:text-white">
+                            <span class="font-semibold mr-1"><%= post.user.username %></span>
+                            <%= post.content %>
+                        </p>
+                    </div>
+
+                    <!-- Post Metadata -->
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        <%= new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                        <% if (post.comments && post.comments.length > 0) { %>
+                            • <button onclick="showComments('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:underline">
+                                View all <%= post.comments.length %> comments
+                            </button>
+                        <% } %>
+                    </div>
                 </div>
             </div>
         <% }) %>
     </div>
 
     <!-- Loading Spinner -->
-    <div class="flex justify-center my-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    <div class="flex justify-center my-8 loading-spinner">
+        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+</div>
+
+<!-- Create Post Modal with Instagram-like UI -->
+<div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full mx-4">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div></div>
+            <h2 class="text-base font-semibold text-gray-800 dark:text-white">Create New Post</h2>
+            <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="createPostForm" class="p-4">
+            <!-- Image Upload Section -->
+            <div class="mb-4">
+                <div id="imagePreviewContainer" class="hidden grid grid-cols-2 gap-4 mb-4">
+                    <!-- Image previews will be added here -->
+                </div>
+                
+                <div class="flex items-center justify-center w-full">
+                    <label class="w-full flex flex-col items-center px-4 py-6 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload photos</span>
+                        <span class="mt-1 text-xs text-gray-400 dark:text-gray-500">PNG, JPG up to 10MB</span>
+                        <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Caption Input -->
+            <textarea name="content" 
+                     placeholder="Write a caption..."
+                     class="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                     rows="3"
+                     required></textarea>
+
+            <button type="submit" 
+                    id="submitPostBtn"
+                    class="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg
+                         hover:from-blue-600 hover:to-purple-700 transition duration-200">
+                Share
+            </button>
+        </form>
     </div>
 </div>
 
@@ -216,13 +273,19 @@
             </div>
 
             <!-- Story Progress Bar -->
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gray-700 z-20">
-                <div id="storyProgress" class="h-full bg-white w-0 transition-all duration-100"></div>
+            <div class="absolute top-0 left-0 right-0 flex space-x-1 p-2 z-20">
+                <div class="story-progress-container flex-1 h-1 bg-gray-600 rounded-full overflow-hidden">
+                    <div id="storyProgress" class="h-full bg-white w-0 transition-all"></div>
+                </div>
             </div>
 
             <!-- Story User Info -->
             <div class="absolute top-4 left-4 flex items-center z-20">
+                <div class="story-ring p-[2px] rounded-full">
+                    <div class="bg-black p-[1px] rounded-full">
                 <img id="storyUserImage" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                    </div>
+                </div>
                 <div class="ml-2 text-white">
                     <p id="storyUsername" class="font-semibold text-sm"></p>
                     <p id="storyTime" class="text-xs opacity-75"></p>
@@ -231,103 +294,81 @@
 
             <!-- Story Reply Section -->
             <div class="absolute bottom-4 left-4 right-4 z-20">
-                <div class="flex items-center justify-between mb-2">
-                    <!-- Viewers Button (Only visible for story owner) -->
-                    <div id="viewersButtonContainer" class="hidden">
-                        <button onclick="toggleViewersList()" 
-                                class="flex items-center space-x-2 px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20">
-                            <i class="fas fa-eye"></i>
-                            <span id="viewerCount" class="text-sm">0</span>
-                        </button>
-                    </div>
-                    <!-- Delete Story Button (Only visible for story owner) -->
-                    <button id="deleteStoryBtn" 
-                            onclick="deleteCurrentStory()" 
-                            class="hidden px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-red-500/50">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
                 <form onsubmit="replyToStory(event)" class="flex items-center gap-2">
                     <input type="text" 
                            id="storyReplyInput"
                            placeholder="Reply to story..." 
-                           class="flex-1 px-4 py-2 rounded-full bg-white/10 text-white placeholder-white/70 backdrop-blur-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
+                           class="flex-1 px-4 py-3 rounded-full bg-white/10 text-white placeholder-white/70 backdrop-blur-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
                     <button type="submit" 
-                            class="px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20">
+                            class="p-3 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20 flex items-center justify-center">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
             </div>
-
-            <!-- Viewers List Modal -->
-            <div id="viewersListModal" class="hidden absolute inset-0 bg-black bg-opacity-90 z-30">
-                <div class="p-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-white text-lg font-semibold">Story Viewers</h3>
-                        <button onclick="closeViewersList()" class="text-white text-xl">
-                            <i class="fas fa-times"></i>
-                        </button>
                     </div>
-                    <div id="viewersList" class="space-y-4 max-h-[70vh] overflow-y-auto">
-                        <!-- Viewers will be listed here -->
                     </div>
                 </div>
-            </div>
+
+<!-- Post Options Modal - Instagram Style -->
+<div id="postOptionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-t-xl sm:rounded-xl max-w-md w-full mx-auto overflow-hidden animate-slideUp">
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <button onclick="copyPostLink()" class="w-full text-center py-4 text-sm font-medium text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                Copy link
+            </button>
+            <button onclick="reportPost()" class="w-full text-center py-4 text-sm font-medium text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                Report
+            </button>
+            <button onclick="unfollowUser()" class="w-full text-center py-4 text-sm font-medium text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                Unfollow
+            </button>
+            <button onclick="closePostOptionsModal()" class="w-full text-center py-4 text-sm font-medium text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                Cancel
+            </button>
         </div>
     </div>
 </div>
 
-<!-- Share Modal -->
-<div id="shareModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-4">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+<!-- Share Modal - Instagram Style -->
+<div id="shareModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-t-xl sm:rounded-xl max-w-md w-full mx-auto overflow-hidden animate-slideUp">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 text-center">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Share Post</h3>
         </div>
+        
         <div class="p-4">
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Share with (username)</label>
+            <div class="mb-4 relative">
+                <div class="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <i class="fas fa-search text-gray-400 mr-2"></i>
                 <input type="text" 
                        id="shareUsername" 
-                       class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                       placeholder="Enter username">
+                           class="w-full bg-transparent border-none focus:outline-none text-gray-800 dark:text-white"
+                           placeholder="Search for a user...">
             </div>
+                
+                <div id="userResults" class="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden z-10">
+                    <!-- User results will appear here -->
+                </div>
+            </div>
+            
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message (optional)</label>
                 <textarea id="shareMessage" 
-                          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                           rows="3" 
                           placeholder="Add a message..."></textarea>
             </div>
+            
             <div class="flex justify-end space-x-3">
                 <button onclick="closeShareModal()" 
                         class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
                     Cancel
                 </button>
                 <button onclick="confirmShare()" 
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700">
                     Share
                 </button>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Post Options Modal -->
-<div id="postOptionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4 overflow-hidden">
-        <div class="p-4">
-            <button class="w-full text-left py-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white rounded-md">
-                <i class="fas fa-link mr-2 text-gray-600 dark:text-gray-400"></i> Copy link
-            </button>
-            <button class="w-full text-left py-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white rounded-md">
-                <i class="fas fa-flag mr-2 text-gray-600 dark:text-gray-400"></i> Report post
-            </button>
-            <button class="w-full text-left py-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 rounded-md">
-                <i class="fas fa-ban mr-2"></i> Unfollow user
-            </button>
-            <button onclick="closePostOptionsModal()" class="w-full text-center py-3 px-4 text-gray-800 dark:text-white font-medium border-t border-gray-200 dark:border-gray-700 mt-2">
-                Cancel
-            </button>
         </div>
     </div>
 </div>
@@ -338,24 +379,15 @@
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
 
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #555;
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
 
 /* Swiper Customization */
@@ -363,19 +395,27 @@
 .swiper-button-prev {
     color: white !important;
     background: rgba(0, 0, 0, 0.3);
-    padding: 20px;
+    width: 30px !important;
+    height: 30px !important;
     border-radius: 50%;
-    width: 40px !important;
-    height: 40px !important;
+    --swiper-navigation-size: 18px;
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+    font-size: 18px;
 }
 
 .swiper-pagination-bullet {
     background: white !important;
-    opacity: 0.8 !important;
+    opacity: 0.6 !important;
+    width: 6px;
+    height: 6px;
 }
 
 .swiper-pagination-bullet-active {
-    background: #3B82F6 !important;
+    opacity: 1 !important;
+    background: white !important;
 }
 
 /* Animations */
@@ -394,9 +434,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 120px;
-    color: white;
-    text-shadow: 0 0 30px rgba(0,0,0,0.4);
+    font-size: 100px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 20px rgba(0,0,0,0.4);
     pointer-events: none;
     z-index: 10;
     opacity: 0;
@@ -420,40 +460,6 @@
     100% { transform: scale(1); }
 }
 
-/* Add this to your existing styles */
-.ring-gradient-to-tr {
-    background: linear-gradient(to right, #fbbf24, #d946ef);
-}
-
-.story-progress {
-    transition: width 30ms linear;
-}
-
-/* Story viewer animations */
-.story-enter {
-    animation: slideIn 0.3s ease-out;
-}
-
-.story-exit {
-    animation: slideOut 0.3s ease-in;
-}
-
-@keyframes slideIn {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
-
-@keyframes slideOut {
-    from { transform: translateX(0); }
-    to { transform: translateX(-100%); }
-}
-
-/* Add these styles */
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
 .story-ring {
     background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
 }
@@ -462,403 +468,62 @@
     background: #ccc;
 }
 
-/* Add these styles */
-.story-container {
-    max-height: 100vh;
-    height: 100%;
-    aspect-ratio: 9/16;
-    margin: 0 auto;
-    position: relative;
-    background: #000;
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
-@media (min-width: 500px) {
-    .story-container {
-        max-width: 500px;
+.animate-slideUp {
+    animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Better comment transitions */
+.comments-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.comments-container.open {
+    max-height: 500px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .swiper-button-next,
+    .swiper-button-prev {
+        background: rgba(255, 255, 255, 0.15);
     }
 }
 
-.story-media {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #000;
+/* Loading shimmer effect */
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
 }
 
-/* Story viewer overlay gradient */
-.story-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 25%;
-    background: linear-gradient(to bottom, 
-        rgba(0,0,0,0.5) 0%,
-        rgba(0,0,0,0) 100%);
-    pointer-events: none;
-}
-
-/* Story progress bar animation */
-.story-progress {
-    transition: width 30ms linear;
-}
-
-/* Add smooth fade transitions */
-.story-fade-enter {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-.story-fade-enter-active {
-    opacity: 1;
-    transform: scale(1);
-    transition: opacity 300ms, transform 300ms;
-}
-
-.story-fade-exit {
-    opacity: 1;
-    transform: scale(1);
-}
-
-.story-fade-exit-active {
-    opacity: 0;
-    transform: scale(0.95);
-    transition: opacity 300ms, transform 300ms;
-}
-
-/* Story Preview Modal Styles */
-#storyPreviewModal {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 1rem;
-    background-color: rgba(0, 0, 0, 0.75);
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 50;
-}
-
-#storyPreviewModal.hidden {
-    display: none !important;
-}
-
-#storyPreviewModal:not(.hidden) {
-    display: flex;
-}
-
-#storyPreviewModal .modal-content {
-    width: 100%;
-    max-width: 500px; /* Increased from 400px */
-    background: white;
-    border-radius: 0.5rem;
-    overflow: hidden;
-}
-
-#storyPreviewContainer {
-    position: relative;
-    width: 100%;
-    height: 0;
-    padding-bottom: 177.78%; /* 16:9 aspect ratio */
-    background: black;
-    overflow: hidden;
-}
-
-#storyPreviewContainer img,
-#storyPreviewContainer video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-/* Text Overlay Styles */
-.text-overlay {
-    position: absolute;
-    cursor: move;
-    user-select: none;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    background-color: rgba(0, 0, 0, 0.5);
-    color: white;
-    font-size: 2rem; /* Increased from 1.5rem */
-    max-width: 80%;
-    word-wrap: break-word;
-    z-index: 10;
-    transform-origin: center;
-    min-width: 50px;
-    min-height: 50px;
-}
-
-/* Emoji Overlay Styles */
-.emoji-overlay {
-    position: absolute;
-    cursor: move;
-    user-select: none;
-    font-size: 3rem; /* Increased from 2rem */
-    z-index: 10;
-    transform-origin: center;
-    min-width: 50px;
-    min-height: 50px;
-}
-
-/* Controls Overlay */
-.story-controls {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
-    display: flex;
-    justify-content: space-between;
-    z-index: 20;
-}
-
-.control-button {
-    width: 3rem; /* Increased from 2.5rem */
-    height: 3rem; /* Increased from 2.5rem */
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    border: none;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 1.25rem; /* Added font size */
-}
-
-.control-button:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
-}
-
-/* Text Input Styles */
-#textOverlayInput {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    z-index: 30;
-}
-
-#storyText {
-    width: 100%;
-    padding: 1rem;
-    border-radius: 9999px;
-    background-color: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    font-size: 1.25rem; /* Increased from 1rem */
-}
-
-#storyText::placeholder {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-/* Emoji Picker Styles */
-#emojiPicker {
-    position: absolute;
-    bottom: 1rem;
-    left: 1rem;
-    right: 1rem;
-    background-color: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    z-index: 30;
-}
-
-#emojiPicker .grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 0.5rem;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-#emojiPicker button {
-    width: 3rem; /* Increased from 2.5rem */
-    height: 3rem; /* Increased from 2.5rem */
-    border: none;
-    background: none;
-    font-size: 2rem; /* Increased from 1.5rem */
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-#emojiPicker button:hover {
-    transform: scale(1.2);
+.shimmer {
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.1), 
+        rgba(255, 255, 255, 0.2), 
+        rgba(255, 255, 255, 0.1)
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
 }
 </style>
 
 <script>
-// Add these variables at the very top of your script section
-let stories = [];
-let currentStoryIndex = 0;
-let currentStory = null;
-let storyInterval;
-let isPaused = false;
-let storyText = '';
-let storyEmojis = [];
-let storyFile = null;
-let isDragging = false;
-let currentX;
-let currentY;
-let initialX;
-let initialY;
-let xOffset = 0;
-let yOffset = 0;
-let storyTextPosition = { x: 50, y: 50 }; // Initialize text position
-
-const socket = io();
-
-socket.on('connect', () => {
-    console.log('Socket connected');
-});
-
-socket.on('newStory', (data) => {
-    console.log('New story received:', data); // Debug log
-    stories.unshift(data.story);
-    renderStories();
-});
-
-// Listen for new posts
-socket.on('newPost', (data) => {
-    const postHTML = createPostHTML(data.post);
-    const feedContainer = document.querySelector('.space-y-8');
-    feedContainer.insertAdjacentHTML('beforeend', postHTML);
-    
-    // Initialize Swiper for the new post if it has images
-    if (data.post.images && data.post.images.length > 0) {
-        const newPostContainer = feedContainer.lastElementChild;
-        const swiper = new Swiper(newPostContainer.querySelector('.swiper-container'), {
-            pagination: {
-                el: '.swiper-pagination',
-            },
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-        });
-    }
-});
-
-function createPostHTML(post) {
-    const imagesHTML = post.images && post.images.length > 0 ? `
-        <div class="relative post-image" ondblclick="handleDoubleTap('${post._id}')">
-            <div class="swiper-container">
-                <div class="swiper-wrapper">
-                    ${post.images.map(image => `
-                        <div class="swiper-slide">
-                            <img src="${image.url}" 
-                                 alt="Post image"
-                                 class="w-full object-cover post-img md:max-h-[600px] h-auto aspect-square md:aspect-auto">
-                        </div>
-                    `).join('')}
-                </div>
-                ${post.images.length > 1 ? `
-                    <div class="swiper-pagination"></div>
-                    <div class="swiper-button-next"></div>
-                    <div class="swiper-button-prev"></div>
-                    <div class="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
-                        <span class="current-slide">1</span>/${post.images.length}
-                    </div>
-                ` : ''}
-            </div>
-            <div class="heart-animation hidden">
-                <i class="fas fa-heart"></i>
-            </div>
-        </div>
-    ` : '';
-
-    return `
-        <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden transform hover:shadow-lg transition-shadow duration-200 post-container">
-            <div class="p-4 flex items-center justify-between">
-                <a href="/user/${post.user.username}" class="flex items-center group">
-                    <div class="relative">
-                        <img src="${post.user.profileImage}" 
-                             alt="Profile" 
-                             class="w-10 h-10 rounded-full object-cover group-hover:opacity-90">
-                        <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"></div>
-                    </div>
-                    <div class="ml-3">
-                        <h5 class="font-semibold text-gray-800 dark:text-white group-hover:text-blue-600">${post.user.name}</h5>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">@${post.user.username}</p>
-                    </div>
-                </a>
-                <div class="flex space-x-2">
-                    <button onclick="showPostOptions('${post._id}')" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">
-                        <i class="fas fa-ellipsis-h"></i>
-                    </button>
-                </div>
-            </div>
-
-            ${imagesHTML}
-
-            <div class="p-4">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-4">
-                        <button onclick="toggleLike('${post._id}')" 
-                                id="like-btn-${post._id}"
-                                class="like-btn text-gray-500 hover:scale-110 transform transition-transform">
-                            <i class="fas fa-heart text-2xl"></i>
-                            <span class="like-count ml-1 text-sm">0</span>
-                        </button>
-                        <button onclick="focusComment('${post._id}')" 
-                                class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
-                            <i class="fas fa-comment text-2xl"></i>
-                            <span class="ml-1 text-sm">0</span>
-                        </button>
-                        <button onclick="sharePost('${post._id}')" 
-                                class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
-                            <i class="fas fa-share text-2xl"></i>
-                        </button>
-                    </div>
-                    <button onclick="toggleSavePost('${post._id}')"
-                            id="save-btn-${post._id}"
-                            class="save-btn text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:scale-110 transform transition-transform">
-                        <i class="fas fa-bookmark text-2xl"></i>
-                    </button>
-                </div>
-
-                <h3 class="font-semibold text-lg mb-2 text-gray-800 dark:text-white">${post.title}</h3>
-                <p class="text-gray-700 dark:text-gray-300 mb-2">${post.content}</p>
-                
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                    <span>${new Date(post.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</span>
-                    • <span>0 likes</span>
-                    • <span>0 comments</span>
-                </div>
-
-                <div class="mt-4 border-t pt-4">
-                    <form class="mb-4 flex gap-2" onsubmit="addComment(event, '${post._id}')">
-                        <input type="text" 
-                               id="comment-input-${post._id}"
-                               placeholder="Write a comment..." 
-                               class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                               required>
-                        <button type="submit" 
-                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                            Comment
-                        </button>
-                    </form>
-                    <div class="space-y-4 comments-section" data-post-id="${post._id}"></div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Swiper carousels for post images
     const swipers = document.querySelectorAll('.swiper-container');
     swipers.forEach((container, index) => {
         const swiper = new Swiper(container, {
@@ -871,7 +536,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 prevEl: '.swiper-button-prev',
             },
             grabCursor: true,
-            slideToClickedSlide: true,
             keyboard: {
                 enabled: true,
             },
@@ -886,553 +550,267 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Adjust image heights for better consistency
-    const adjustPostImageHeights = () => {
-        const postImages = document.querySelectorAll('.post-img');
-        
-        if (window.innerWidth >= 768) { // md breakpoint in Tailwind
-            postImages.forEach(img => {
-                const postWidth = img.offsetWidth;
-                // Use a more reasonable height for desktop view (max 600px)
-                img.style.maxHeight = '600px';
-            });
-        } else {
-            // On mobile, use square aspect ratio
-            postImages.forEach(img => {
-                img.style.height = img.offsetWidth + 'px';
-            });
-        }
-    };
-    
-    // Run once on load
-    adjustPostImageHeights();
-    
-    // Update on window resize
-    window.addEventListener('resize', adjustPostImageHeights);
-});
-
-// Add infinite scroll
-let loading = false;
+    // Infinite scroll functionality
+    let isLoading = false;
 let page = 1;
 
-window.addEventListener('scroll', () => {
-    if (loading) return;
-    
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100) {
+    window.addEventListener('scroll', function() {
+        if (isLoading) return;
+        
+        const scrollPosition = window.innerHeight + window.scrollY;
+        const pageHeight = document.body.offsetHeight;
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        
+        if (scrollPosition >= pageHeight - 500 && loadingSpinner) {
+            isLoading = true;
         loadMorePosts();
     }
 });
 
-async function loadMorePosts() {
-    loading = true;
-    page++;
+    // Load stories on page load
+    loadStories();
     
-    try {
-        const response = await fetch(`/feed?page=${page}`);
-        const data = await response.json();
-        
-        if (data.posts.length > 0) {
-            // Append new posts
-            const feedContainer = document.querySelector('.space-y-8');
-            data.posts.forEach(post => {
-                feedContainer.insertAdjacentHTML('beforeend', createPostHTML(post));
-            });
-            
-            // Initialize Swiper for new posts
-            initializeSwipers();
+    // Initialize socket connection
+    initializeSocketConnection();
+});
+
+// Show comments modal
+let currentPostIdForComments = null;
+
+function showComments(postId) {
+    currentPostIdForComments = postId;
+    
+    // Get the comments container
+    const modalCommentsContainer = document.getElementById('modalCommentsContainer');
+    modalCommentsContainer.innerHTML = '<div class="flex justify-center py-4"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div>';
+    
+    // Show the modal
+    document.getElementById('commentsModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    
+    // Fetch the comments
+    fetch(`/post/${postId}/comments`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                modalCommentsContainer.innerHTML = `<p class="text-center text-red-500">${data.error}</p>`;
+            return;
         }
-    } catch (error) {
-        console.error('Error loading more posts:', error);
-    } finally {
-        loading = false;
-    }
+        
+            // Update the form
+            const modalCommentForm = document.getElementById('modalCommentForm');
+            modalCommentForm.onsubmit = function(e) {
+                e.preventDefault();
+                addCommentFromModal(postId);
+            };
+            
+            // Display the comments
+            if (data.comments && data.comments.length > 0) {
+                let commentsHTML = '';
+                
+                data.comments.forEach(comment => {
+                    commentsHTML += `
+                        <div class="flex space-x-2 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                            <img src="${comment.user ? comment.user.profileImage : '/images/default-profile.png'}" 
+                                 alt="${comment.user ? comment.user.name : 'User'}" 
+                                 class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start">
+                                    <p class="font-medium text-sm text-gray-800 dark:text-white">${comment.user ? comment.user.name : 'Deleted User'}</p>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatTimeAgo(new Date(comment.createdAt))}</span>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">${comment.content}</p>
+                                
+                                <!-- Comment actions -->
+                                <div class="mt-1 flex items-center text-xs space-x-4">
+                                    <button onclick="likeComment('${comment._id}')" 
+                                            class="comment-like-btn ${comment.likes && comment.likes.includes('<%= user._id %>') ? 'text-red-500' : 'text-gray-500'} hover:text-red-500">
+                                        <i class="fas fa-heart"></i>
+                                        <span class="like-count ml-1">${comment.likes ? comment.likes.length : 0}</span>
+                                    </button>
+                                    <button onclick="toggleReplyForm('${comment._id}')" 
+                                            class="text-gray-500 hover:text-blue-500">
+                                        Reply
+                                    </button>
+                                </div>
+                                
+                                <!-- Replies would go here -->
+                        </div>
+            </div>
+        `;
+                });
+                
+                modalCommentsContainer.innerHTML = commentsHTML;
+            } else {
+                modalCommentsContainer.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-4">No comments yet</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching comments:', error);
+            modalCommentsContainer.innerHTML = '<p class="text-center text-red-500">Failed to load comments</p>';
+        });
 }
 
-// Add smooth animations for likes
-function toggleLike(postId) {
-    fetch(`/post/${postId}/like`, {
+// Add comment from modal
+function addCommentFromModal(postId) {
+    const input = document.getElementById('modalCommentInput');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    // Disable input and show loading state
+    input.disabled = true;
+    
+    fetch(`/post/${postId}/comment`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ content })
     })
     .then(response => response.json())
     .then(data => {
-        const likeBtn = document.getElementById(`like-btn-${postId}`);
-        const likeCount = likeBtn.querySelector('.like-count');
-        
-        if (data.isLiked) {
-            likeBtn.classList.remove('text-gray-500');
-            likeBtn.classList.add('text-red-500');
-            likeBtn.classList.add('liked');
-            setTimeout(() => likeBtn.classList.remove('liked'), 300);
-        } else {
-            likeBtn.classList.remove('text-red-500');
-            likeBtn.classList.add('text-gray-500');
-        }
-        
-        likeCount.textContent = data.likes;
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-// Add story reply function
-async function replyToStory(event) {
-    event.preventDefault();
-    
-    const replyInput = document.getElementById('storyReplyInput');
-    const replyText = replyInput.value.trim();
-    
-    if (!replyText || !currentStory) return;
-
-    try {
-        const response = await fetch(`/story/${currentStory._id}/reply`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ content: replyText })
-        });
-
-        if (response.ok) {
+        if (data.error) {
+            showToast(data.error);
+    } else {
             // Clear input
-            replyInput.value = '';
+            input.value = '';
             
-            // Show success message
-            const successMsg = document.createElement('div');
-            successMsg.className = 'absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white/80 text-black px-4 py-2 rounded-full backdrop-blur-sm';
-            successMsg.textContent = 'Reply sent!';
-            document.getElementById('storyModal').appendChild(successMsg);
-            setTimeout(() => successMsg.remove(), 2000);
+            // Refresh comments
+            showComments(postId);
         }
-    } catch (error) {
-        console.error('Error sending reply:', error);
-        showToast('Failed to send reply. Please try again.');
-    }
-}
-
-// Function to load stories
-async function loadStories() {
-    try {
-        console.log('Loading stories...');
-        const response = await fetch('/stories');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Received stories data:', data);
-        
-        if (!Array.isArray(data)) {
-            console.error('Received data is not an array:', data);
-            stories = [];
-            return;
-        }
-        
-        stories = data;
-        console.log('Stories loaded successfully:', stories);
-        renderStories();
-    } catch (error) {
-        console.error('Error loading stories:', error);
-        stories = [];
-        renderStories();
-    }
-}
-
-// Function to render stories
-function renderStories() {
-    console.log('Rendering stories:', stories);
-    const storiesList = document.getElementById('storiesList');
-    if (!storiesList) {
-        console.error('Stories list element not found');
-        return;
-    }
-
-    storiesList.innerHTML = '';
-
-    if (!Array.isArray(stories) || stories.length === 0) {
-        console.log('No stories to render');
-        return;
-    }
-
-    stories.forEach((story, index) => {
-        if (!story || !story.user) {
-            console.error('Invalid story data at index:', index, story);
-            return;
-        }
-
-        const hasViewed = story.viewers && story.viewers.some(viewer => viewer.user === '<%= user._id %>');
-        const storyHTML = `
-            <div class="flex-shrink-0 text-center">
-                <div onclick="viewStory(${index})" 
-                     class="relative w-16 h-16 cursor-pointer hover:scale-105 transition-transform">
-                    <div class="absolute inset-0 rounded-full ${hasViewed ? 'bg-gray-300' : 'bg-gradient-to-tr from-yellow-400 to-fuchsia-600'} p-[2px]">
-                        <div class="w-full h-full rounded-full bg-white p-[2px]">
-                            <img src="${story.user.profileImage || '/images/default-profile.png'}" 
-                                 alt="${story.user.username}'s story" 
-                                 class="w-full h-full rounded-full object-cover">
-                        </div>
-                    </div>
-                </div>
-                <p class="text-xs mt-1 text-gray-600">${story.user.username}</p>
-            </div>
-        `;
-        storiesList.insertAdjacentHTML('beforeend', storyHTML);
+    })
+    .catch(error => {
+        console.error('Error adding comment:', error);
+        showToast('Failed to add comment');
+    })
+    .finally(() => {
+        // Re-enable input
+        input.disabled = false;
     });
 }
 
-// Add the viewStory function after the loadStories function
-function viewStory(index) {
-    console.log('viewStory called with index:', index);
-    console.log('Current stories array:', stories);
-
-    // Validate stories array and index
-    if (!stories) {
-        console.error('Stories array is not initialized');
-        return;
-    }
-
-    if (!Array.isArray(stories)) {
-        console.error('Stories is not an array:', stories);
-        return;
-    }
-
-    if (index < 0 || index >= stories.length) {
-        console.error('Invalid story index:', index, 'Stories length:', stories.length);
-        return;
-    }
-
-    const story = stories[index];
-    console.log('Selected story:', story);
-    
-    // Validate story object and its properties
-    if (!story) {
-        console.error('Story object is null or undefined');
-        return;
-    }
-
-    if (!story.user) {
-        console.error('Story user is null or undefined:', story);
-        return;
-    }
-
-    if (!story.media) {
-        console.error('Story media is null or undefined:', story);
-        return;
-    }
-
-    isPaused = false;
-    currentStoryIndex = index;
-    currentStory = story;
-
-    const modal = document.getElementById('storyModal');
-    if (!modal) {
-        console.error('Story modal element not found');
-        return;
-    }
-
-    const mediaContainer = document.getElementById('storyImage');
-    const userImage = document.getElementById('storyUserImage');
-    const username = document.getElementById('storyUsername');
-    const timeElement = document.getElementById('storyTime');
-    const deleteButton = document.getElementById('deleteStoryBtn');
-    const viewersButtonContainer = document.getElementById('viewersButtonContainer');
-
-    // Show delete button and viewers button only if the story belongs to current user
-    if (currentStory.user._id.toString() === '<%= user._id %>') {
-        deleteButton.classList.remove('hidden');
-        viewersButtonContainer.classList.remove('hidden');
-        // Load viewers immediately for the story owner
-        loadStoryViewers(currentStory._id);
-    } else {
-        deleteButton.classList.add('hidden');
-        viewersButtonContainer.classList.add('hidden');
-    }
-
-    // Clear previous media
-    mediaContainer.innerHTML = '';
-
-    // Create appropriate media element
-    const mediaElement = currentStory.media.type === 'video' 
-        ? document.createElement('video')
-        : document.createElement('img');
-
-    mediaElement.src = currentStory.media.url;
-    mediaElement.className = 'w-full h-full object-contain';
-    
-    if (mediaElement.tagName === 'VIDEO') {
-        mediaElement.controls = false;
-        mediaElement.autoplay = true;
-        mediaElement.muted = false;
-        mediaElement.loop = false;
-        mediaElement.playsInline = true;
-    }
-
-    mediaContainer.appendChild(mediaElement);
-
-    // Set user info with fallbacks
-    userImage.src = currentStory.user.profileImage || '/images/default-profile.png';
-    username.textContent = currentStory.user.username || 'Unknown User';
-    timeElement.textContent = getTimeAgo(new Date(currentStory.createdAt));
-
-    // Update viewer count
-    const viewerCount = document.getElementById('viewerCount');
-    if (viewerCount) {
-        viewerCount.textContent = currentStory.viewerCount || '0';
-    }
-
-    modal.classList.remove('hidden');
-    startStoryProgress();
-    markStoryAsViewed(currentStory._id);
+// Close comments modal
+function closeCommentsModal() {
+    document.getElementById('commentsModal').classList.add('hidden');
+    document.body.style.overflow = ''; // Re-enable scrolling
+    currentPostIdForComments = null;
 }
 
-// Function to upload story
-async function uploadStory(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('story', file);
-
-    try {
-        const response = await fetch('/story', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // Immediately add the new story to the list
-            stories.unshift(data.story);
-            renderStories();
-            
-            // Show success message
-            const successMsg = document.createElement('div');
-            successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-            successMsg.textContent = 'Story uploaded successfully!';
-            document.body.appendChild(successMsg);
-            setTimeout(() => successMsg.remove(), 3000);
-        } else {
-            throw new Error(data.error || 'Failed to upload story');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showToast('Error uploading story: ' + error.message);
-    }
-}
-
-// Listen for new stories
-socket.on('newStory', (data) => {
-    stories.unshift(data.story);
-    renderStories();
-});
-
-// Function to mark story as viewed
-async function markStoryAsViewed(storyId) {
-    try {
-        const response = await fetch(`/story/${storyId}/view`, {
-            method: 'POST'
-        });
-        
-        if (response.ok) {
-            // Emit socket event to notify story owner
-            socket.emit('viewStory', { storyId });
-        }
-    } catch (error) {
-        console.error('Error marking story as viewed:', error);
-    }
-}
-
-// Function to get time ago
-function getTimeAgo(date) {
+// Format time ago
+function formatTimeAgo(date) {
     const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return 'yesterday';
-}
-
-// Load stories when page loads
-loadStories();
-
-// Update stories every minute to refresh timestamps
-setInterval(loadStories, 60000);
-
-function startStoryProgress() {
-    const progressBar = document.getElementById('storyProgress');
-    progressBar.style.width = '0%';
     
-    let width = 0;
-    clearInterval(storyInterval); // Clear any existing interval
+    let interval = Math.floor(seconds / 31536000);
+    if (interval > 1) return interval + ' years ago';
+    if (interval === 1) return '1 year ago';
     
-    storyInterval = setInterval(() => {
-        if (!isPaused) {
-            width += 1;
-            progressBar.style.width = width + '%';
-            
-            if (width >= 100) {
-                clearInterval(storyInterval);
-                showNextStory();
-            }
-        }
-    }, 30); // 3 seconds total duration
+    interval = Math.floor(seconds / 2592000);
+    if (interval > 1) return interval + ' months ago';
+    if (interval === 1) return '1 month ago';
+    
+    interval = Math.floor(seconds / 86400);
+    if (interval > 1) return interval + ' days ago';
+    if (interval === 1) return '1 day ago';
+    
+    interval = Math.floor(seconds / 3600);
+    if (interval > 1) return interval + ' hours ago';
+    if (interval === 1) return '1 hour ago';
+    
+    interval = Math.floor(seconds / 60);
+    if (interval > 1) return interval + ' minutes ago';
+    if (interval === 1) return '1 minute ago';
+    
+    return 'just now';
 }
 
-function showNextStory() {
-    if (currentStoryIndex < stories.length - 1) {
-        viewStory(currentStoryIndex + 1);
-    } else {
-        closeStoryModal();
-    }
-}
-
-function closeStoryModal() {
-    document.getElementById('storyModal').classList.add('hidden');
-    clearInterval(storyInterval);
-    isPaused = false;
-    const video = document.querySelector('#storyImage video');
-    if (video) {
-        video.pause();
-    }
-}
-
-// Add touch/swipe support for stories
-let touchStartX = 0;
-document.getElementById('storyModal').addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    pauseStory();
-});
-
-document.getElementById('storyModal').addEventListener('touchend', (e) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX - touchEndX;
-
-    if (Math.abs(diff) > 50) { // Minimum swipe distance
-        if (diff > 0 && currentStoryIndex < stories.length - 1) {
-            // Swipe left - next story
-            viewStory(currentStoryIndex + 1);
-        } else if (diff < 0 && currentStoryIndex > 0) {
-            // Swipe right - previous story
-            viewStory(currentStoryIndex - 1);
-        }
-    }
-    resumeStory();
-});
-
-// Add mouse event listeners for desktop
-document.getElementById('storyModal').addEventListener('mousedown', pauseStory);
-document.getElementById('storyModal').addEventListener('mouseup', resumeStory);
-document.getElementById('storyModal').addEventListener('mouseleave', resumeStory);
-
-// Add keyboard controls
-document.addEventListener('keydown', (e) => {
-    if (!document.getElementById('storyModal').classList.contains('hidden')) {
-        switch(e.key) {
-            case 'ArrowLeft':
-                showPreviousStory();
-                break;
-            case 'ArrowRight':
-                showNextStory();
-                break;
-            case 'Escape':
-                closeStoryModal();
-                break;
-            case ' ': // Spacebar
-                e.preventDefault();
-                if (isPaused) {
-                    resumeStory();
-                } else {
-                    pauseStory();
-                }
-                break;
-        }
-    }
-});
-
-// Add previous story function
-function showPreviousStory() {
-    if (currentStoryIndex > 0) {
-        viewStory(currentStoryIndex - 1);
-    }
-}
-
-// Add pause and resume functions
-function pauseStory() {
-    isPaused = true;
-    const mediaElement = document.querySelector('#storyImage video, #storyImage img');
-    if (mediaElement && mediaElement.tagName === 'VIDEO') {
-        mediaElement.pause();
-    }
-}
-
-function resumeStory() {
-    isPaused = false;
-    const mediaElement = document.querySelector('#storyImage video, #storyImage img');
-    if (mediaElement && mediaElement.tagName === 'VIDEO') {
-        mediaElement.play();
-    }
-}
-
-// Like functionality
+// Toggle post like
 function toggleLike(postId) {
+    const likeBtn = document.getElementById(`like-btn-${postId}`);
+    const isLiked = likeBtn.classList.contains('text-red-500');
+    
+    // Optimistic UI update
+    if (isLiked) {
+        likeBtn.classList.remove('text-red-500');
+        likeBtn.classList.add('text-gray-800', 'dark:text-white');
+        likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
+        updateLikeCount(postId, -1);
+                } else {
+        likeBtn.classList.remove('text-gray-800', 'dark:text-white');
+        likeBtn.classList.add('text-red-500', 'liked');
+        likeBtn.innerHTML = '<i class="fas fa-heart text-2xl"></i>';
+        updateLikeCount(postId, 1);
+        
+        // Show heart animation
+        const heartAnimation = likeBtn.closest('.post-container').querySelector('.heart-animation');
+        if (heartAnimation) {
+            heartAnimation.classList.remove('hidden');
+            heartAnimation.classList.add('active');
+            
+            setTimeout(() => {
+                heartAnimation.classList.remove('active');
+                heartAnimation.classList.add('hidden');
+            }, 1000);
+        }
+    }
+    
+    // Send request to server
     fetch(`/post/${postId}/like`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        const likeBtn = document.getElementById(`like-btn-${postId}`);
-        const likeCount = likeBtn.querySelector('.like-count');
+    .catch(error => {
+        console.error('Error:', error);
         
-        if (data.isLiked) {
-            likeBtn.classList.remove('text-gray-500');
+        // Revert UI if request fails
+        if (isLiked) {
             likeBtn.classList.add('text-red-500');
-            likeBtn.classList.add('liked');
-            setTimeout(() => likeBtn.classList.remove('liked'), 300);
+            likeBtn.classList.remove('text-gray-800', 'dark:text-white');
+            likeBtn.innerHTML = '<i class="fas fa-heart text-2xl"></i>';
+            updateLikeCount(postId, 1);
         } else {
+            likeBtn.classList.add('text-gray-800', 'dark:text-white');
             likeBtn.classList.remove('text-red-500');
-            likeBtn.classList.add('text-gray-500');
+            likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
+            updateLikeCount(postId, -1);
         }
-        
-        likeCount.textContent = data.likes;
-    })
-    .catch(error => console.error('Error:', error));
+    });
+}
+
+// Update like count in UI
+function updateLikeCount(postId, change) {
+    const countElements = document.querySelectorAll(`.like-count-${postId}`);
+    countElements.forEach(element => {
+        const currentCount = parseInt(element.textContent);
+        element.textContent = currentCount + change;
+    });
 }
 
 // Double tap to like
 function handleDoubleTap(postId) {
     const likeBtn = document.getElementById(`like-btn-${postId}`);
-    const imgContainer = event.currentTarget;
-    const heartAnimation = imgContainer.querySelector('.heart-animation');
+    const isLiked = likeBtn.classList.contains('text-red-500');
     
-    // Only like if not already liked
-    if (!likeBtn.classList.contains('text-red-500')) {
+    if (!isLiked) {
         toggleLike(postId);
-        
-        // Show heart animation
-        heartAnimation.classList.remove('hidden');
-        heartAnimation.classList.add('active');
-        setTimeout(() => {
-            heartAnimation.classList.add('hidden');
-            heartAnimation.classList.remove('active');
-        }, 1000);
     }
 }
 
-// Focus on comment input
-function focusComment(postId) {
-    const commentInput = document.querySelector(`#comment-input-${postId}`);
-    if (commentInput) {
-        commentInput.focus();
-    }
-}
-
-// Save post functionality
+// Toggle save post
 function toggleSavePost(postId) {
+    const saveBtn = document.getElementById(`save-btn-${postId}`);
+    const isSaved = saveBtn.querySelector('i').classList.contains('fas');
+    
+    // Optimistic UI update
+    if (isSaved) {
+        saveBtn.innerHTML = '<i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>';
+    } else {
+        saveBtn.innerHTML = '<i class="fas fa-bookmark text-2xl text-gray-800 dark:text-white"></i>';
+    }
+    
+    // Send request to server
     fetch(`/post/${postId}/save`, {
         method: 'POST',
         headers: {
@@ -1441,37 +819,72 @@ function toggleSavePost(postId) {
     })
     .then(response => response.json())
     .then(data => {
-        const saveBtn = document.getElementById(`save-btn-${postId}`);
-        
-        if (data.saved) {
-            saveBtn.classList.remove('text-gray-500');
-            saveBtn.classList.add('text-blue-500');
+        if (data.error) {
+            // Revert UI if request fails
+            if (isSaved) {
+                saveBtn.innerHTML = '<i class="fas fa-bookmark text-2xl text-gray-800 dark:text-white"></i>';
         } else {
-            saveBtn.classList.remove('text-blue-500');
-            saveBtn.classList.add('text-gray-500');
+                saveBtn.innerHTML = '<i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>';
+            }
+            showToast(data.error);
+        } else {
+            showToast(data.saved ? 'Post saved. View in <a href="/saved-posts" class="underline">saved posts</a>.' : 'Post removed from your collection');
+            
+            // Update the page to show saved posts if on saved posts page
+            if (window.location.pathname === '/saved-posts') {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        
+        // Revert UI if request fails
+        if (isSaved) {
+            saveBtn.innerHTML = '<i class="fas fa-bookmark text-2xl text-gray-800 dark:text-white"></i>';
+        } else {
+            saveBtn.innerHTML = '<i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>';
+        }
+    });
 }
 
-// Share post functionality
-let currentPostId = null;
-let selectedUserId = null;
-
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
-    toastMessage.textContent = message;
-    
-    // Show toast
-    toast.classList.remove('translate-x-full');
-    
-    // Hide after 3 seconds
-    setTimeout(() => {
-        toast.classList.add('translate-x-full');
-    }, 3000);
+// Open post options modal
+function showPostOptions(postId) {
+    currentPostId = postId;
+    document.getElementById('postOptionsModal').classList.remove('hidden');
 }
 
+// Close post options modal
+function closePostOptionsModal() {
+    document.getElementById('postOptionsModal').classList.add('hidden');
+}
+
+// Copy post link
+function copyPostLink() {
+    const url = `${window.location.origin}/post/${currentPostId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copied to clipboard');
+        closePostOptionsModal();
+    });
+}
+
+// Report post
+function reportPost() {
+    // Implementation for reporting post
+    showToast('Post reported');
+    closePostOptionsModal();
+}
+
+// Unfollow user
+function unfollowUser() {
+    // Implementation for unfollowing user
+    showToast('User unfollowed');
+    closePostOptionsModal();
+}
+
+// Share post
 function sharePost(postId) {
     currentPostId = postId;
     document.getElementById('shareModal').classList.remove('hidden');
@@ -1479,17 +892,18 @@ function sharePost(postId) {
     document.getElementById('shareMessage').value = '';
 }
 
+// Close share modal
 function closeShareModal() {
     document.getElementById('shareModal').classList.add('hidden');
-    currentPostId = null;
 }
 
+// Confirm share post
 function confirmShare() {
     const username = document.getElementById('shareUsername').value.trim();
     const message = document.getElementById('shareMessage').value.trim();
     
     if (!username) {
-        showToast('Please enter a username to share with');
+        showToast('Please select a user to share with');
         return;
     }
     
@@ -1515,796 +929,105 @@ function confirmShare() {
     });
 }
 
-// Post options modal
-function showPostOptions(postId) {
-    document.getElementById('postOptionsModal').classList.remove('hidden');
-}
-
-function closePostOptionsModal() {
-    document.getElementById('postOptionsModal').classList.add('hidden');
-}
-
-// User search for share functionality
-document.getElementById('shareRecipient').addEventListener('input', function(e) {
-    const query = e.target.value.trim();
-    const userResults = document.getElementById('userResults');
-    
-    if (query.length < 2) {
-        userResults.classList.add('hidden');
-        return;
-    }
-    
-    fetch(`/search?q=${encodeURIComponent(query)}&format=json`)
-        .then(response => response.json())
-        .then(data => {
-            userResults.innerHTML = '';
-            
-            if (data.users && data.users.length > 0) {
-                data.users.forEach(user => {
-                    const userItem = document.createElement('div');
-                    userItem.className = 'flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer';
-                    userItem.innerHTML = `
-                        <img src="${user.profileImage}" alt="${user.name}" class="w-8 h-8 rounded-full mr-2">
-                        <div>
-                            <div class="font-semibold text-gray-800 dark:text-white">${user.name}</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">@${user.username}</div>
-                        </div>
-                    `;
-                    userItem.addEventListener('click', function() {
-                        document.getElementById('share-username-${postId}').value = user.username;
-                        selectedUserId = user._id;
-                        userResults.classList.add('hidden');
-                    });
-                    userResults.appendChild(userItem);
-                });
-                userResults.classList.remove('hidden');
-            } else {
-                userResults.innerHTML = '<div class="p-2 text-gray-500 dark:text-gray-400">No users found</div>';
-                userResults.classList.remove('hidden');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-});
-
-// Close modals when clicking outside
-window.addEventListener('click', function(event) {
-    const shareModal = document.getElementById('shareModal');
-    const postOptionsModal = document.getElementById('postOptionsModal');
-    
-    if (event.target === shareModal) {
-        closeShareModal();
-    }
-    
-    if (event.target === postOptionsModal) {
-        closePostOptionsModal();
-    }
-});
-
-// Add these functions to your script section
-async function deleteCurrentStory() {
-    if (!currentStory) return;
-
-    try {
-        const response = await fetch(`/story/${currentStory._id}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            // Remove story from array
-            stories = stories.filter(story => story._id !== currentStory._id);
-            // Close modal and re-render stories
-            closeStoryModal();
-            renderStories();
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-// Add double tap detection
-document.addEventListener('DOMContentLoaded', () => {
-    // Setup double tap detection on post images
-    const postImages = document.querySelectorAll('.post-image');
-    postImages.forEach(img => {
-        let lastTap = 0;
-        img.addEventListener('touchend', function(e) {
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap;
-            if (tapLength < 500 && tapLength > 0) {
-                // Double tap detected
-                const postId = img.closest('.post-container').querySelector('.like-btn').id.replace('like-btn-', '');
-                handleDoubleTap(postId);
-                e.preventDefault();
-            }
-            lastTap = currentTime;
-        });
-        
-        // Add click event for faster testing on desktop (two clicks within 500ms)
-        img.addEventListener('click', function(e) {
-            const currentTime = new Date().getTime();
-            const clickLength = currentTime - lastTap;
-            if (clickLength < 500 && clickLength > 0) {
-                // Double click detected
-                const postId = this.closest('.post-container').querySelector('.like-btn').id.replace('like-btn-', '');
-                handleDoubleTap(postId);
-            }
-            lastTap = currentTime;
-        });
-    });
-});
-
-// Post creation functionality
-let processedImages = [];
-
-function openCreatePostModal() {
-    document.getElementById('createPostModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
-}
-
-function closeCreatePostModal() {
-    document.getElementById('createPostModal').classList.add('hidden');
-    document.body.style.overflow = ''; // Re-enable scrolling
-    
-    // Reset form
-    document.getElementById('createPostForm').reset();
-    document.getElementById('imagePreviewContainer').classList.add('hidden');
-    document.getElementById('imagePreviewContainer').querySelector('.swiper-wrapper').innerHTML = '';
-    processedImages = [];
-    updateImageCounter(0);
-}
-
-function handleImageSelect(event) {
-    const files = Array.from(event.target.files);
-    
-    // Check if maximum number of images is reached
-    if (processedImages.filter(Boolean).length >= 10) {
-        showToast('You can upload a maximum of 10 images per post');
-        return;
-    }
-    
-    const container = document.getElementById('imagePreviewContainer');
-    const swiperWrapper = container.querySelector('.swiper-wrapper');
-    swiperWrapper.innerHTML = ''; // Clear previous previews
-    container.classList.remove('hidden');
-    
-    processedImages = [];
-    
-    files.forEach((file, index) => {
-        if (index >= 10) return; // Max 10 images
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Create a slide for the image preview
-            const slide = document.createElement('div');
-            slide.className = 'swiper-slide';
-            
-            // Create the image preview
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.className = 'w-full h-64 md:h-96 object-contain';
-            img.alt = `Preview ${index + 1}`;
-            
-            // Create a delete button
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = 'button';
-            deleteBtn.className = 'absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 shadow-md hover:bg-red-600';
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteBtn.onclick = function() {
-                removeImage(index);
-            };
-            
-            slide.appendChild(img);
-            slide.appendChild(deleteBtn);
-            swiperWrapper.appendChild(slide);
-            
-            // Store the image data
-            processedImages[index] = e.target.result;
-            
-            // Initialize or update Swiper if this is the last image
-            if (index === files.length - 1) {
-                initializePreviewSwiper();
-                updateImageCounter(files.length);
-            }
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-function removeImage(index) {
-    processedImages[index] = null;
-    
-    // Count non-null images
-    const count = processedImages.filter(img => img !== null).length;
-    updateImageCounter(count);
-    
-    // Reinitialize the swiper with updated slides
-    const swiperWrapper = document.querySelector('#imagePreviewContainer .swiper-wrapper');
-    const slides = swiperWrapper.querySelectorAll('.swiper-slide');
-    
-    if (slides[index]) {
-        slides[index].remove();
-    }
-    
-    // If all images are removed, hide the container
-    if (count === 0) {
-        document.getElementById('imagePreviewContainer').classList.add('hidden');
-    } else {
-        // Reinitialize swiper to update it
-        initializePreviewSwiper();
-    }
-}
-
-function updateImageCounter(count) {
-    document.getElementById('imageCounter').textContent = `${count}/10 images`;
-}
-
-function initializePreviewSwiper() {
-    if (window.previewSwiper) {
-        window.previewSwiper.destroy();
-    }
-    
-    window.previewSwiper = new Swiper('#imagePreviewContainer .swiper-container', {
-        pagination: {
-            el: '.swiper-pagination',
-            dynamicBullets: true,
-        },
-        navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-        },
-        slidesPerView: 1,
-        spaceBetween: 10,
-        centeredSlides: true,
-        grabCursor: true,
-    });
-}
-
-document.getElementById('createPostForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const validImages = processedImages.filter(img => img !== null);
-    
-    // Check if there are valid images
-    if (validImages.length === 0) {
-        showToast('Please add at least one image to your post');
-        return;
-    }
-    
-    // Remove any existing processedImages from formData
-    formData.delete('processedImages');
-    
-    validImages.forEach((dataUrl, index) => {
-        // Convert base64 to blob
-        const blob = dataURLtoBlob(dataUrl);
-        formData.append('processedImages', blob, `image${index}.jpg`);
-    });
-
-    try {
-        // Show loading state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
-        submitBtn.disabled = true;
-        
-        const response = await fetch('/post', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.ok) {
-            closeCreatePostModal();
-            showToast('Post created successfully!');
-            
-            // Reload the feed to show the new post
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
-        } else {
-            const data = await response.json();
-            showToast('Error creating post: ' + (data.error || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Error creating post:', error);
-        showToast('Error creating post. Please try again.');
-    } finally {
-        // Reset button state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.innerHTML = '<i class="fas fa-share mr-2"></i> Share Post';
-        submitBtn.disabled = false;
-    }
-});
-
-function dataURLtoBlob(dataurl) {
-    let arr = dataurl.split(',');
-    let mime = arr[0].match(/:(.*?);/)[1];
-    let bstr = atob(arr[1]);
-    let n = bstr.length;
-    let u8arr = new Uint8Array(n);
-    while(n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], {type:mime});
-}
-
-function toggleTextOverlay() {
-    const input = document.getElementById('textOverlayInput');
-    input.classList.toggle('hidden');
-    if (!input.classList.contains('hidden')) {
-        document.getElementById('storyText').focus();
-    }
-}
-
-function toggleEmojiPicker() {
-    const picker = document.getElementById('emojiPicker');
-    picker.classList.toggle('hidden');
-    if (!picker.classList.contains('hidden')) {
-        loadEmojiGrid();
-    }
-}
-
-function loadEmojiGrid() {
-    const emojis = ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
-    const grid = document.querySelector('#emojiPicker .grid');
-    grid.innerHTML = emojis.map(emoji => `
-        <button onclick="addEmoji('${emoji}')" class="text-2xl hover:scale-110 transition-transform">
-            ${emoji}
-        </button>
-    `).join('');
-}
-
-function addEmoji(emoji) {
-    const container = document.getElementById('storyPreviewContainer');
-    const rect = container.getBoundingClientRect();
-    
-    // Add new emoji at center position
-    storyEmojis.push({
-        emoji,
-        position: { x: 50, y: 50 },
-        scale: 1 // Add scale property
-    });
-    
-    updateStoryPreview();
-    
-    // Hide emoji picker after adding
-    document.getElementById('emojiPicker').classList.add('hidden');
-}
-
-function updateStoryPreview() {
-    const container = document.getElementById('storyPreviewContainer');
-    const mediaElement = container.querySelector('img, video');
-    if (!mediaElement) return;
-
-    // Remove existing text and emoji overlays
-    container.querySelectorAll('.text-overlay, .emoji-overlay').forEach(el => el.remove());
-
-    // Add text overlay if exists
-    if (storyText) {
-        const textOverlay = document.createElement('div');
-        textOverlay.className = 'text-overlay';
-        textOverlay.style.left = `${storyTextPosition.x}%`;
-        textOverlay.style.top = `${storyTextPosition.y}%`;
-        textOverlay.style.transform = 'translate(-50%, -50%)';
-        textOverlay.textContent = storyText;
-        textOverlay.draggable = true;
-        textOverlay.addEventListener('dragstart', dragStart);
-        textOverlay.addEventListener('drag', drag);
-        textOverlay.addEventListener('dragend', dragEnd);
-        container.appendChild(textOverlay);
-    }
-
-    // Add emoji overlays
-    storyEmojis.forEach(({ emoji, position, scale = 1 }) => {
-        const emojiOverlay = document.createElement('div');
-        emojiOverlay.className = 'emoji-overlay';
-        emojiOverlay.style.left = `${position.x}%`;
-        emojiOverlay.style.top = `${position.y}%`;
-        emojiOverlay.style.transform = `translate(-50%, -50%) scale(${scale})`;
-        emojiOverlay.textContent = emoji;
-        emojiOverlay.draggable = true;
-        emojiOverlay.addEventListener('dragstart', dragStart);
-        emojiOverlay.addEventListener('drag', drag);
-        emojiOverlay.addEventListener('dragend', dragEnd);
-        container.appendChild(emojiOverlay);
-    });
-}
-
-function dragStart(e) {
-    initialX = e.clientX - xOffset;
-    initialY = e.clientY - yOffset;
-
-    if (e.target.classList.contains('emoji-overlay') || e.target.classList.contains('text-overlay')) {
-        isDragging = true;
-        e.target.style.zIndex = '100'; // Bring dragged element to front
-    }
-}
-
-function drag(e) {
-    if (isDragging) {
-        e.preventDefault();
-        currentX = e.clientX - initialX;
-        currentY = e.clientY - initialY;
-
-        xOffset = currentX;
-        yOffset = currentY;
-
-        setTranslate(currentX, currentY, e.target);
-    }
-}
-
-function setTranslate(xPos, yPos, el) {
-    const container = document.getElementById('storyPreviewContainer');
-    const rect = container.getBoundingClientRect();
-    const x = (xPos / rect.width) * 100;
-    const y = (yPos / rect.height) * 100;
-    
-    el.style.left = `${x}%`;
-    el.style.top = `${y}%`;
-    
-    // Update position in storyEmojis or storyTextPosition
-    if (el.classList.contains('emoji-overlay')) {
-        const index = Array.from(container.querySelectorAll('.emoji-overlay')).indexOf(el);
-        if (index !== -1) {
-            storyEmojis[index].position = { x, y };
-        }
-    } else if (el.classList.contains('text-overlay')) {
-        storyTextPosition = { x, y };
-    }
-}
-
-function dragEnd(e) {
-    initialX = currentX;
-    initialY = currentY;
-    isDragging = false;
-    e.target.style.zIndex = '10'; // Reset z-index
-}
-
-async function uploadStory() {
-    if (!storyFile) {
-        showToast('Please select a file first');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('story', storyFile);
-    
-    // Add text overlay data if text exists
-    if (storyText) {
-        formData.append('textOverlay', JSON.stringify({
-            text: storyText,
-            position: storyTextPosition,
-            style: {
-                fontSize: 24,
-                color: '#ffffff',
-                backgroundColor: 'rgba(0,0,0,0.5)'
-            }
-        }));
-    }
-    
-    // Add emojis data if emojis exist
-    if (storyEmojis.length > 0) {
-        formData.append('emojis', JSON.stringify(storyEmojis));
-    }
-
-    try {
-        const response = await fetch('/story', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            closeStoryPreview();
-            stories.unshift(data.story);
-            renderStories();
-            
-            const successMsg = document.createElement('div');
-            successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-            successMsg.textContent = 'Story uploaded successfully!';
-            document.body.appendChild(successMsg);
-            setTimeout(() => successMsg.remove(), 3000);
-        } else {
-            throw new Error(data.error || 'Failed to upload story');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showToast('Error uploading story: ' + error.message);
-    }
-}
-
-function closeStoryPreview() {
-    const modal = document.getElementById('storyPreviewModal');
-    const previewContainer = document.getElementById('storyPreviewContainer');
-    
-    // Clear the preview
-    previewContainer.innerHTML = '';
-    
-    // Hide the modal
-    modal.classList.add('hidden');
-    
-    // Reset the story data
-    storyFile = null;
-    storyText = '';
-    storyEmojis = [];
-    storyTextPosition = { x: 50, y: 50 }; // Reset text position
-    
-    // Hide any open overlays
-    document.getElementById('textOverlayInput').classList.add('hidden');
-    document.getElementById('emojiPicker').classList.add('hidden');
-}
-
-// Add event listener for story text input
-document.getElementById('storyText')?.addEventListener('input', function(e) {
-    storyText = e.target.value;
-    updateStoryPreview();
-});
-
-// Add these functions for viewers functionality
-function toggleViewersList() {
-    const viewersListModal = document.getElementById('viewersListModal');
-    viewersListModal.classList.toggle('hidden');
-}
-
-async function loadStoryViewers(storyId) {
-    try {
-        console.log('Loading viewers for story:', storyId);
-        const response = await fetch(`/story/${storyId}/viewers`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Received viewers data:', data);
-        
-        const viewersList = document.getElementById('viewersList');
-        if (!viewersList) {
-            console.error('Viewers list element not found');
-            return;
-        }
-
-        viewersList.innerHTML = '';
-        
-        if (data.viewers && data.viewers.length > 0) {
-            data.viewers.forEach(viewer => {
-                if (!viewer || !viewer.user) {
-                    console.error('Invalid viewer data:', viewer);
-                    return;
-                }
-                
-                const viewerElement = document.createElement('div');
-                viewerElement.className = 'flex items-center space-x-3 text-white';
-                viewerElement.innerHTML = `
-                    <img src="${viewer.user.profileImage || '/images/default-profile.png'}" 
-                         alt="${viewer.user.username}" 
-                         class="w-10 h-10 rounded-full object-cover">
-                    <div>
-                        <p class="font-semibold">${viewer.user.name || viewer.user.username}</p>
-                        <p class="text-sm opacity-75">@${viewer.user.username}</p>
-                        <p class="text-xs opacity-50">${getTimeAgo(new Date(viewer.viewedAt))}</p>
-                    </div>
-                `;
-                viewersList.appendChild(viewerElement);
-            });
-        } else {
-            viewersList.innerHTML = '<p class="text-white text-center">No viewers yet</p>';
-        }
-    } catch (error) {
-        console.error('Error loading story viewers:', error);
-        const viewersList = document.getElementById('viewersList');
-        if (viewersList) {
-            viewersList.innerHTML = '<p class="text-white text-center text-red-500">Error loading viewers</p>';
-        }
-    }
-}
-
-function showViewersList() {
-    if (currentStory && currentStory.user._id.toString() === '<%= user._id %>') {
-        document.getElementById('viewersListModal').classList.remove('hidden');
-        loadStoryViewers(currentStory._id);
-    }
-}
-
-function closeViewersList() {
-    document.getElementById('viewersListModal').classList.add('hidden');
-}
-
-// Update the viewStory function to show viewers button
-
-</script>
-
-<!-- Share Modal Template -->
-<template id="share-modal-template">
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
-            <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Share Post</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Share with (username)</label>
-                    <input type="text" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter username">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message (optional)</label>
-                    <textarea class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" rows="3" placeholder="Add a message..."></textarea>
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button onclick="closeShareModal(this)" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
-                    <button onclick="confirmShare(this)" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Share</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</template>
-
-<!-- Create Post Modal -->
-<div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4 py-6">
-        <div class="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full mx-auto">
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Create New Post</h2>
-                <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <form id="createPostForm" action="/post" method="post" enctype="multipart/form-data" class="p-4">
-                <!-- Image Upload Section -->
-                <div class="mb-4">
-                    <div id="imagePreviewContainer" class="hidden mb-4">
-                        <div class="swiper-container">
-                            <div class="swiper-wrapper">
-                                <!-- Image previews will be added here -->
-                            </div>
-                            <div class="swiper-pagination"></div>
-                            <div class="swiper-button-next"></div>
-                            <div class="swiper-button-prev"></div>
-                        </div>
-                        <div class="mt-2 text-center">
-                            <span id="imageCounter" class="text-sm text-gray-500 dark:text-gray-400">0/10 images</span>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center justify-center w-full">
-                        <label class="w-full flex flex-col items-center px-4 py-6 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 dark:text-gray-500"></i>
-                            <span class="mt-2 text-base text-gray-500 dark:text-gray-400">Click to upload images (max 10)</span>
-                            <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Title Input -->
-                <div class="mb-4">
-                    <input type="text" 
-                           name="title" 
-                           placeholder="Add a title..." 
-                           class="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
-                           required>
-                </div>
-
-                <!-- Caption Input -->
-                <textarea name="content" 
-                          placeholder="Write a caption..."
-                          class="w-full p-4 border dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
-                          rows="3"
-                          required></textarea>
-
-                <button type="submit" 
-                        class="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 flex items-center justify-center">
-                    <i class="fas fa-share mr-2"></i> Share Post
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Story Preview Modal -->
-<div id="storyPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="modal-content">
-            <div class="p-4 border-b flex justify-between items-center">
-                <h3 class="text-lg font-semibold">Preview Story</h3>
-                <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <div class="relative">
-                    <div id="storyPreviewContainer">
-                        <!-- Media preview will be inserted here -->
-                    </div>
-                    <!-- Controls -->
-                    <div class="story-controls">
-                        <div class="flex space-x-2">
-                            <button onclick="toggleTextOverlay()" class="control-button">
-                                <i class="fas fa-text"></i>
-                            </button>
-                            <button onclick="toggleEmojiPicker()" class="control-button">
-                                <i class="fas fa-smile"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Text overlay input -->
-                    <div id="textOverlayInput" class="hidden">
-                        <input type="text" 
-                               id="storyText" 
-                               placeholder="Add text to your story..."
-                               class="w-full">
-                    </div>
-                    <!-- Emoji picker -->
-                    <div id="emojiPicker" class="hidden">
-                        <div class="grid">
-                            <!-- Emoji grid will be populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4 flex justify-end space-x-2">
-                    <button onclick="closeStoryPreview()" 
-                            class="px-4 py-2 text-gray-600 hover:text-gray-800">
-                        Cancel
-                    </button>
-                    <button onclick="uploadStory()" 
-                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                        Share Story
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add this before the closing body tag -->
-<div id="viewersListModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full">
-            <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
-                <h3 class="text-lg font-semibold dark:text-white">Story Viewers</h3>
-                <button onclick="closeViewersList()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <div id="viewersList" class="space-y-4 max-h-[60vh] overflow-y-auto">
-                    <!-- Viewers will be loaded here -->
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add this at the very end of the file, just before </body> -->
-<script>
-// Toast notification function
+// Toast notification
 function showToast(message) {
-    // If toast exists, remove it
-    let toast = document.getElementById('toast');
-    if (toast) {
-        document.body.removeChild(toast);
-    }
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
     
-    // Create new toast
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300';
-    toast.textContent = message;
-    document.body.appendChild(toast);
+    toastMessage.textContent = message;
+    toast.classList.remove('translate-y-full', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
     
-    // Show toast
+    // Hide after 3 seconds
     setTimeout(() => {
-        toast.classList.add('opacity-100');
-    }, 100);
-    
-    // Hide toast after 3 seconds
-    setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        
-        // Remove after fade out
-        setTimeout(() => {
-            if (toast.parentNode) {
-                document.body.removeChild(toast);
-            }
-        }, 300);
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-full', 'opacity-0');
     }, 3000);
 }
+
+// Load stories
+function loadStories() {
+    fetch('/stories')
+        .then(response => response.json())
+        .then(data => {
+            const storiesList = document.getElementById('storiesList');
+            
+            if (data.stories && data.stories.length > 0) {
+                data.stories.forEach(story => {
+                    const storyItem = document.createElement('div');
+                    storyItem.className = 'flex-shrink-0 text-center';
+                    storyItem.innerHTML = `
+                        <div class="cursor-pointer" onclick="openStory('${story._id}')">
+                            <div class="${story.viewed ? 'story-ring-viewed' : 'story-ring'} rounded-full p-[2px]">
+                                <div class="bg-white dark:bg-black p-[1px] rounded-full">
+                                    <img src="${story.user.profileImage}" 
+                                         alt="${story.user.name}" 
+                                         class="w-16 h-16 rounded-full object-cover">
+                                </div>
+                            </div>
+                            <p class="text-xs mt-1 text-gray-600 dark:text-gray-400 truncate max-w-[62px] mx-auto">${story.user.username}</p>
+                        </div>
+                    `;
+                    
+                    storiesList.appendChild(storyItem);
+                });
+            } else {
+                // Handle empty state
+            }
+        })
+        .catch(error => console.error('Error loading stories:', error));
+}
+
+// Socket connection for real-time updates
+function initializeSocketConnection() {
+    const socket = io();
+    
+    socket.on('connect', () => {
+        console.log('Connected to socket.io server');
+    });
+    
+    socket.on('newPost', data => {
+        // Add new post to the feed
+        console.log('New post received:', data);
+        // Implement if needed
+    });
+    
+    socket.on('newLike', data => {
+        // Update like count for a post
+        console.log('New like received:', data);
+        updateLikeCount(data.postId, 1);
+    });
+    
+    socket.on('newComment', data => {
+        // Add new comment to a post
+        console.log('New comment received:', data);
+        // Implement if needed
+    });
+}
+
+// Load more posts for infinite scrolling
+function loadMorePosts() {
+    const loadingSpinner = document.querySelector('.loading-spinner');
+    loadingSpinner.classList.remove('hidden');
+    
+    fetch(`/api/posts?page=${page + 1}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.posts && data.posts.length > 0) {
+                page++;
+                // Append new posts to the feed
+                // Implementation depends on how your server returns data
+            }
+            
+            isLoading = false;
+            loadingSpinner.classList.add('hidden');
+        })
+        .catch(error => {
+            console.error('Error loading more posts:', error);
+            isLoading = false;
+            loadingSpinner.classList.add('hidden');
+        });
+}
 </script>
-</body>
-</html>
+
+<%- include('partials/footer') %>

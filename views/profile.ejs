@@ -112,15 +112,15 @@
             <!-- Profile Info -->
             <div class="flex-grow">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
+            <div>
                         <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white"><%= user.name %></h1>
                         <p class="text-gray-500 dark:text-gray-400">@<%= user.username %></p>
                     </div>
                     <div class="flex space-x-2">
-                        <button onclick="openCreatePostModal()" 
+                    <button onclick="openCreatePostModal()" 
                                 class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition-all">
                             <i class="fas fa-plus-circle mr-2"></i> Create
-                        </button>
+                    </button>
                     </div>
                 </div>
                 
@@ -216,59 +216,59 @@
             </div>
         <% } %>
     </div>
-</div>
+    </div>
 
-<!-- Create Post Modal -->
+    <!-- Create Post Modal -->
 <div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full mx-4">
         <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Create New Post</h2>
             <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
 
         <form id="createPostForm" class="p-4">
-            <!-- Image Upload Section -->
-            <div class="mb-4">
-                <div id="imagePreviewContainer" class="hidden grid grid-cols-2 gap-4 mb-4">
-                    <!-- Image previews will be added here -->
-                </div>
-                
-                <div class="flex items-center justify-center w-full">
+                    <!-- Image Upload Section -->
+                    <div class="mb-4">
+                        <div id="imagePreviewContainer" class="hidden grid grid-cols-2 gap-4 mb-4">
+                            <!-- Image previews will be added here -->
+                        </div>
+                        
+                        <div class="flex items-center justify-center w-full">
                     <label class="w-full flex flex-col items-center px-4 py-6 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
                         <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 dark:text-gray-500"></i>
                         <span class="mt-2 text-base text-gray-500 dark:text-gray-400">Click to upload images</span>
-                        <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-                    </label>
-                </div>
-            </div>
+                                <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                            </label>
+                        </div>
+                    </div>
 
-            <!-- Title Input -->
-            <div class="mb-4">
-                <input type="text" 
-                       name="title" 
-                       placeholder="Add a title..." 
+                    <!-- Title Input -->
+                    <div class="mb-4">
+                        <input type="text" 
+                               name="title" 
+                               placeholder="Add a title..." 
                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                       required>
-            </div>
+                               required>
+                    </div>
 
-            <!-- Caption Input -->
-            <textarea name="content" 
-                      placeholder="Write a caption..."
+                    <!-- Caption Input -->
+                    <textarea name="content" 
+                              placeholder="Write a caption..."
                       class="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                      rows="3"
-                      required></textarea>
+                              rows="3"
+                              required></textarea>
 
-            <button type="submit" 
+                    <button type="submit" 
                     id="submitPostBtn"
                     class="w-full px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg
                            hover:from-blue-600 hover:to-purple-700 transition duration-200">
-                Share Post
-            </button>
-        </form>
-    </div>
-</div>
+                        Share Post
+                    </button>
+                </form>
+            </div>
+        </div>
 
 <!-- Post Options Menu -->
 <div id="postOptionsMenu" class="fixed hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl z-50 overflow-hidden w-48">
@@ -284,59 +284,59 @@
             </button>
         </li>
     </ul>
-</div>
+    </div>
 
 <!-- Other modals remain the same -->
-<!-- Image Cropper Modal -->
+    <!-- Image Cropper Modal -->
 <div id="cropperModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full mx-4 p-4">
-        <div class="mb-4 flex justify-between items-center">
+                <div class="mb-4 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Crop Image</h3>
             <button onclick="closeCropperModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="relative">
-            <img id="cropperImage" src="" alt="Image to crop">
-        </div>
-        <div class="mt-4 flex justify-end space-x-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <img id="cropperImage" src="" alt="Image to crop">
+                </div>
+                <div class="mt-4 flex justify-end space-x-2">
             <button onclick="closeCropperModal()" class="px-4 py-2 border rounded-lg text-gray-800 dark:text-white dark:border-gray-700">
-                Cancel
-            </button>
+                        Cancel
+                    </button>
             <button onclick="cropImage()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                Crop
-            </button>
+                        Crop
+                    </button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Story Upload Preview Modal -->
+    <!-- Story Upload Preview Modal -->
 <div id="storyPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full mx-4">
         <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Preview Story</h3>
             <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="p-4">
-            <div class="relative aspect-[9/16] bg-black rounded-lg overflow-hidden">
-                <!-- Preview container -->
-                <div id="storyPreviewContainer" class="w-full h-full"></div>
-            </div>
-            <div class="mt-4 flex justify-end space-x-2">
-                <button onclick="closeStoryPreview()" 
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="relative aspect-[9/16] bg-black rounded-lg overflow-hidden">
+                        <!-- Preview container -->
+                        <div id="storyPreviewContainer" class="w-full h-full"></div>
+                    </div>
+                    <div class="mt-4 flex justify-end space-x-2">
+                        <button onclick="closeStoryPreview()" 
                         class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
-                    Cancel
-                </button>
-                <button onclick="uploadStory()" 
+                            Cancel
+                        </button>
+                        <button onclick="uploadStory()" 
                         class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700">
-                    Share Story
-                </button>
+                            Share Story
+                        </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
@@ -350,7 +350,7 @@
             <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
                 Delete
             </button>
-        </div>
+            </div>
     </div>
 </div>
 
@@ -603,7 +603,7 @@ async function handlePostSubmit(e) {
     validImages.forEach((blob, index) => {
         formData.append('images', blob, `image-${index}.jpg`);
     });
-    
+
     try {
         const response = await fetch('/post', {
             method: 'POST',
@@ -618,7 +618,7 @@ async function handlePostSubmit(e) {
             
             // Reload the page after a short delay to let user see the toast
             setTimeout(() => {
-                window.location.reload();
+            window.location.reload();
             }, 1000);
         } else {
             const error = await response.text();
@@ -643,12 +643,12 @@ function handleStoryUpload(event) {
         showToast('Please select an image or video file');
         return;
     }
-    
+
     storyFile = file;
     
     // Show preview
     const previewContainer = document.getElementById('storyPreviewContainer');
-    
+
     if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -677,15 +677,15 @@ async function uploadStory() {
 
     const formData = new FormData();
     formData.append('story', storyFile);
-    
+
     try {
         const response = await fetch('/story', {
             method: 'POST',
             body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             closeStoryPreview();
             showToast('Story uploaded successfully!');
