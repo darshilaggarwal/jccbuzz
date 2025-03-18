@@ -96,20 +96,19 @@
         /* Improved wave shape */
         .wave-shape {
             position: absolute;
-            bottom: 0;
+            bottom: -1px;
             left: 0;
             width: 100%;
             overflow: hidden;
             line-height: 0;
-            transform: rotate(180deg);
+            z-index: 10;
         }
 
         .wave-shape svg {
             position: relative;
             display: block;
-            width: calc(138% + 1.3px);
+            width: calc(120% + 1.3px);
             height: 120px;
-            transform: rotateY(180deg);
         }
 
         .wave-shape .shape-fill {
@@ -184,7 +183,7 @@
         <div class="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
             <div class="flex justify-between items-center h-20">
                 
-                <!-- Left: JCCbuzz Logo -->
+                <!-- Left: JCCbuzz Logo (only on landing page) -->
                 <div class="flex-shrink-0">
                     <a href="/" class="flex items-center">
                         <img class="h-40 w-auto object-contain mt-3" src="/placeholder/JccBUZZ_logo-removebg-preview.png" alt="JCCbuzz Logo">
@@ -239,7 +238,7 @@
                 Testimonials
             </a>
             <a href="#contact" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-indigo-500 text-base font-medium text-indigo-700 bg-indigo-50 hover:text-indigo-800 transition-colors duration-300">
-                Contac Us
+                Contact Us
             </a>
             <a href="/register" class="btn-primary block text-center mx-3 mt-4 px-5 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 shadow-md">
                 Register
@@ -249,8 +248,8 @@
 </header>
 
 <div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-    <!-- Hero Section -->
-    <section class="pt-24 pb-16 md:pt-32 md:pb-20 hero-gradient text-white relative overflow-hidden">
+    <!-- Hero Section - Only visible on laptop -->
+    <section class="h-screen pt-24 md:pt-32 pb-0 hero-gradient text-white relative overflow-hidden hidden md:block">
         <!-- Background Pattern -->
         <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
         
@@ -259,7 +258,7 @@
         <div class="decor-ring w-40 h-40 bg-indigo-300 blur-xl bottom-40 -right-10"></div>
         <div class="decor-ring w-24 h-24 bg-blue-300 blur-xl top-40 right-1/4"></div>
         
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
             <div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
                 <!-- Left Column - Text Content -->
                 <div class="col-span-6 text-center lg:text-left animate-fade-in" style="animation-delay: 0.1s">
@@ -278,8 +277,8 @@
                                 <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                         </a>
-                        <a href="#features" class="btn-primary px-8 py-3 rounded-full border border-white text-white hover:bg-white hover:text-indigo-600 transition-all font-medium text-base inline-flex items-center justify-center">
-                            Explore Features
+                        <a href="#how-it-works" class="btn-primary px-8 py-3 rounded-full border border-white text-white hover:bg-white hover:text-indigo-600 transition-all font-medium text-base inline-flex items-center justify-center">
+                            How It Works
                         </a>
                     </div>
                 </div>
@@ -304,17 +303,44 @@
             </div>
         </div>
         
-        <!-- Improved wave separator -->
-        <div class="wave-shape">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" class="shape-fill"></path>
-                <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" class="shape-fill"></path>
-                <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" class="shape-fill"></path>
-            </svg>
+        <!-- Scroll indicator for desktop -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+            <span class="text-sm text-indigo-200 mb-2">Scroll to explore</span>
+            <div class="animate-bounce">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </div>
+        </div>
+        
+       <!-- Wavy separator (Inverted) should be placed at the bottom -->
+<div class="wave-shape">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" class="w-full h-24 md:h-32 transform scale-y-[-1]">
+        <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" class="shape-fill" fill="#F9FAFB"></path>
+        <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" class="shape-fill" fill="#F9FAFB"></path>
+        <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" class="shape-fill" fill="#F9FAFB"></path>
+    </svg>
+</div>
+
+    </section>
+    
+    <!-- Mobile Hero Alternative -->
+    <section class="md:hidden py-16 hero-gradient text-white">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-3xl font-extrabold mb-4">JCCbuzz</h1>
+            <p class="mb-6">The exclusive social platform for Jagannath University students</p>
+            <div class="flex flex-col space-y-3">
+                <a href="/register" class="btn-primary px-6 py-3 rounded-full bg-white text-indigo-600 hover:bg-indigo-50 transition-all shadow-md font-medium">
+                    Get Started
+                </a>
+                <a href="#how-it-works" class="btn-primary px-6 py-3 rounded-full border border-white text-white hover:bg-white hover:text-indigo-600 transition-all font-medium">
+                    How It Works
+                </a>
+            </div>
         </div>
     </section>
     
-    <!-- App Screenshots Section -->
+    <!-- How It Works Section with Illustrations -->
     <div class="py-16 bg-white" id="how-it-works">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center">
@@ -327,35 +353,62 @@
                 </p>
             </div>
             
-            <!-- App Screenshots Grid -->
-            <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+            <!-- Illustrations Grid -->
+            <div class="mt-16 grid grid-cols-1 gap-12 md:grid-cols-3">
                 <div class="flex flex-col items-center">
-                    <div class="app-screenshot mb-4 w-full md:w-64 mx-auto">
-                        <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Feed" class="w-full rounded-xl shadow-lg">
+                    <div class="mb-6 w-48 h-48 flex items-center justify-center">
+                        <svg class="w-full h-full text-indigo-500" viewBox="0 0 200 200" fill="none">
+                            <circle cx="100" cy="100" r="80" fill="#EEF2FF" />
+                            <rect x="60" y="60" width="80" height="100" rx="8" fill="white" stroke="#4F46E5" stroke-width="3"/>
+                            <rect x="70" y="70" width="60" height="40" rx="4" fill="#818CF8" />
+                            <rect x="70" y="120" width="60" height="8" rx="2" fill="#C7D2FE" />
+                            <rect x="70" y="135" width="40" height="8" rx="2" fill="#C7D2FE" />
+                            <circle cx="140" cy="50" r="15" fill="#EF4444" stroke="white" stroke-width="3"/>
+                        </svg>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900">Beautiful Feed</h3>
-                    <p class="text-center text-gray-500 mt-2">Share photos and videos with classmates in an intuitive, beautiful feed</p>
+                    <h3 class="text-xl font-bold text-gray-900">Beautiful Feed</h3>
+                    <p class="text-center text-gray-500 mt-3 px-6">Share photos and videos with classmates in an intuitive, beautiful feed. See updates from friends and campus activities.</p>
                 </div>
                 
                 <div class="flex flex-col items-center">
-                    <div class="app-screenshot mb-4 w-full md:w-64 mx-auto">
-                        <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Chat" class="w-full rounded-xl shadow-lg">
+                    <div class="mb-6 w-48 h-48 flex items-center justify-center">
+                        <svg class="w-full h-full text-indigo-500" viewBox="0 0 200 200" fill="none">
+                            <circle cx="100" cy="100" r="80" fill="#EEF2FF" />
+                            <rect x="50" y="50" width="100" height="100" rx="10" fill="white" stroke="#4F46E5" stroke-width="3"/>
+                            <circle cx="80" cy="80" r="15" fill="#818CF8" />
+                            <rect x="105" y="70" width="35" height="8" rx="4" fill="#C7D2FE" />
+                            <rect x="105" y="85" width="25" height="8" rx="4" fill="#C7D2FE" />
+                            <circle cx="120" cy="120" r="15" fill="#4F46E5" />
+                            <rect x="60" y="110" width="35" height="8" rx="4" fill="#C7D2FE" />
+                            <rect x="60" y="125" width="25" height="8" rx="4" fill="#C7D2FE" />
+                        </svg>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900">Real-time Messaging</h3>
-                    <p class="text-center text-gray-500 mt-2">Chat with friends, send voice messages, and stay connected anywhere</p>
+                    <h3 class="text-xl font-bold text-gray-900">Real-time Messaging</h3>
+                    <p class="text-center text-gray-500 mt-3 px-6">Chat with friends, send voice messages, and share files instantly. Group chats make team projects easier.</p>
                 </div>
                 
                 <div class="flex flex-col items-center">
-                    <div class="app-screenshot mb-4 w-full md:w-64 mx-auto">
-                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Events" class="w-full rounded-xl shadow-lg">
+                    <div class="mb-6 w-48 h-48 flex items-center justify-center">
+                        <svg class="w-full h-full text-indigo-500" viewBox="0 0 200 200" fill="none">
+                            <circle cx="100" cy="100" r="80" fill="#EEF2FF" />
+                            <rect x="55" y="60" width="90" height="90" rx="8" fill="white" stroke="#4F46E5" stroke-width="3"/>
+                            <rect x="65" y="70" width="70" height="20" rx="4" fill="#818CF8" />
+                            <circle cx="75" cy="100" r="5" fill="#4F46E5" />
+                            <rect x="85" y="97" width="40" height="6" rx="3" fill="#C7D2FE" />
+                            <circle cx="75" cy="120" r="5" fill="#4F46E5" />
+                            <rect x="85" y="117" width="40" height="6" rx="3" fill="#C7D2FE" />
+                            <circle cx="75" cy="140" r="5" fill="#4F46E5" />
+                            <rect x="85" y="137" width="40" height="6" rx="3" fill="#C7D2FE" />
+                            <circle cx="140" cy="50" r="15" fill="#10B981" stroke="white" stroke-width="3"/>
+                        </svg>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900">Campus Events</h3>
-                    <p class="text-center text-gray-500 mt-2">Discover and participate in university events, clubs, and activities</p>
+                    <h3 class="text-xl font-bold text-gray-900">Campus Events</h3>
+                    <p class="text-center text-gray-500 mt-3 px-6">Discover and participate in university events, clubs, and activities. Never miss important campus announcements.</p>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Features Section with visual cards -->
     <div class="py-16 bg-gray-50" id="features">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -534,16 +587,22 @@
         </div>
     </div>
 
-    <!-- Call to Action Section -->
-    <div class="bg-indigo-700">
-        <div class="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
+    <!-- Call to Action Section - Updated with hero style -->
+    <div class="hero-gradient relative overflow-hidden py-16">
+        <!-- Decorative rings -->
+        <div class="decor-ring w-28 h-28 bg-purple-400 blur-xl -top-10 -left-10 opacity-30"></div>
+        <div class="decor-ring w-36 h-36 bg-indigo-300 blur-xl bottom-10 -right-10 opacity-30"></div>
+        <div class="decor-ring w-20 h-20 bg-blue-300 blur-xl top-20 right-1/3 opacity-30"></div>
+        <div class="decor-ring w-24 h-24 bg-pink-400 blur-xl bottom-20 left-1/3 opacity-30"></div>
+        
+        <div class="max-w-2xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
             <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
                 <span class="block">Ready to connect with your campus?</span>
             </h2>
-            <p class="mt-4 text-lg leading-6 text-indigo-200">
+            <p class="mt-4 text-lg leading-6 text-indigo-100">
                 Join thousands of Jagannath University students already on JCCbuzz.
             </p>
-            <a href="/register" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-full text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto transform transition-all duration-300 hover:scale-105">
+            <a href="/register" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-full text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto transform transition-all duration-300 hover:scale-105 shadow-lg">
                 Sign up today
             </a>
         </div>
@@ -777,45 +836,54 @@
                     message: document.getElementById('message').value
                 };
                 
-                // Simulate form submission (replace with actual backend call)
-                setTimeout(() => {
+                // Send data to backend
+                fetch('/api/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                })
+                .then(response => response.json())
+                .then(data => {
                     // Reset the form
                     contactForm.reset();
                     
-                    // Show success message
-                    submitButton.innerHTML = '<span>Message Sent!</span><i class="fas fa-check ml-2"></i>';
-                    submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-                    submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                    if (data.success) {
+                        // Show success message
+                        submitButton.innerHTML = '<span>Message Sent!</span><i class="fas fa-check ml-2"></i>';
+                        submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                        submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                    } else {
+                        // Show error message
+                        submitButton.innerHTML = '<span>Failed to Send</span><i class="fas fa-exclamation-circle ml-2"></i>';
+                        submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                        submitButton.classList.add('bg-red-600', 'hover:bg-red-700');
+                    }
                     
                     // Reset button after 3 seconds
                     setTimeout(() => {
                         submitButton.innerHTML = '<span>Send Message</span><i class="fas fa-paper-plane ml-2"></i>';
                         submitButton.disabled = false;
-                        submitButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        submitButton.classList.remove('bg-green-600', 'bg-red-600', 'hover:bg-green-700', 'hover:bg-red-700');
                         submitButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
                     }, 3000);
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                    // Show error message
+                    submitButton.innerHTML = '<span>Failed to Send</span><i class="fas fa-exclamation-circle ml-2"></i>';
+                    submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                    submitButton.classList.add('bg-red-600', 'hover:bg-red-700');
                     
-                    // In a real implementation, you would send the form data to your backend
-                    // Example fetch call to a backend API
-                    /*
-                    fetch('/api/contact', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Success:', data);
-                        // Success handling code here
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        // Error handling code here
-                    });
-                    */
-                }, 1500);
+                    // Reset button after 3 seconds
+                    setTimeout(() => {
+                        submitButton.innerHTML = '<span>Send Message</span><i class="fas fa-paper-plane ml-2"></i>';
+                        submitButton.disabled = false;
+                        submitButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+                        submitButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                    }, 3000);
+                });
             });
         }
     });
