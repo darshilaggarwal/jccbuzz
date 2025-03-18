@@ -1,5 +1,41 @@
 <%- include('partials/header') %>
 
+<script>
+// Modal functions
+function openCreatePostModal() {
+    const modal = document.getElementById('createPostModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCreatePostModal() {
+    const modal = document.getElementById('createPostModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    
+    // Reset form
+    const form = document.getElementById('createPostForm');
+    if (form) form.reset();
+    
+    // Clear image previews
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    if (previewContainer) {
+        previewContainer.querySelector('div').innerHTML = '';
+        previewContainer.classList.add('hidden');
+    }
+    
+    // Show upload placeholder
+    document.getElementById('imageUploadPlaceholder').classList.remove('hidden');
+    
+    // Hide "add more" button
+    document.getElementById('addMoreImagesBtn').classList.add('hidden');
+    
+    // Reset character counters
+    document.getElementById('titleCharCount').textContent = '0/50';
+    document.getElementById('captionCharCount').textContent = '0/2200';
+}
+</script>
+
 <style>
 /* Profile picture and story ring styles */
 .profile-container {
@@ -112,15 +148,15 @@
             <!-- Profile Info -->
             <div class="flex-grow">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
+                    <div>
                         <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white"><%= user.name %></h1>
                         <p class="text-gray-500 dark:text-gray-400">@<%= user.username %></p>
                     </div>
                     <div class="flex space-x-2">
-                    <button onclick="openCreatePostModal()" 
+                        <button onclick="openCreatePostModal()" 
                                 class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition-all">
                             <i class="fas fa-plus-circle mr-2"></i> Create
-                    </button>
+                        </button>
                     </div>
                 </div>
                 
@@ -228,59 +264,83 @@
             </div>
         <% } %>
     </div>
-    </div>
+</div>
 
-    <!-- Create Post Modal -->
-<div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full mx-4">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Create New Post</h2>
-            <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+<!-- Create Post Modal -->
+<div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full mx-4 shadow-xl overflow-hidden transform transition-all">
+        <!-- Header -->
+        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+            <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h2 class="text-sm font-semibold text-gray-800 dark:text-white">New Post</h2>
+            <button type="submit" form="createPostForm" id="submitPostBtn" class="text-blue-500 font-semibold hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-sm">
+                Share
+            </button>
+        </div>
 
-        <form id="createPostForm" class="p-4">
-                    <!-- Image Upload Section -->
-                    <div class="mb-4">
-                        <div id="imagePreviewContainer" class="hidden grid grid-cols-2 gap-4 mb-4">
+        <form id="createPostForm" class="flex flex-col h-full">
+            <!-- Image Upload and Preview Section -->
+            <div class="flex-grow max-h-[60vh]">
+                <!-- Image Preview Container -->
+                <div id="imagePreviewContainer" class="hidden h-full">
+                    <div class="aspect-square bg-gray-50 dark:bg-gray-800 relative flex items-center justify-center overflow-hidden">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 h-full w-full">
                             <!-- Image previews will be added here -->
                         </div>
                         
-                        <div class="flex items-center justify-center w-full">
-                    <label class="w-full flex flex-col items-center px-4 py-6 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 dark:text-gray-500"></i>
-                        <span class="mt-2 text-base text-gray-500 dark:text-gray-400">Click to upload images</span>
-                                <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-                            </label>
-                        </div>
+                        <!-- Add more images button - shows when at least one image is selected -->
+                        <button type="button" class="absolute bottom-3 right-3 bg-black bg-opacity-70 text-white rounded-full p-2 hidden hover:bg-opacity-80 transition-all" id="addMoreImagesBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
                     </div>
+                </div>
+                
+                <!-- Image Upload Placeholder - shows when no images are selected -->
+                <div id="imageUploadPlaceholder" class="aspect-square flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 border-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">Drag photos here</p>
+                    <label class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition cursor-pointer text-sm font-medium">
+                        Select from computer
+                        <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                    </label>
+                </div>
+            </div>
 
-                    <!-- Title Input -->
-                    <div class="mb-4">
-                        <input type="text" 
-                               name="title" 
-                               placeholder="Add a title..." 
-                       class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                               required>
-                    </div>
+            <!-- Post Details Section -->
+            <div class="border-t border-gray-200 dark:border-gray-800 p-4 space-y-3">
+                <!-- Title Input with character count -->
+                <div class="relative">
+                    <input type="text" 
+                           name="title" 
+                           placeholder="Write a title..." 
+                           maxlength="50"
+                           class="w-full px-3 py-2 bg-transparent border-0 border-b border-gray-200 dark:border-gray-700 focus:ring-0 focus:border-gray-300 dark:text-white text-sm"
+                           required>
+                    <div class="absolute right-2 bottom-2 text-xs text-gray-400 dark:text-gray-600" id="titleCharCount">0/50</div>
+                </div>
 
-                    <!-- Caption Input -->
+                <!-- Caption Input with character count -->
+                <div class="relative">
                     <textarea name="content" 
                               placeholder="Write a caption..."
-                      class="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                              maxlength="2200"
+                              class="w-full px-3 py-2 bg-transparent border-0 border-b border-gray-200 dark:border-gray-700 focus:ring-0 focus:border-gray-300 dark:text-white resize-none text-sm"
                               rows="3"
                               required></textarea>
-
-                    <button type="submit" 
-                    id="submitPostBtn"
-                    class="w-full px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg
-                           hover:from-blue-600 hover:to-purple-700 transition duration-200">
-                        Share Post
-                    </button>
-                </form>
+                    <div class="absolute right-2 bottom-2 text-xs text-gray-400 dark:text-gray-600" id="captionCharCount">0/2200</div>
+                </div>
             </div>
-        </div>
+        </form>
+    </div>
+</div>
 
 <!-- Post Options Menu -->
 <div id="postOptionsMenu" class="fixed hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl z-50 overflow-hidden w-48">
@@ -296,59 +356,58 @@
             </button>
         </li>
     </ul>
-    </div>
+</div>
 
 <!-- Other modals remain the same -->
-    <!-- Image Cropper Modal -->
+<!-- Image Cropper Modal -->
 <div id="cropperModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full mx-4 p-4">
-                <div class="mb-4 flex justify-between items-center">
+        <div class="mb-4 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Crop Image</h3>
             <button onclick="closeCropperModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="relative">
-                    <img id="cropperImage" src="" alt="Image to crop">
-                </div>
-                <div class="mt-4 flex justify-end space-x-2">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="relative">
+            <img id="cropperImage" src="" alt="Image to crop">
+        </div>
+        <div class="mt-4 flex justify-end space-x-2">
             <button onclick="closeCropperModal()" class="px-4 py-2 border rounded-lg text-gray-800 dark:text-white dark:border-gray-700">
-                        Cancel
-                    </button>
+                Cancel
+            </button>
             <button onclick="cropImage()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                        Crop
-                    </button>
-            </div>
+                Crop
+            </button>
         </div>
     </div>
+</div>
 
-    <!-- Story Upload Preview Modal -->
+<!-- Story Upload Preview Modal -->
 <div id="storyPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full mx-4">
         <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Preview Story</h3>
             <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="p-4">
-                    <div class="relative aspect-[9/16] bg-black rounded-lg overflow-hidden">
-                        <!-- Preview container -->
-                        <div id="storyPreviewContainer" class="w-full h-full"></div>
-                    </div>
-                    <div class="mt-4 flex justify-end space-x-2">
-                        <button onclick="closeStoryPreview()" 
-                        class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
-                            Cancel
-                        </button>
-                        <button onclick="uploadStory()" 
-                        class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700">
-                            Share Story
-                        </button>
-                </div>
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <div class="relative aspect-[9/16] bg-black rounded-lg overflow-hidden">
+                <!-- Preview container -->
+                <div id="storyPreviewContainer" class="w-full h-full"></div>
             </div>
+            <div class="mt-4 flex justify-end space-x-2">
+                <button onclick="closeStoryPreview()" 
+                class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
+                    Cancel
+                </button>
+                <button onclick="uploadStory()" 
+                class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700">
+                    Share Story
+                </button>
         </div>
     </div>
+</div>
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
@@ -362,7 +421,7 @@
             <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
                 Delete
             </button>
-            </div>
+        </div>
     </div>
 </div>
 
@@ -390,6 +449,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up event listeners for post deletion
     if (document.getElementById('confirmDeleteBtn')) {
         document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeletePost);
+    }
+
+    // Add drag and drop functionality for images
+    const dropZone = document.getElementById('imageUploadPlaceholder');
+    
+    if (dropZone) {
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+        
+        // Handle dropped files
+        dropZone.addEventListener('drop', handleDrop, false);
     }
 });
 
@@ -469,125 +551,6 @@ function closePostMenu() {
     }, 200);
 }
 
-// Create Post Modal Functions
-function openCreatePostModal() {
-    document.getElementById('createPostModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
-}
-
-function closeCreatePostModal() {
-    document.getElementById('createPostModal').classList.add('hidden');
-    document.body.style.overflow = ''; // Re-enable scrolling
-    
-    // Reset form
-    const form = document.getElementById('createPostForm');
-    if (form) form.reset();
-    
-    // Clear image previews
-    const previewContainer = document.getElementById('imagePreviewContainer');
-    if (previewContainer) {
-        previewContainer.innerHTML = '';
-        previewContainer.classList.add('hidden');
-    }
-    
-    // Reset processed images
-    processedImages = [];
-}
-
-// Handle image selection
-function handleImageSelect(event) {
-    const files = Array.from(event.target.files);
-    
-    // Check if maximum number of images is reached
-    if (processedImages.filter(Boolean).length >= 10) {
-        showToast('You can upload a maximum of 10 images per post');
-        return;
-    }
-    
-    // Get preview container
-    const previewContainer = document.getElementById('imagePreviewContainer');
-    
-    // Process each file
-    files.forEach(file => {
-        if (!file.type.startsWith('image/')) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Create temporary image for cropping
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.onload = function() {
-                // Show preview
-                const index = processedImages.length;
-                processedImages.push(null); // Reserve spot
-                
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'relative aspect-square overflow-hidden rounded-lg shadow-md';
-                previewDiv.innerHTML = `
-                    <img src="${e.target.result}" class="w-full h-full object-cover" />
-                    <button type="button" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600" onclick="removeImage(${index})">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                `;
-                
-                previewContainer.appendChild(previewDiv);
-                previewContainer.classList.remove('hidden');
-                
-                // Process the image (convert to blob)
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Max size
-                const MAX_WIDTH = 1200;
-                const MAX_HEIGHT = 1200;
-                
-                let width = img.width;
-                let height = img.height;
-                
-                // Resize if needed
-                if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-                    if (width > height) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    } else {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                // Draw and get as blob
-                ctx.drawImage(img, 0, 0, width, height);
-                canvas.toBlob(blob => {
-                    processedImages[index] = blob;
-                }, file.type, 0.85); // 85% quality
-            };
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-// Remove image from previews
-function removeImage(index) {
-    if (index >= 0 && index < processedImages.length) {
-        processedImages[index] = null;
-        
-        // Remove preview
-        const previewContainer = document.getElementById('imagePreviewContainer');
-        const previews = previewContainer.querySelectorAll('div');
-        if (previews[index]) {
-            previews[index].remove();
-        }
-        
-        // Hide container if empty
-        if (previewContainer.children.length === 0) {
-            previewContainer.classList.add('hidden');
-        }
-    }
-}
-
 // Handle post form submission
 async function handlePostSubmit(e) {
     e.preventDefault();
@@ -596,11 +559,11 @@ async function handlePostSubmit(e) {
     const form = e.target;
     const formData = new FormData(form);
     
-    // Check if there are valid images
-    const validImages = processedImages.filter(img => img !== null);
+    // Check if there are images selected
+    const imageInput = document.getElementById('imageInput');
+    const files = imageInput.files;
     
-    // Check if there are valid images
-    if (validImages.length === 0) {
+    if (!files || files.length === 0) {
         showToast('Please add at least one image to your post');
         return;
     }
@@ -608,12 +571,17 @@ async function handlePostSubmit(e) {
     // Update submit button state
     const submitBtn = document.getElementById('submitPostBtn');
     const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+    submitBtn.innerHTML = '<span class="inline-block animate-pulse">Sharing...</span>';
     submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-70');
     
-    // Append processed images to form data
-    validImages.forEach((blob, index) => {
-        formData.append('processedImages', blob, `image-${index}.jpg`);
+    // Append image files to form data (already done through the FormData constructor)
+    Array.from(files).forEach((file, index) => {
+        // Rename files for better organization on server
+        const newFile = new File([file], `image-${index}.${file.name.split('.').pop()}`, {
+            type: file.type
+        });
+        formData.append('processedImages', newFile);
     });
 
     try {
@@ -623,26 +591,117 @@ async function handlePostSubmit(e) {
         });
         
         if (response.ok) {
-            // Parse the JSON response but don't display it directly
+            // Parse the JSON response
             const data = await response.json();
-            showToast(data.message || 'Post created successfully!');
+            showToast(data.message || 'Post shared successfully!');
             closeCreatePostModal();
             
-            // Reload the page after a short delay to let user see the toast
+            // Reload the page after a short delay
             setTimeout(() => {
-            window.location.reload();
-            }, 1000);
+                window.location.reload();
+            }, 1500);
         } else {
-            const error = await response.text();
-            showToast('Error creating post: ' + error);
+            const errorData = await response.json();
+            showToast('Error: ' + (errorData.message || 'Could not create post'));
         }
     } catch (error) {
+        console.error('Error creating post:', error);
         showToast('Network error. Please try again.');
     } finally {
         // Reset button state
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-70');
     }
+}
+
+// Function to remove image from previews (if needed)
+function removeImage(index) {
+    // This function could be implemented if needed for image removal
+    // For now the upload refreshes all images
+}
+
+// Handle image selection
+function handleImageSelect(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const previewGrid = previewContainer.querySelector('div');
+    const uploadPlaceholder = document.getElementById('imageUploadPlaceholder');
+    const addMoreBtn = document.getElementById('addMoreImagesBtn');
+    
+    // Clear previous previews
+    previewGrid.innerHTML = '';
+    
+    // Show preview container and hide placeholder
+    previewContainer.classList.remove('hidden');
+    uploadPlaceholder.classList.add('hidden');
+    
+    // Show add more button after at least one image is selected
+    if (files.length > 0) {
+        addMoreBtn.classList.remove('hidden');
+    }
+    
+    // Create preview for each file
+    Array.from(files).forEach((file, index) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'relative aspect-square';
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'w-full h-full object-cover';
+            
+            previewItem.appendChild(img);
+            previewGrid.appendChild(previewItem);
+        }
+        
+        reader.readAsDataURL(file);
+    });
+    
+    // Update the form's submit button state
+    updateSubmitButtonState();
+}
+
+// Add event listeners for character counts
+document.addEventListener('DOMContentLoaded', function() {
+    const titleInput = document.querySelector('input[name="title"]');
+    const captionInput = document.querySelector('textarea[name="content"]');
+    const titleCharCount = document.getElementById('titleCharCount');
+    const captionCharCount = document.getElementById('captionCharCount');
+    
+    titleInput.addEventListener('input', function() {
+        titleCharCount.textContent = `${this.value.length}/50`;
+        updateSubmitButtonState();
+    });
+    
+    captionInput.addEventListener('input', function() {
+        captionCharCount.textContent = `${this.value.length}/2200`;
+        updateSubmitButtonState();
+    });
+    
+    // Handle click on add more images button
+    document.getElementById('addMoreImagesBtn').addEventListener('click', function() {
+        document.getElementById('imageInput').click();
+    });
+});
+
+// Function to update submit button state
+function updateSubmitButtonState() {
+    const titleInput = document.querySelector('input[name="title"]');
+    const captionInput = document.querySelector('textarea[name="content"]');
+    const imageInput = document.getElementById('imageInput');
+    const submitBtn = document.getElementById('submitPostBtn');
+    
+    const hasTitle = titleInput.value.trim().length > 0;
+    const hasCaption = captionInput.value.trim().length > 0;
+    const hasImages = imageInput.files && imageInput.files.length > 0;
+    
+    submitBtn.disabled = !(hasTitle && hasCaption && hasImages);
+    submitBtn.classList.toggle('opacity-50', !(hasTitle && hasCaption && hasImages));
 }
 
 // Handle story upload
@@ -841,6 +900,32 @@ function showToast(message) {
             }
         }, 300);
     }, 3000);
+}
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function highlight() {
+    dropZone.classList.add('bg-blue-50', 'dark:bg-blue-900', 'border-2', 'border-dashed', 'border-blue-300', 'dark:border-blue-700');
+}
+
+function unhighlight() {
+    dropZone.classList.remove('bg-blue-50', 'dark:bg-blue-900', 'border-2', 'border-dashed', 'border-blue-300', 'dark:border-blue-700');
+}
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    // Update file input with dropped files
+    if (files && files.length > 0) {
+        // Unfortunately, we can't directly set FileList to an input
+        // So we'll trigger the change event handler manually
+        document.getElementById('imageInput').files = files;
+        handleImageSelect({target: {files: files}});
+    }
 }
 </script>
 

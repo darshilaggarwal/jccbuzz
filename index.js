@@ -1090,26 +1090,34 @@ app.post("/comment/:commentId/reply/:replyIndex/like", isLoggedIn, async (req, r
     try {
         const comment = await commentModel.findById(req.params.commentId);
         const user = await userModel.findOne({ email: req.user.email });
-        const reply = comment.replies[req.params.replyIndex];
+        const replyIndex = parseInt(req.params.replyIndex);
 
-        const isLiked = reply.likes.includes(user._id);
+        if (!comment || !comment.replies || replyIndex >= comment.replies.length) {
+            return res.status(404).json({ error: "Reply not found" });
+        }
+
+        const reply = comment.replies[replyIndex];
+        const isLiked = reply.likes.some(id => id.toString() === user._id.toString());
 
         if (isLiked) {
+            // Unlike the reply
             reply.likes = reply.likes.filter(id => id.toString() !== user._id.toString());
         } else {
+            // Like the reply
             reply.likes.push(user._id);
             
             // Create notification for reply like
             if (reply.user.toString() !== user._id.toString()) {
                 // Get the post for context
                 const post = await postModel.findById(comment.post);
-                await createNotification(reply.user, user._id, 'comment_like', post._id, comment._id);
+                await createNotification(reply.user, user._id, 'reply_like', post._id, comment._id);
             }
         }
 
         await comment.save();
         res.json({ likes: reply.likes.length, isLiked: !isLiked });
     } catch (error) {
+        console.error('Error liking reply:', error);
         res.status(500).json({ error: "Error processing like" });
     }
 });
@@ -2726,7 +2734,7 @@ async function createNotification(recipientId, senderId, type, postId = null, co
         if (recipient.notificationSettings) {
             // Skip if user has disabled this notification type
             if (type === 'like' && recipient.notificationSettings.likes === false) return null;
-            if (type === 'comment' && recipient.notificationSettings.comments === false) return null;
+            if ((type === 'comment' || type === 'comment_like' || type === 'reply' || type === 'reply_like') && recipient.notificationSettings.comments === false) return null;
             if ((type === 'follow' || type === 'followAccepted') && recipient.notificationSettings.follows === false) return null;
             if (type === 'new_post' && recipient.notificationSettings.postUpdates === false) return null;
         }
@@ -2740,8 +2748,14 @@ async function createNotification(recipientId, senderId, type, postId = null, co
             case 'comment':
                 text = 'commented on your post.';
                 break;
+            case 'comment_like':
+                text = 'liked your comment.';
+                break;
             case 'reply':
                 text = 'replied to your comment.';
+                break;
+            case 'reply_like':
+                text = 'liked your reply.';
                 break;
             case 'follow':
                 text = 'started following you.';
@@ -3569,5 +3583,34 @@ app.get("/explore", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error("Error fetching explore page:", error);
         res.status(500).send("Failed to load explore page");
+    }
+});
+
+// Get comments for a post
+app.get("/post/:postId/comments", isLoggedIn, async (req, res) => {
+    try {
+        const post = await postModel.findById(req.params.postId)
+            .populate({
+                path: 'comments',
+                populate: [
+                    {
+                        path: 'user',
+                        select: 'name username profileImage'
+                    },
+                    {
+                        path: 'replies.user',
+                        select: 'name username profileImage'
+                    }
+                ]
+            });
+
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+
+        res.json({ comments: post.comments });
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        res.status(500).json({ error: "Error fetching comments" });
     }
 });
