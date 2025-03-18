@@ -7,7 +7,7 @@
             <div class="flex flex-col sm:flex-row items-center sm:items-start pt-6 sm:space-x-6">
                 <!-- Profile Image -->
                 <div class="relative mb-4 sm:mb-0">
-                    <div class="<%= profileUser.hasActiveStory ? 'story-ring pulse-ring rounded-full p-[2px]' : '' %>" id="profileImageContainer">
+                    <div class="<%= profileUser.hasActiveStory ? 'story-ring rounded-full p-[2px]' : '' %>" id="profileImageContainer">
                         <div class="bg-white dark:bg-black p-[1px] rounded-full">
                             <img src="<%= profileUser.profileImage %>" 
                                  alt="<%= profileUser.name %>" 
@@ -361,6 +361,7 @@
     background: #ccc;
 }
 
+/* Remove pulse animation */
 @keyframes pulse-ring {
     0% {
         transform: scale(0.98);
@@ -376,8 +377,9 @@
     }
 }
 
+/* No longer used */
 .pulse-ring {
-    animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+    /* animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite; */
 }
 
 .story-progress-bar {
@@ -1030,6 +1032,13 @@ function openUserStories(userId) {
             // Show modal
             document.getElementById('storyModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
+            // Update story ring to viewed after seeing the story
+            const profileImageContainer = document.getElementById('profileImageContainer');
+            if (profileImageContainer && profileImageContainer.classList.contains('story-ring')) {
+                // After viewing, we'll replace the story-ring with story-ring-viewed
+                // This will happen when the stories are marked as viewed
+            }
         })
         .catch(error => {
             console.error('Error opening stories:', error);
