@@ -1,81 +1,95 @@
 <%- include('partials/header') %>
 
 <div class="max-w-4xl mx-auto mt-8 px-4">
-    <!-- Profile Header - Instagram-like -->
-    <div class="bg-white dark:bg-black rounded-lg shadow-md p-6 mb-8">
-        <div class="flex flex-col md:flex-row md:items-center gap-6">
-            <!-- Profile Image -->
-            <div class="flex justify-center md:justify-start">
-                <img src="<%= profileUser.profileImage %>" 
-                     alt="Profile" 
-                     class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-2 border-gray-200 dark:border-gray-800">
-            </div>
-            
-            <!-- Profile Info -->
-            <div class="flex-grow">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white"><%= profileUser.name %></h1>
-                        <div class="flex items-center">
-                            <p class="text-gray-500 dark:text-gray-400">@<%= profileUser.username %></p>
-                            <% if (profileUser.isPrivate) { %>
-                                <span class="ml-2 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full flex items-center">
-                                    <i class="fas fa-lock text-xs mr-1"></i> Private
-                                </span>
-                            <% } %>
+    <!-- Profile Header -->
+    <div class="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 pb-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center sm:items-start pt-6 sm:space-x-6">
+                <!-- Profile Image -->
+                <div class="relative mb-4 sm:mb-0">
+                    <div class="<%= profileUser.hasActiveStory ? 'story-ring pulse-ring rounded-full p-[2px]' : '' %>" id="profileImageContainer">
+                        <div class="bg-white dark:bg-black p-[1px] rounded-full">
+                            <img src="<%= profileUser.profileImage %>" 
+                                 alt="<%= profileUser.name %>" 
+                                 class="w-24 h-24 sm:w-36 sm:h-36 rounded-full object-cover cursor-pointer" 
+                                 id="profileImage">
                         </div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <% if (!isOwnProfile) { %>
-                            <% 
-                                let followBtnText = 'Follow';
-                                let followBtnClass = 'bg-blue-600 text-white hover:bg-blue-700';
-                                
-                                // Current following status check
-                                const isFollowing = user.following && user.following.some(id => id.toString() === profileUser._id.toString());
-                                
-                                // Check if there's a pending follow request
-                                const hasRequestedFollow = profileUser.followRequests && 
-                                    profileUser.followRequests.some(req => req.user && req.user.toString() === user._id.toString());
-                                
-                                if (isFollowing) {
-                                    followBtnText = 'Following';
-                                    followBtnClass = 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600';
-                                } else if (hasRequestedFollow) {
-                                    followBtnText = 'Requested';
-                                    followBtnClass = 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600';
-                                }
-                            %>
-                            <button id="followButton"
-                                    onclick="toggleFollow('<%= profileUser._id %>')"
-                                    class="px-4 py-2 rounded-md transition-colors <%= followBtnClass %>">
-                                <%= followBtnText %>
-                            </button>
-                            <a href="/chat/<%= profileUser._id %>" 
-                               class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                                <i class="fas fa-paper-plane mr-2"></i>
-                                Message
-                            </a>
-                        <% } %>
                     </div>
                 </div>
                 
-                <p class="mt-2 text-gray-600 dark:text-gray-300"><%= profileUser.bio %></p>
-                
-                <!-- Stats - Instagram Style -->
-                <div class="flex justify-around md:justify-start md:space-x-8 mt-4 py-3 border-t border-b border-gray-200 dark:border-gray-800">
-                    <div class="text-center md:text-left">
-                        <span class="block text-base md:text-lg font-bold text-gray-800 dark:text-white"><%= profileUser.posts.length %></span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">posts</span>
+                <!-- Profile Info -->
+                <div class="flex-1 text-center sm:text-left">
+                    <div class="flex flex-col sm:flex-row sm:items-center mb-2">
+                        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white"><%= profileUser.name %></h1>
+                        
+                        <% if (profileUser.isPrivate) { %>
+                            <span class="ml-2 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full font-medium">Private</span>
+                        <% } %>
+                        
+                        <% if (profileUser.isVerified) { %>
+                            <span class="ml-2 text-blue-500"><i class="fas fa-badge-check"></i></span>
+                        <% } %>
                     </div>
-                    <button onclick="showFollowers('<%= profileUser._id %>')" class="text-center md:text-left hover:opacity-80 transition">
-                        <span id="followersCount" class="block text-base md:text-lg font-bold text-gray-800 dark:text-white"><%= profileUser.followers ? profileUser.followers.length : 0 %></span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">followers</span>
-                    </button>
-                    <button onclick="showFollowing('<%= profileUser._id %>')" class="text-center md:text-left hover:opacity-80 transition">
-                        <span id="followingCount" class="block text-base md:text-lg font-bold text-gray-800 dark:text-white"><%= profileUser.following ? profileUser.following.length : 0 %></span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">following</span>
-                    </button>
+                    
+                    <p class="text-gray-500 dark:text-gray-400 mb-4">@<%= profileUser.username %></p>
+                    
+                    <!-- Stats & Follow Button Row -->
+                    <div class="flex flex-col sm:flex-row items-center">
+                        <div class="flex space-x-6 mb-4 sm:mb-0">
+                            <div>
+                                <span class="text-gray-900 dark:text-white font-semibold"><%= profileUser.posts ? profileUser.posts.length : 0 %></span>
+                                <span class="text-gray-500 dark:text-gray-400 text-sm"> posts</span>
+                            </div>
+                            <button class="focus:outline-none" onclick="showFollowers('<%= profileUser._id %>')">
+                                <span class="text-gray-900 dark:text-white font-semibold" id="followersCount"><%= typeof profileUser.followers === 'number' ? profileUser.followers : (profileUser.followers ? profileUser.followers.length : 0) %></span>
+                                <span class="text-gray-500 dark:text-gray-400 text-sm"> followers</span>
+                            </button>
+                            <button class="focus:outline-none" onclick="showFollowing('<%= profileUser._id %>')">
+                                <span class="text-gray-900 dark:text-white font-semibold"><%= typeof profileUser.following === 'number' ? profileUser.following : (profileUser.following ? profileUser.following.length : 0) %></span>
+                                <span class="text-gray-500 dark:text-gray-400 text-sm"> following</span>
+                            </button>
+                        </div>
+                        
+                        <% if (!isOwnProfile) { %>
+                            <div class="ml-0 sm:ml-auto">
+                                <button id="followButton" 
+                                        onclick="performFollowToggle('<%= profileUser._id %>')"
+                                        class="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-blue-500 hover:bg-blue-600 text-white">
+                                    Follow
+                                </button>
+                                
+                                <button onclick="showMessageModal()"
+                                        class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-md ml-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                    Message
+                                </button>
+                            </div>
+                        <% } else { %>
+                            <div class="ml-0 sm:ml-auto">
+                                <a href="/edit-profile" 
+                                   class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                    Edit Profile
+                                </a>
+                            </div>
+                        <% } %>
+                    </div>
+                    
+                    <!-- Bio -->
+                    <% if (profileUser.bio) { %>
+                        <div class="mt-4 text-gray-700 dark:text-gray-300">
+                            <%= profileUser.bio %>
+                        </div>
+                    <% } %>
+                    
+                    <!-- Website -->
+                    <% if (profileUser.website) { %>
+                        <div class="mt-1">
+                            <a href="<%= profileUser.website %>" 
+                               target="_blank" 
+                               class="text-blue-500 hover:underline">
+                                <%= profileUser.website.replace(/(^\w+:|^)\/\//, '') %>
+                            </a>
+                        </div>
+                    <% } %>
                 </div>
             </div>
         </div>
@@ -171,6 +185,64 @@
                 <% }) %>
             </div>
         <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- Story Viewer Modal -->
+<div id="storyModal" class="hidden fixed inset-0 bg-black z-50">
+    <div class="relative h-full flex justify-center">
+        <!-- Mobile-like container with fixed aspect ratio -->
+        <div class="h-full aspect-[9/16] bg-black relative max-w-[500px] w-full">
+            <!-- Touch areas for navigation -->
+            <div class="absolute inset-0 z-10 flex">
+                <div class="w-1/2 h-full" onclick="showPreviousStory()"></div>
+                <div class="w-1/2 h-full" onclick="showNextStory()"></div>
+            </div>
+            
+            <button onclick="closeStoryModal()" class="absolute top-4 right-4 text-white text-2xl z-20">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="h-full flex items-center justify-center bg-black">
+                <div id="storyImage" class="w-full h-full relative">
+                    <!-- Media will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Story Progress Bars -->
+            <div class="absolute top-0 left-0 right-0 flex space-x-1 p-2 z-20">
+                <div id="storyProgressBars" class="flex-1 flex space-x-1">
+                    <!-- Progress bars will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Story User Info -->
+            <div class="absolute top-4 left-4 flex items-center z-20">
+                <div class="story-ring p-[2px] rounded-full">
+                    <div class="bg-black p-[1px] rounded-full">
+                        <img id="storyUserImage" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                    </div>
+                </div>
+                <div class="ml-2 text-white">
+                    <p id="storyUsername" class="font-semibold text-sm"></p>
+                    <p id="storyTime" class="text-xs opacity-75"></p>
+                </div>
+            </div>
+
+            <!-- Story Reply Section -->
+            <div class="absolute bottom-4 left-4 right-4 z-20">
+                <form onsubmit="replyToStory(event)" class="flex items-center gap-2">
+                    <input type="text" 
+                           id="storyReplyInput"
+                           placeholder="Reply to story..." 
+                           class="flex-1 px-4 py-3 rounded-full bg-white/10 text-white placeholder-white/70 backdrop-blur-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
+                    <button type="submit" 
+                            class="p-3 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20 flex items-center justify-center">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -280,6 +352,39 @@
         -webkit-line-clamp: 4;
     }
 }
+
+.story-ring {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.story-ring-viewed {
+    background: #ccc;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.98);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.98);
+        opacity: 0.8;
+    }
+}
+
+.pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+.story-progress-bar {
+    height: 3px;
+    border-radius: 3px;
+    transition: width 0.1s linear;
+}
 </style>
 
 <!-- Add Swiper JS for image carousel -->
@@ -290,50 +395,113 @@
 // Track the currently selected post
 let currentPostId = null;
 
-async function toggleFollow(userId) {
-    try {
-        // Check if currently following before making the request
-        const followButton = document.getElementById('followButton');
-        const isCurrentlyFollowing = followButton.textContent.trim() === 'Following';
-        
-        // Show custom unfollow confirmation modal if trying to unfollow
-        if (isCurrentlyFollowing) {
-            // Get user info
-            const username = document.querySelector('p.text-gray-500').textContent.trim();
-            const profileImage = document.querySelector('.rounded-full').src;
-            const name = document.querySelector('h1.text-xl').textContent.trim();
-            
-            // Set modal content
-            document.getElementById('unfollowUserImage').src = profileImage;
-            document.getElementById('unfollowUsername').textContent = username;
-            
-            // Show the modal
-            document.getElementById('unfollowModal').classList.remove('hidden');
-            
-            // Set up confirmation button handler (using a promise to wait for user decision)
-            return new Promise((resolve) => {
-                document.getElementById('confirmUnfollow').onclick = async () => {
-                    // Close modal
-                    closeUnfollowModal();
-                    // Continue with unfollow logic
-                    await performFollowToggle(userId);
-                    resolve();
-                };
-            });
-        } else {
-            // Not unfollowing, proceed directly
-            await performFollowToggle(userId);
-        }
-    } catch (error) {
-        console.error('Error:', error);
+// Variables for story handling
+let currentStories = [];
+let currentStoryIndex = 0;
+let currentUserIndex = 0;
+let storyTimer = null;
+
+// Document ready handler
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - initializing profile page');
+    
+    // Initialize user ID
+    window.currentUserId = '<%= user._id %>';
+    window.profileUserId = '<%= profileUser._id %>';
+    
+    // Check if user has active stories and make profile image clickable
+    const profileImageContainer = document.getElementById('profileImageContainer');
+    const profileImage = document.getElementById('profileImage');
+    
+    if (profileImageContainer && profileImageContainer.classList.contains('story-ring')) {
+        console.log('User has active stories, adding click handler');
+        profileImage.addEventListener('click', function() {
+            openUserStories(window.profileUserId);
+        });
     }
-}
+    
+    // Update the follow button on page load
+    const followButton = document.getElementById('followButton');
+    if (!followButton) return;
+    
+    const profileId = '<%= profileUser._id %>';
+    
+    // Check if follow status is in localStorage first (faster response)
+    const isFollowing = localStorage.getItem(`following_${profileId}`) === 'true';
+    const hasRequested = localStorage.getItem(`followRequested_${profileId}`) === 'true';
+    
+    if (isFollowing) {
+        followButton.textContent = 'Following';
+        followButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+        followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+    } else if (hasRequested) {
+        followButton.textContent = 'Requested';
+        followButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+        followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+    }
+    
+    // Then check with the server for accurate status
+    fetch(`/api/follow-status/${profileId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.following) {
+                followButton.textContent = 'Following';
+                followButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                localStorage.setItem(`following_${profileId}`, 'true');
+                localStorage.removeItem(`followRequested_${profileId}`);
+            } else if (data.followRequested) {
+                followButton.textContent = 'Requested';
+                followButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                localStorage.setItem(`followRequested_${profileId}`, 'true');
+                localStorage.removeItem(`following_${profileId}`);
+            } else {
+                followButton.textContent = 'Follow';
+                followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                followButton.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+                localStorage.removeItem(`following_${profileId}`);
+                localStorage.removeItem(`followRequested_${profileId}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking follow status:', error);
+        });
+    
+    // Set up delete button handler
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function() {
+            deletePost(postIdToDelete);
+        });
+    }
+    
+    // Add transitions for hover effects
+    document.querySelectorAll('[data-post-id]').forEach(post => {
+        post.classList.add('transition', 'duration-200');
+    });
+    
+    // Check follow status once
+    checkFollowStatus();
+});
 
 // Function to actually perform the follow/unfollow action
 async function performFollowToggle(userId) {
     try {
         const followButton = document.getElementById('followButton');
+        if (!followButton) return;
+        
         const isCurrentlyFollowing = followButton.textContent.trim() === 'Following';
+        const hasRequestedFollow = followButton.textContent.trim() === 'Requested';
+        
+        // Disable button during request
+        followButton.disabled = true;
+        
+        // Show loading state
+        const originalText = followButton.textContent;
+        followButton.innerHTML = '<span class="inline-block animate-spin mr-1">⟳</span> ' + originalText;
+        
+        console.log(`Toggling follow for user ID: ${userId}`);
         
         const response = await fetch(`/user/${userId}/follow`, {
             method: 'POST',
@@ -344,150 +512,256 @@ async function performFollowToggle(userId) {
         });
         
         const data = await response.json();
+        console.log('Follow toggle response:', data);
         
-        if (data.success) {
-            const followersCount = document.getElementById('followersCount');
-            
-            // Update button text and style
-            if (data.following) {
-                followButton.textContent = 'Following';
-                followButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-                
-                // Save state to localStorage
-                localStorage.setItem(`following_${userId}`, 'true');
-                
-                // Show toast
-                showToast('You are now following ' + document.querySelector('h1').textContent.trim());
-            } else if (data.followRequested) {
-                followButton.textContent = 'Requested';
-                followButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-                
-                // Save state to localStorage
-                localStorage.setItem(`requested_${userId}`, 'true');
-                
-                // Show toast
-                showToast('Follow request sent to ' + document.querySelector('h1').textContent.trim());
-            } else {
-                followButton.textContent = 'Follow';
-                followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-                followButton.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                
-                // Update localStorage
-                localStorage.removeItem(`following_${userId}`);
-                localStorage.removeItem(`requested_${userId}`);
-                
-                // Show toast
-                showToast('You unfollowed ' + document.querySelector('h1').textContent.trim());
-            }
-            
-            // Update followers count with animation
-            const oldCount = parseInt(followersCount.textContent);
-            const newCount = data.followers;
-            
-            if (oldCount !== newCount) {
-                followersCount.classList.add('scale-125', 'text-blue-500');
-                setTimeout(() => {
-                    followersCount.textContent = newCount;
-                    setTimeout(() => {
-                        followersCount.classList.remove('scale-125', 'text-blue-500');
-                    }, 300);
-                }, 300);
-            }
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showToast('Something went wrong. Please try again.');
-    }
-}
-
-function closeUnfollowModal() {
-    document.getElementById('unfollowModal').classList.add('hidden');
-}
-
-async function showFollowers(userId) {
-    try {
-        document.getElementById('followersModal').classList.remove('hidden');
-        
-        const response = await fetch(`/user/${userId}/followers`);
-        const data = await response.json();
-        
-        const followersList = document.getElementById('followersList');
-        
-        if (data.followers.length === 0) {
-            followersList.innerHTML = `
-                <div class="py-8 text-center">
-                    <p class="text-gray-500 dark:text-gray-400">No followers yet</p>
-                </div>
-            `;
+        if (data.error) {
+            showToast(data.error);
+            followButton.disabled = false;
+            followButton.textContent = originalText;
             return;
         }
         
-        followersList.innerHTML = data.followers.map(follower => `
-            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition">
-                <a href="/user/${follower.username}" class="flex items-center space-x-3">
-                    <img src="${follower.profileImage}" alt="${follower.name}" class="w-10 h-10 rounded-full object-cover">
-                    <div>
-                        <p class="font-semibold text-gray-800 dark:text-white">${follower.name}</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">@${follower.username}</p>
-                    </div>
-                </a>
-                <button 
-                    class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white"
-                    onclick="window.location.href='/user/${follower.username}'">
-                    View
-                </button>
-            </div>
-        `).join('');
+        const followersCountElement = document.getElementById('followersCount');
         
+        if (isCurrentlyFollowing) {
+            // User was following, now unfollowing
+            followButton.textContent = 'Follow';
+            followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+            followButton.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+            
+            // Update followers count with animation
+            if (followersCountElement) {
+                const currentCount = parseInt(followersCountElement.textContent);
+                followersCountElement.textContent = Math.max(0, currentCount - 1);
+            }
+            
+            // Update local storage
+            localStorage.removeItem(`following_${userId}`);
+            localStorage.removeItem(`followRequested_${userId}`);
+            
+            showToast('Unfollowed successfully');
+            
+        } else if (hasRequestedFollow) {
+            // User had requested to follow, now cancelling request
+            followButton.textContent = 'Follow';
+            followButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+            followButton.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+            
+            // Update local storage
+            localStorage.removeItem(`followRequested_${userId}`);
+            
+            showToast('Follow request cancelled');
+            
+        } else {
+            // User was not following, now following or requesting
+            if (data.followRequested) {
+                // Private account - show requested state
+                followButton.textContent = 'Requested';
+                followButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                
+                // Update local storage
+                localStorage.setItem(`followRequested_${userId}`, 'true');
+                
+                showToast('Follow request sent');
+                
+            } else {
+                // Public account - show following state
+                followButton.textContent = 'Following';
+                followButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+                followButton.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                
+                // Update followers count with animation
+                if (followersCountElement) {
+                    const currentCount = parseInt(followersCountElement.textContent) || 0;
+                    followersCountElement.textContent = currentCount + 1;
+                }
+                
+                // Update local storage
+                localStorage.setItem(`following_${userId}`, 'true');
+                
+                showToast('Following successfully');
+            }
+        }
+        
+        // Check if we need to refresh the page to show posts for a private account
+        if (data.following && document.getElementById('isProfilePrivate').value === 'true') {
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
     } catch (error) {
         console.error('Error:', error);
+        showToast('An error occurred while processing your request.');
+    } finally {
+        // Re-enable button
+        const followButton = document.getElementById('followButton');
+        if (followButton) followButton.disabled = false;
+    }
+}
+
+// Toast notification for feedback
+function showToast(message) {
+    console.log('Showing toast:', message);
+    
+    // Check if toast container exists, if not create it
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-full transition-all duration-300 z-50 opacity-0';
+        toast.innerHTML = `
+            <div class="bg-black bg-opacity-75 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-sm">
+                <span id="toast-message" class="font-medium text-sm"></span>
+            </div>
+        `;
+        document.body.appendChild(toast);
+    }
+    
+    const toastMessage = document.getElementById('toast-message');
+    
+    toastMessage.textContent = message;
+    toast.classList.remove('translate-y-full', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-full', 'opacity-0');
+    }, 3000);
+}
+
+// Show followers modal
+function showFollowers(userId) {
+    if (!userId) {
+        console.error('No user ID provided to showFollowers function');
+        return;
+    }
+    
+    console.log('Showing followers for user:', userId);
+    
+    try {
+        document.getElementById('followersModal').classList.remove('hidden');
+        
+        fetch(`/user/${userId}/followers`)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                console.log('Followers data:', data);
+                const followersList = document.getElementById('followersList');
+                
+                if (!data.followers || data.followers.length === 0) {
+                    followersList.innerHTML = `
+                        <div class="py-8 text-center">
+                            <p class="text-gray-500 dark:text-gray-400">No followers yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                followersList.innerHTML = data.followers.map(follower => `
+                    <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition">
+                        <a href="/user/${follower.username}" class="flex items-center space-x-3">
+                            <img src="${follower.profileImage}" alt="${follower.name}" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <p class="font-semibold text-gray-800 dark:text-white">${follower.name}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">@${follower.username}</p>
+                            </div>
+                        </a>
+                        <button 
+                            class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white"
+                            onclick="window.location.href='/user/${follower.username}'">
+                            View
+                        </button>
+                    </div>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading followers:', error);
+                showToast('Failed to load followers');
+                
+                const followersList = document.getElementById('followersList');
+                followersList.innerHTML = `
+                    <div class="py-8 text-center">
+                        <p class="text-red-500">Error loading followers</p>
+                    </div>
+                `;
+            });
+        
+    } catch (error) {
+        console.error('Error showing followers modal:', error);
         showToast('Failed to load followers');
     }
 }
 
-async function showFollowing(userId) {
+// Show following modal
+function showFollowing(userId) {
+    if (!userId) {
+        console.error('No user ID provided to showFollowing function');
+        return;
+    }
+    
+    console.log('Showing following for user:', userId);
+    
     try {
         document.getElementById('followingModal').classList.remove('hidden');
         
-        const response = await fetch(`/user/${userId}/following`);
-        const data = await response.json();
-        
-        const followingList = document.getElementById('followingList');
-        
-        if (data.following.length === 0) {
-            followingList.innerHTML = `
-                <div class="py-8 text-center">
-                    <p class="text-gray-500 dark:text-gray-400">Not following anyone yet</p>
-                </div>
-            `;
-            return;
-        }
-        
-        followingList.innerHTML = data.following.map(user => `
-            <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition">
-                <a href="/user/${user.username}" class="flex items-center space-x-3">
-                    <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
-                    <div>
-                        <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</p>
+        fetch(`/user/${userId}/following`)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                console.log('Following data:', data);
+                const followingList = document.getElementById('followingList');
+                
+                if (!data.following || data.following.length === 0) {
+                    followingList.innerHTML = `
+                        <div class="py-8 text-center">
+                            <p class="text-gray-500 dark:text-gray-400">Not following anyone yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                followingList.innerHTML = data.following.map(user => `
+                    <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition">
+                        <a href="/user/${user.username}" class="flex items-center space-x-3">
+                            <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</p>
+                            </div>
+                        </a>
+                        <button 
+                            class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white"
+                            onclick="window.location.href='/user/${user.username}'">
+                            View
+                        </button>
                     </div>
-                </a>
-                <button 
-                    class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white"
-                    onclick="window.location.href='/user/${user.username}'">
-                    View
-                </button>
-            </div>
-        `).join('');
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading following:', error);
+                showToast('Failed to load following list');
+                
+                const followingList = document.getElementById('followingList');
+                followingList.innerHTML = `
+                    <div class="py-8 text-center">
+                        <p class="text-red-500">Error loading following list</p>
+                    </div>
+                `;
+            });
         
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error showing following modal:', error);
         showToast('Failed to load following list');
     }
 }
 
+// Close modals
 function closeFollowersModal() {
     document.getElementById('followersModal').classList.add('hidden');
 }
@@ -496,10 +770,73 @@ function closeFollowingModal() {
     document.getElementById('followingModal').classList.add('hidden');
 }
 
+function closeUnfollowModal() {
+    document.getElementById('unfollowModal').classList.add('hidden');
+}
+
+function showMessageModal() {
+    // Implement message functionality
+    showToast('Messaging feature coming soon!');
+}
+
+// Function to check if user has been accepted as a follower
+async function checkFollowStatus() {
+    const profileUserId = document.getElementById('profileUserId').value;
+    const isProfilePrivate = document.getElementById('isProfilePrivate').value === 'true';
+    const canViewPosts = document.getElementById('canViewPosts').value === 'true';
+    
+    // Check if we've already performed this check in the current session
+    if (sessionStorage.getItem(`checked_${profileUserId}`) === 'true') {
+        console.log('Already checked follow status this session, skipping');
+        return;
+    }
+    
+    // Set the flag immediately to prevent multiple calls
+    sessionStorage.setItem(`checked_${profileUserId}`, 'true');
+    
+    if (!isProfilePrivate || canViewPosts) {
+        return; // Only check for private profiles that we can't view yet
+    }
+    
+    console.log('Checking follow status for private profile:', profileUserId);
+    
+    try {
+        // First check localStorage for accepted follow requests
+        const acceptedFollowRequests = JSON.parse(localStorage.getItem('acceptedFollowRequests') || '[]');
+        const thisProfileAccepted = acceptedFollowRequests.find(req => req.profileId === profileUserId);
+        
+        if (thisProfileAccepted) {
+            console.log('This profile has accepted your follow request, reloading page...');
+            
+            // Remove this profile from the accepted list before reloading
+            const updatedRequests = acceptedFollowRequests.filter(req => req.profileId !== profileUserId);
+            localStorage.setItem('acceptedFollowRequests', JSON.stringify(updatedRequests));
+            
+            // Reload the page only once
+            window.location.reload();
+            return;
+        }
+        
+        // If no localStorage indicator, make a direct API call to check follow status
+        const response = await fetch(`/api/follow-status/${profileUserId}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.following) {
+                console.log('Server confirmed following status is now true, reloading page...');
+                window.location.reload();
+            }
+        }
+    } catch (error) {
+        console.error('Error checking follow status:', error);
+    }
+}
+
 // Function to show post options menu
 function showPostMenu(event, postId) {
     event.preventDefault();
     event.stopPropagation();
+    
+    console.log('Showing post menu for post:', postId);
     
     // Get elements
     const menu = document.getElementById('postOptionsMenu');
@@ -572,29 +909,367 @@ function closePostMenu() {
     }, 200);
 }
 
-// Context menu for posts (Edit/Delete)
-document.addEventListener('DOMContentLoaded', function() {
-    // Set up event delegation for the three-dots menu
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('#postOptionsMenu')) {
-            // Clicks inside the menu should be handled by their own handlers
+// Delete confirmation functionality
+let postIdToDelete = null;
+
+function showDeleteConfirmation(postId) {
+    postIdToDelete = postId;
+    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+}
+
+function closeDeleteConfirmModal() {
+    document.getElementById('deleteConfirmModal').classList.add('hidden');
+    postIdToDelete = null;
+}
+
+function deletePost(postId) {
+    if (!postId) return;
+    
+    console.log('Deleting post:', postId);
+    
+    fetch(`/delete/${postId}`, {
+        method: 'GET'
+    })
+    .then(response => {
+        if (response.ok) {
+            // Remove the post from the UI
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            if (postElement) {
+                postElement.classList.add('scale-0', 'opacity-0');
+                setTimeout(() => {
+                    postElement.remove();
+                    
+                    // Update post count
+                    const postsCountElement = document.querySelector('.text-gray-900.dark\\:text-white.font-semibold');
+                    if (postsCountElement) {
+                        const currentCount = parseInt(postsCountElement.textContent) - 1;
+                        postsCountElement.textContent = Math.max(0, currentCount);
+                    }
+                    
+                    // Show empty state if no posts left
+                    const postGrid = document.querySelector('.grid');
+                    if (postGrid && postGrid.children.length === 0) {
+                        const postsContainer = document.getElementById('postsContainer');
+                        if (postsContainer) {
+                            postsContainer.innerHTML = `
+                                <div class="flex flex-col items-center justify-center py-12 text-center">
+                                    <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                                        <i class="fas fa-camera"></i>
+                                    </div>
+                                    <p class="text-gray-500 dark:text-gray-400 mb-2">No posts yet</p>
+                                    <p class="text-sm text-gray-400 dark:text-gray-500">When you share photos, they'll appear here.</p>
+                                </div>
+                            `;
+                        }
+                    }
+                }, 300);
+            }
+            
+            showToast('Post deleted successfully');
+        } else {
+            showToast('Failed to delete post');
+        }
+        closeDeleteConfirmModal();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred');
+        closeDeleteConfirmModal();
+    });
+}
+
+// Open stories for a specific user
+function openUserStories(userId) {
+    console.log('Opening stories for user:', userId);
+    
+    fetch('/stories')
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            console.log('Stories data:', data);
+            
+            // Handle both response formats for backward compatibility
+            const stories = data.stories || data;
+            
+            if (!stories || stories.length === 0) {
+                console.log('No stories available');
+                showToast('No stories available');
+                return;
+            }
+            
+            // Group stories by user
+            const storiesByUser = {};
+            stories.forEach(story => {
+                if (!storiesByUser[story.user._id]) {
+                    storiesByUser[story.user._id] = {
+                        user: story.user,
+                        stories: []
+                    };
+                }
+                storiesByUser[story.user._id].stories.push(story);
+            });
+            
+            // Find stories for the selected user
+            const userStories = storiesByUser[userId];
+            if (!userStories || userStories.stories.length === 0) {
+                console.log('No stories for this user');
+                showToast('No stories for this user');
+                return;
+            }
+            
+            // Set up the stories viewer
+            currentStories = [userStories]; // Array with just this user's stories
+            currentUserIndex = 0;
+            currentStoryIndex = 0;
+            
+            // Display the first story
+            displayCurrentStory();
+            
+            // Show modal
+            document.getElementById('storyModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        })
+        .catch(error => {
+            console.error('Error opening stories:', error);
+            showToast('Error loading stories');
+        });
+}
+
+// Display the current story
+function displayCurrentStory() {
+    if (!currentStories || currentStories.length === 0 || currentUserIndex < 0 || currentUserIndex >= currentStories.length) {
+        closeStoryModal();
+        return;
+    }
+    
+    const userStories = currentStories[currentUserIndex];
+    if (!userStories.stories || userStories.stories.length === 0 || currentStoryIndex < 0 || currentStoryIndex >= userStories.stories.length) {
+        // Move to next user's stories
+        currentUserIndex++;
+        currentStoryIndex = 0;
+        
+        // If we've reached the end of all stories, close modal
+        if (currentUserIndex >= currentStories.length) {
+            closeStoryModal();
+            return;
+        }
+    }
+    
+    const story = userStories.stories[currentStoryIndex];
+    const user = userStories.user;
+    
+    console.log('Displaying story:', story);
+    
+    // Set user info
+    document.getElementById('storyUserImage').src = user.profileImage;
+    document.getElementById('storyUsername').textContent = user.username;
+    
+    // Calculate time difference
+    const storyTime = new Date(story.createdAt);
+    const now = new Date();
+    const diffInHours = Math.floor((now - storyTime) / (1000 * 60 * 60));
+    
+    document.getElementById('storyTime').textContent = diffInHours === 0 
+        ? 'Just now' 
+        : `${diffInHours}h ago`;
+    
+    // Update progress bars
+    const progressBarsContainer = document.getElementById('storyProgressBars');
+    progressBarsContainer.innerHTML = '';
+    
+    userStories.stories.forEach((_, index) => {
+        const progressBar = document.createElement('div');
+        progressBar.className = 'flex-1 h-1 bg-gray-600 rounded-full overflow-hidden';
+        
+        // If this story has already been viewed
+        const isViewed = index < currentStoryIndex || 
+                         (index === currentStoryIndex && story.viewers && 
+                          story.viewers.includes(window.currentUserId));
+        
+        // If this is the current story or a previous story, fill the progress bar
+        const fillWidth = index < currentStoryIndex ? '100%' : 
+                          index === currentStoryIndex ? '0%' : '0%';
+        
+        progressBar.innerHTML = `
+            <div class="story-progress-bar h-full bg-white" 
+                 style="width: ${fillWidth}; transition-duration: ${story.media && story.media.type === 'image' ? '5s' : '10s'}"></div>
+        `;
+        progressBarsContainer.appendChild(progressBar);
+    });
+    
+    // Start progress for current story
+    const currentProgressBar = progressBarsContainer.children[currentStoryIndex];
+    if (currentProgressBar) {
+        const progressBar = currentProgressBar.querySelector('.story-progress-bar');
+        // Set to 0 first to trigger animation
+        progressBar.style.width = '0%';
+        
+        // Force reflow to ensure transition is applied
+        void progressBar.offsetWidth;
+        
+        // Then animate to 100%
+        setTimeout(() => {
+            progressBar.style.width = '100%';
+        }, 50);
+    }
+    
+    // Update story image container
+    const storyImageContainer = document.getElementById('storyImage');
+    storyImageContainer.innerHTML = '<div class="w-full h-full flex items-center justify-center"><div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div></div>';
+    
+    if (story.media && story.media.type === 'image') {
+        const img = new Image();
+        img.onload = function() {
+            storyImageContainer.innerHTML = `<img src="${story.media.url}" class="w-full h-full object-contain">`;
+        };
+        img.onerror = function() {
+            storyImageContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full">
+                <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-2"></i>
+                <p class="text-white text-center">Error loading image</p>
+            </div>`;
+        };
+        img.src = story.media.url;
+    } else if (story.media && story.media.type === 'video') {
+        storyImageContainer.innerHTML = `
+            <video src="${story.media.url}" class="w-full h-full object-contain" autoplay muted
+                   onloadeddata="this.play()" 
+                   onplay="this.classList.remove('opacity-0')"
+                   onerror="this.parentNode.innerHTML = '<div class=\\'flex flex-col items-center justify-center h-full\\'><i class=\\'fas fa-exclamation-triangle text-red-500 text-4xl mb-2\\'></i><p class=\\'text-white text-center\\'>Error loading video</p></div>';"
+                   class="opacity-0 transition-opacity duration-300"></video>
+        `;
+    } else {
+        storyImageContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full">
+            <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-2"></i>
+            <p class="text-white text-center">Story format not supported</p>
+        </div>`;
+    }
+    
+    // Mark story as viewed
+    markStoryAsViewed(story._id);
+    
+    // Clear existing timer
+    if (storyTimer) clearTimeout(storyTimer);
+    
+    // Start progress timer (5 seconds for images, video duration for videos)
+    const duration = story.media && story.media.type === 'image' ? 5000 : 10000; // Default 10s for videos
+    
+    storyTimer = setTimeout(() => {
+        nextStory();
+    }, duration);
+}
+
+// Mark story as viewed
+function markStoryAsViewed(storyId) {
+    console.log('Marking story as viewed:', storyId);
+    
+    fetch(`/story/${storyId}/view`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Story marked as viewed:', data);
+    })
+    .catch(error => console.error('Error marking story as viewed:', error));
+}
+
+// Go to next story
+function nextStory() {
+    currentStoryIndex++;
+    
+    // If we're at the end of this user's stories, move to next user
+    if (currentStoryIndex >= currentStories[currentUserIndex].stories.length) {
+        currentUserIndex++;
+        currentStoryIndex = 0;
+        
+        // If we're at the end of all stories, close modal
+        if (currentUserIndex >= currentStories.length) {
+            closeStoryModal();
+            return;
+        }
+    }
+    
+    displayCurrentStory();
+}
+
+// Go to previous story
+function previousStory() {
+    currentStoryIndex--;
+    
+    // If we're at the beginning of this user's stories, move to previous user
+    if (currentStoryIndex < 0) {
+        currentUserIndex--;
+        
+        // If we're at the beginning of all stories, loop to the end
+        if (currentUserIndex < 0) {
+            closeStoryModal();
             return;
         }
         
-        // Close menu when clicking outside
-        if (document.getElementById('postOptionsMenu') && !document.getElementById('postOptionsMenu').classList.contains('hidden')) {
-            closePostMenu();
-        }
-    });
+        // Set to last story of previous user
+        currentStoryIndex = currentStories[currentUserIndex].stories.length - 1;
+    }
     
-    // Set up event handlers for new posts that might be added dynamically
-    document.addEventListener('mouseover', function(e) {
-        const postItem = e.target.closest('[data-post-id]');
-        if (postItem) {
-            // Add hover class if needed
+    displayCurrentStory();
+}
+
+// Navigation functions
+function showNextStory() {
+    if (storyTimer) clearTimeout(storyTimer);
+    nextStory();
+}
+
+function showPreviousStory() {
+    if (storyTimer) clearTimeout(storyTimer);
+    previousStory();
+}
+
+// Close story modal
+function closeStoryModal() {
+    if (storyTimer) clearTimeout(storyTimer);
+    document.getElementById('storyModal').classList.add('hidden');
+    document.body.style.overflow = ''; // Re-enable scrolling
+}
+
+// Reply to story
+function replyToStory(event) {
+    event.preventDefault();
+    
+    const replyInput = document.getElementById('storyReplyInput');
+    const message = replyInput.value.trim();
+    
+    if (!message) return;
+    
+    console.log('Sending story reply');
+    
+    const userStories = currentStories[currentUserIndex];
+    const story = userStories.stories[currentStoryIndex];
+    
+    fetch(`/story/${story._id}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Reply response:', data);
+        if (data.message) {
+            // Show toast notification
+            showToast('Reply sent');
+            replyInput.value = '';
         }
+    })
+    .catch(error => {
+        console.error('Error sending reply:', error);
+        showToast('Failed to send reply');
     });
-});
+}
 
 // Close modals when clicking outside
 window.addEventListener('click', function(event) {
@@ -614,218 +1289,6 @@ window.addEventListener('click', function(event) {
     }
     if (event.target === deleteConfirmModal) {
         closeDeleteConfirmModal();
-    }
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Add transitions for hover effects
-    document.querySelectorAll('[data-post-id]').forEach(post => {
-        post.classList.add('transition', 'duration-200');
-    });
-    
-    // Check server-side rendered state
-    const followButton = document.getElementById('followButton');
-    const profileUserId = '<%= profileUser._id %>';
-    
-    // Store current state in localStorage on page load to ensure consistency
-    if (followButton && followButton.textContent.trim() === 'Following') {
-        localStorage.setItem(`following_${profileUserId}`, 'true');
-    } else if (followButton) {
-        localStorage.removeItem(`following_${profileUserId}`);
-    }
-});
-
-// Add CSS transitions for followers/following counts
-document.head.insertAdjacentHTML('beforeend', `
-<style>
-/* Transitions and animations */
-#followersCount, 
-#followingCount {
-    transition: all 0.3s ease;
-}
-
-.grid-item {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.grid-item:hover {
-    transform: scale(0.98);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-    .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-/* Dark mode enhancements */
-.dark .grid-item {
-    border-color: #333;
-}
-
-</style>
-`);
-
-// Delete confirmation functionality
-let postIdToDelete = null;
-
-function showDeleteConfirmation(postId) {
-    postIdToDelete = postId;
-    document.getElementById('deleteConfirmModal').classList.remove('hidden');
-}
-
-function closeDeleteConfirmModal() {
-    document.getElementById('deleteConfirmModal').classList.add('hidden');
-    postIdToDelete = null;
-}
-
-// Set up the confirm delete button
-document.addEventListener('DOMContentLoaded', function() {
-    const confirmBtn = document.getElementById('confirmDeleteBtn');
-    if (confirmBtn) {
-        confirmBtn.addEventListener('click', function() {
-            if (!postIdToDelete) return;
-            
-            fetch(`/delete/${postIdToDelete}`, {
-                method: 'GET'
-            })
-            .then(response => {
-                if (response.ok) {
-                    // Remove the post from the UI
-                    const postElement = document.querySelector(`[data-post-id="${postIdToDelete}"]`);
-                    if (postElement) {
-                        postElement.classList.add('scale-0', 'opacity-0');
-                        setTimeout(() => {
-                            postElement.remove();
-                            
-                            // Update post count
-                            const postsCount = document.querySelector('span.block.text-base.md\\:text-lg.font-bold');
-                            if (postsCount) {
-                                const currentCount = parseInt(postsCount.textContent) - 1;
-                                postsCount.textContent = currentCount;
-                            }
-                            
-                            // Show empty state if no posts left
-                            const postGrid = document.querySelector('.grid');
-                            if (postGrid && postGrid.children.length === 0) {
-                                postGrid.parentElement.innerHTML = `
-                                    <div class="flex flex-col items-center justify-center py-12 text-center">
-                                        <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
-                                            <i class="fas fa-camera"></i>
-                                        </div>
-                                        <p class="text-gray-500 dark:text-gray-400 mb-2">No posts yet</p>
-                                        <p class="text-sm text-gray-400 dark:text-gray-500">When you share photos, they'll appear here.</p>
-                                    </div>
-                                `;
-                            }
-                        }, 300);
-                    }
-                    
-                    showToast('Post deleted successfully');
-                } else {
-                    showToast('Failed to delete post');
-                }
-                closeDeleteConfirmModal();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('An error occurred');
-                closeDeleteConfirmModal();
-            });
-        });
-    }
-});
-
-// Toast notification function
-function showToast(message) {
-    // If toast exists, remove it
-    let toast = document.getElementById('toast');
-    if (toast) {
-        document.body.removeChild(toast);
-    }
-    
-    // Create new toast
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    // Show toast
-    setTimeout(() => {
-        toast.classList.add('opacity-100');
-    }, 100);
-    
-    // Hide toast after 3 seconds
-    setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        
-        // Remove after fade out
-        setTimeout(() => {
-            if (toast.parentNode) {
-                document.body.removeChild(toast);
-            }
-        }, 300);
-    }, 3000);
-}
-
-// Function to check if user has been accepted as a follower
-async function checkFollowStatus() {
-    const profileUserId = document.getElementById('profileUserId').value;
-    const isProfilePrivate = document.getElementById('isProfilePrivate').value === 'true';
-    const canViewPosts = document.getElementById('canViewPosts').value === 'true';
-    
-    if (!isProfilePrivate || canViewPosts) {
-        return; // Only check for private profiles that we can't view yet
-    }
-    
-    try {
-        // First check localStorage for accepted follow requests
-        const acceptedFollowRequests = JSON.parse(localStorage.getItem('acceptedFollowRequests') || '[]');
-        const thisProfileAccepted = acceptedFollowRequests.find(req => req.profileId === profileUserId);
-        
-        if (thisProfileAccepted) {
-            console.log('This profile has accepted your follow request, reloading page...');
-            
-            // Remove this profile from the accepted list before reloading
-            const updatedRequests = acceptedFollowRequests.filter(req => req.profileId !== profileUserId);
-            localStorage.setItem('acceptedFollowRequests', JSON.stringify(updatedRequests));
-            
-            // Reload the page only once
-            window.location.reload();
-            return;
-        }
-        
-        // If no localStorage indicator, make a direct API call to check follow status
-        // Only make this call once when the page loads
-        const response = await fetch(`/api/follow-status/${profileUserId}`);
-        if (response.ok) {
-            const data = await response.json();
-            if (data.following) {
-                console.log('Server confirmed following status is now true, reloading page...');
-                
-                // Set a flag in sessionStorage to prevent further reloads
-                sessionStorage.setItem(`checked_${profileUserId}`, 'true');
-                
-                window.location.reload();
-            }
-        }
-    } catch (error) {
-        console.error('Error checking follow status:', error);
-    }
-}
-
-// Run the check only once on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const profileUserId = document.getElementById('profileUserId').value;
-    
-    // Check if we've already performed this check in the current session
-    if (sessionStorage.getItem(`checked_${profileUserId}`) !== 'true') {
-        checkFollowStatus();
-        // Mark that we've checked this profile in this session
-        sessionStorage.setItem(`checked_${profileUserId}`, 'true');
     }
 });
 </script>

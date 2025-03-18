@@ -1415,13 +1415,25 @@ app.post("/story", isLoggedIn, uploadStory, async (req, res) => {
 // Get stories
 app.get("/stories", isLoggedIn, async (req, res) => {
     try {
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        
+        // Get IDs of users the current user follows plus their own ID
+        const followingIds = [...(currentUser.following || []), currentUser._id];
+        
+        console.log(`User ${currentUser._id} follows ${followingIds.length - 1} users`);
+        
+        // Find stories from the current user and users they follow that are less than 24 hours old
         const stories = await storyModel.find({
-            createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+            createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+            user: { $in: followingIds }
         }).populate('user', 'username name profileImage')
           .sort({ createdAt: -1 });
+          
+        console.log(`Found ${stories.length} stories from followed users`);
 
-        res.json(stories);
+        res.json({ stories });
     } catch (error) {
+        console.error("Error fetching stories:", error);
         res.status(500).json({ error: "Error fetching stories" });
     }
 });

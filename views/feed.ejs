@@ -153,7 +153,7 @@
                     <div class="p-3 flex items-center justify-between">
                         <a href="/user/<%= post.user.username %>" class="flex items-center group">
                             <div class="relative">
-                                <div class="<%= post.user.hasActiveStory ? 'story-ring p-[2px]' : '' %> rounded-full">
+                                <div class="<%= post.user.hasActiveStory ? 'story-ring rounded-full p-[2px]' : '' %>">
                                     <div class="bg-white dark:bg-black p-[1px] rounded-full">
                                 <img src="<%= post.user.profileImage %>" 
                                      alt="Profile" 
@@ -337,10 +337,10 @@
                 </div>
             </div>
 
-            <!-- Story Progress Bar -->
+            <!-- Story Progress Bars -->
             <div class="absolute top-0 left-0 right-0 flex space-x-1 p-2 z-20">
-                <div class="story-progress-container flex-1 h-1 bg-gray-600 rounded-full overflow-hidden">
-                    <div id="storyProgress" class="h-full bg-white w-0 transition-all"></div>
+                <div id="storyProgressBars" class="flex-1 flex space-x-1">
+                    <!-- Progress bars will be added here dynamically -->
                 </div>
             </div>
 
@@ -348,7 +348,7 @@
             <div class="absolute top-4 left-4 flex items-center z-20">
                 <div class="story-ring p-[2px] rounded-full">
                     <div class="bg-black p-[1px] rounded-full">
-                <img id="storyUserImage" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                        <img id="storyUserImage" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover">
                     </div>
                 </div>
                 <div class="ml-2 text-white">
@@ -370,9 +370,9 @@
                     </button>
                 </form>
             </div>
-                    </div>
-                    </div>
-                </div>
+        </div>
+    </div>
+</div>
 
 <!-- Post Options Modal - Instagram Style -->
 <div id="postOptionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
@@ -533,6 +533,25 @@
     background: #ccc;
 }
 
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.85);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.85);
+        opacity: 0.8;
+    }
+}
+
+.pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
 @keyframes slideUp {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -583,6 +602,22 @@
     );
     background-size: 1000px 100%;
     animation: shimmer 2s infinite linear;
+}
+
+/* Improved Story UI */
+.story-preview-modal {
+    backdrop-filter: blur(8px);
+}
+
+.story-preview-container {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.story-progress-bar {
+    height: 3px;
+    border-radius: 3px;
+    transition: width 0.1s linear;
 }
 </style>
 
@@ -642,6 +677,44 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('createPostForm')) {
         document.getElementById('createPostForm').addEventListener('submit', handlePostSubmit);
     }
+    
+    // Store the current user's ID from the server
+    window.currentUserId = '<%= user._id %>';
+
+    // Add user IDs to post containers for easy story detection
+    document.querySelectorAll('.post-container').forEach(postContainer => {
+        const userLink = postContainer.querySelector('a[href^="/user/"]');
+        if (userLink) {
+            const username = userLink.getAttribute('href').split('/').pop();
+            // Store the username as a data attribute to identify posts by this user
+            postContainer.setAttribute('data-username', username);
+        }
+    });
+    
+    // Add click handlers to profile images to view stories
+    document.querySelectorAll('.post-container .relative > div.story-ring').forEach(storyRing => {
+        const parentLink = storyRing.closest('a[href^="/user/"]');
+        if (parentLink) {
+            // Find the parent post container to get user ID
+            const postContainer = storyRing.closest('.post-container');
+            const username = postContainer.getAttribute('data-username');
+            
+            // Add a click handler that prevents default link behavior and opens stories instead
+            storyRing.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Fetch user ID from username and open stories
+                fetchUserIdFromUsername(username).then(userId => {
+                    if (userId) {
+                        openStory(userId);
+                    }
+                });
+                
+                return false;
+            });
+        }
+    });
 });
 
 // Show comments modal
@@ -1056,35 +1129,500 @@ function showToast(message) {
 
 // Load stories
 function loadStories() {
+    console.log('Loading stories...');
     fetch('/stories')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Stories data:', data);
             const storiesList = document.getElementById('storiesList');
+            storiesList.innerHTML = ''; // Clear existing stories
             
-            if (data.stories && data.stories.length > 0) {
-                data.stories.forEach(story => {
+            // Handle both response formats for backward compatibility
+            const stories = data.stories || data;
+            
+            if (stories && stories.length > 0) {
+                // Group stories by user
+                const storiesByUser = {};
+                stories.forEach(story => {
+                    if (!storiesByUser[story.user._id]) {
+                        storiesByUser[story.user._id] = {
+                            user: story.user,
+                            stories: []
+                        };
+                    }
+                    storiesByUser[story.user._id].stories.push(story);
+                });
+                
+                // Create story bubbles for each user
+                Object.values(storiesByUser).forEach(userStories => {
+                    const hasUnviewedStory = userStories.stories.some(story => 
+                        !story.viewers || !story.viewers.includes(window.currentUserId));
+                    
                     const storyItem = document.createElement('div');
                     storyItem.className = 'flex-shrink-0 text-center';
                     storyItem.innerHTML = `
-                        <div class="cursor-pointer" onclick="openStory('${story._id}')">
-                            <div class="${story.viewed ? 'story-ring-viewed' : 'story-ring'} rounded-full p-[2px]">
+                        <div class="cursor-pointer" onclick="openStory('${userStories.user._id}')">
+                            <div class="${hasUnviewedStory ? 'story-ring pulse-ring' : 'story-ring-viewed'} rounded-full p-[2px]">
                                 <div class="bg-white dark:bg-black p-[1px] rounded-full">
-                                    <img src="${story.user.profileImage}" 
-                                         alt="${story.user.name}" 
+                                    <img src="${userStories.user.profileImage}" 
+                                         alt="${userStories.user.name}" 
                                          class="w-16 h-16 rounded-full object-cover">
                                 </div>
                             </div>
-                            <p class="text-xs mt-1 text-gray-600 dark:text-gray-400 truncate max-w-[62px] mx-auto">${story.user.username}</p>
+                            <p class="text-xs mt-1 text-gray-600 dark:text-gray-400 truncate max-w-[62px] mx-auto">${userStories.user.username}</p>
                         </div>
                     `;
                     
                     storiesList.appendChild(storyItem);
                 });
+                
+                // Update any profile pictures in posts that have active stories
+                updatePostHeadersWithStoryRings(Object.keys(storiesByUser));
             } else {
-                // Handle empty state
+                console.log('No stories available or empty stories array');
             }
         })
-        .catch(error => console.error('Error loading stories:', error));
+        .catch(error => {
+            console.error('Error loading stories:', error);
+        });
+}
+
+// Update post headers with story rings for users who have active stories
+function updatePostHeadersWithStoryRings(userIdsWithStories) {
+    // Find all post headers and update them
+    document.querySelectorAll('.post-container').forEach(post => {
+        const userId = post.getAttribute('data-user-id');
+        if (userId && userIdsWithStories.includes(userId)) {
+            const profileImgContainer = post.querySelector('.relative > div');
+            if (profileImgContainer && !profileImgContainer.classList.contains('story-ring')) {
+                profileImgContainer.className = 'story-ring pulse-ring rounded-full p-[2px]';
+            }
+        }
+    });
+}
+
+// Open story viewer by user ID
+function openStory(userId) {
+    console.log('Opening stories for user:', userId);
+    fetch('/stories')
+        .then(response => response.json())
+        .then(data => {
+            // Handle both response formats for backward compatibility
+            const stories = data.stories || data;
+            
+            if (!stories || stories.length === 0) {
+                console.log('No stories available');
+                return;
+            }
+            
+            // Group stories by user
+            const storiesByUser = {};
+            stories.forEach(story => {
+                if (!storiesByUser[story.user._id]) {
+                    storiesByUser[story.user._id] = {
+                        user: story.user,
+                        stories: []
+                    };
+                }
+                storiesByUser[story.user._id].stories.push(story);
+            });
+            
+            // Convert to array and find starting user index
+            const userStoriesArray = Object.values(storiesByUser);
+            currentUserIndex = userStoriesArray.findIndex(item => item.user._id === userId);
+            if (currentUserIndex === -1) {
+                console.log('User stories not found, starting from beginning');
+                currentUserIndex = 0;
+            }
+            
+            // Set current stories to selected user's stories
+            currentStories = userStoriesArray;
+            currentStoryIndex = 0;
+            
+            // Display the first story
+            displayCurrentStory();
+            
+            // Show modal
+            document.getElementById('storyModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        })
+        .catch(error => console.error('Error opening story:', error));
+}
+
+// Display the current story
+function displayCurrentStory() {
+    if (!currentStories || currentStories.length === 0 || currentUserIndex < 0 || currentUserIndex >= currentStories.length) {
+        closeStoryModal();
+        return;
+    }
+    
+    const userStories = currentStories[currentUserIndex];
+    if (!userStories.stories || userStories.stories.length === 0 || currentStoryIndex < 0 || currentStoryIndex >= userStories.stories.length) {
+        // Move to next user's stories
+        currentUserIndex++;
+        currentStoryIndex = 0;
+        
+        // If we've reached the end of all stories, close modal
+        if (currentUserIndex >= currentStories.length) {
+            closeStoryModal();
+            return;
+        }
+        displayCurrentStory();
+        return;
+    }
+    
+    const story = userStories.stories[currentStoryIndex];
+    const user = userStories.user;
+    
+    // Set user info
+    document.getElementById('storyUserImage').src = user.profileImage;
+    document.getElementById('storyUsername').textContent = user.username;
+    
+    // Calculate time difference
+    const storyTime = new Date(story.createdAt);
+    const now = new Date();
+    const diffInHours = Math.floor((now - storyTime) / (1000 * 60 * 60));
+    
+    document.getElementById('storyTime').textContent = diffInHours === 0 
+        ? 'Just now' 
+        : `${diffInHours}h ago`;
+    
+    // Update progress bars
+    const progressBarsContainer = document.getElementById('storyProgressBars');
+    progressBarsContainer.innerHTML = '';
+    
+    userStories.stories.forEach((_, index) => {
+        const progressBar = document.createElement('div');
+        progressBar.className = 'flex-1 h-1 bg-gray-600 rounded-full overflow-hidden';
+        
+        // If this story has already been viewed
+        const isViewed = index < currentStoryIndex || 
+                         (index === currentStoryIndex && story.viewers && 
+                          story.viewers.includes(window.currentUserId));
+        
+        // If this is the current story or a previous story, fill the progress bar
+        const fillWidth = index < currentStoryIndex ? '100%' : 
+                          index === currentStoryIndex ? '0%' : '0%';
+        
+        progressBar.innerHTML = `
+            <div class="story-progress-bar h-full bg-white w-${fillWidth}" 
+                 style="width: ${fillWidth}; transition-duration: ${story.media.type === 'image' ? '5s' : '10s'}"></div>
+        `;
+        progressBarsContainer.appendChild(progressBar);
+    });
+    
+    // Start progress for current story
+    const currentProgressBar = progressBarsContainer.children[currentStoryIndex];
+    if (currentProgressBar) {
+        const progressBar = currentProgressBar.querySelector('.story-progress-bar');
+        // Set to 0 first to trigger animation
+        progressBar.style.width = '0%';
+        
+        // Force reflow to ensure transition is applied
+        void progressBar.offsetWidth;
+        
+        // Then animate to 100%
+        setTimeout(() => {
+            progressBar.style.width = '100%';
+        }, 50);
+    }
+    
+    // Update story image container
+    const storyImageContainer = document.getElementById('storyImage');
+    storyImageContainer.innerHTML = '<div class="w-full h-full flex items-center justify-center"><div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div></div>';
+    
+    if (story.media.type === 'image') {
+        const img = new Image();
+        img.onload = function() {
+            storyImageContainer.innerHTML = `<img src="${story.media.url}" class="w-full h-full object-contain">`;
+        };
+        img.onerror = function() {
+            storyImageContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full">
+                <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-2"></i>
+                <p class="text-white text-center">Error loading image</p>
+            </div>`;
+        };
+        img.src = story.media.url;
+    } else {
+        storyImageContainer.innerHTML = `
+            <video src="${story.media.url}" class="w-full h-full object-contain" autoplay muted
+                   onloadeddata="this.play()" 
+                   onplay="this.classList.remove('opacity-0')"
+                   onerror="this.parentNode.innerHTML = '<div class=\\'flex flex-col items-center justify-center h-full\\'><i class=\\'fas fa-exclamation-triangle text-red-500 text-4xl mb-2\\'></i><p class=\\'text-white text-center\\'>Error loading video</p></div>';"
+                   class="opacity-0 transition-opacity duration-300"></video>
+        `;
+    }
+    
+    // Mark story as viewed
+    markStoryAsViewed(story._id);
+    
+    // Clear existing timer
+    if (storyTimer) clearTimeout(storyTimer);
+    
+    // Start progress timer (5 seconds for images, video duration for videos)
+    const duration = story.media.type === 'image' ? 5000 : 10000; // Default 10s for videos
+    
+    storyTimer = setTimeout(() => {
+        nextStory();
+    }, duration);
+}
+
+// Mark story as viewed
+function markStoryAsViewed(storyId) {
+    fetch(`/story/${storyId}/view`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+        .then(data => {
+        console.log('Story marked as viewed:', data);
+    })
+    .catch(error => console.error('Error marking story as viewed:', error));
+}
+
+// Show next story
+function nextStory() {
+    const userStories = currentStories[currentUserIndex];
+    
+    // Move to next story in current user's stories
+    currentStoryIndex++;
+    
+    // If we've reached the end of this user's stories, move to next user
+    if (currentStoryIndex >= userStories.stories.length) {
+        currentUserIndex++;
+        currentStoryIndex = 0;
+        
+        // If we've reached the end of all stories, close modal
+        if (currentUserIndex >= currentStories.length) {
+            closeStoryModal();
+                return;
+        }
+    }
+    
+    displayCurrentStory();
+}
+
+// Show previous story
+function previousStory() {
+    currentStoryIndex--;
+    
+    // If we're at the beginning of this user's stories, move to previous user
+    if (currentStoryIndex < 0) {
+        currentUserIndex--;
+        
+        // If we're at the beginning of all stories, loop to the end
+        if (currentUserIndex < 0) {
+            closeStoryModal();
+            return;
+        }
+        
+        // Set to last story of previous user
+        currentStoryIndex = currentStories[currentUserIndex].stories.length - 1;
+    }
+    
+    displayCurrentStory();
+}
+
+// Show next story
+function showNextStory() {
+    if (storyTimer) clearTimeout(storyTimer);
+    nextStory();
+}
+
+// Show previous story
+function showPreviousStory() {
+    if (storyTimer) clearTimeout(storyTimer);
+    previousStory();
+}
+
+// Close story modal
+function closeStoryModal() {
+    if (storyTimer) clearTimeout(storyTimer);
+    document.getElementById('storyModal').classList.add('hidden');
+}
+
+// Reply to story
+function replyToStory(event) {
+    event.preventDefault();
+    
+    const replyInput = document.getElementById('storyReplyInput');
+    const message = replyInput.value.trim();
+    
+    if (!message) return;
+    
+    const userStories = currentStories[currentUserIndex];
+    const story = userStories.stories[currentStoryIndex];
+    
+    fetch(`/story/${story._id}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            showToast('Reply sent');
+            replyInput.value = '';
+        }
+    })
+    .catch(error => {
+        console.error('Error sending reply:', error);
+        showToast('Failed to send reply');
+    });
+}
+
+// Handle story upload
+function handleStoryUpload(event) {
+    const file = event.target.files[0];
+    
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        showToast('Please select an image or video file');
+        return;
+    }
+
+    storyFile = file;
+    
+    // Create modal if it doesn't exist yet
+    let storyPreviewModal = document.getElementById('storyPreviewModal');
+    if (!storyPreviewModal) {
+        storyPreviewModal = document.createElement('div');
+        storyPreviewModal.id = 'storyPreviewModal';
+        storyPreviewModal.className = 'hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center story-preview-modal backdrop-blur-sm';
+        storyPreviewModal.innerHTML = `
+            <div class="bg-white dark:bg-gray-900 rounded-lg overflow-hidden max-w-md w-full mx-auto story-preview-container shadow-xl">
+                <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Preview Story</h3>
+                    <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="aspect-[9/16] bg-black relative overflow-hidden">
+                    <div id="storyPreviewContainer" class="w-full h-full">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+                    <button onclick="closeStoryPreview()"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-md">
+                        Cancel
+                    </button>
+                    <button onclick="uploadStory()"
+                            class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition">
+                        Share Story
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(storyPreviewModal);
+    }
+    
+    // Show preview with loading indicator
+    const previewContainer = document.getElementById('storyPreviewContainer');
+    previewContainer.innerHTML = '<div class="w-full h-full flex items-center justify-center"><div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div></div>';
+    storyPreviewModal.classList.remove('hidden');
+
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewContainer.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(file);
+    } else if (file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewContainer.innerHTML = `
+                <video src="${e.target.result}" class="w-full h-full object-cover" autoplay muted loop></video>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Upload story
+async function uploadStory() {
+    if (!storyFile) {
+        showToast('Please select a file first');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('story', storyFile);
+
+    try {
+        const response = await fetch('/story', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.message) {
+            closeStoryPreview();
+            showToast('Story uploaded successfully!');
+            
+            // Update UI to show active story
+            const addStoryButton = document.querySelector('.flex-shrink-0.text-center');
+            if (addStoryButton) {
+                // Add story ring to the user's story button
+                const storyRing = document.createElement('div');
+                storyRing.className = 'story-ring rounded-full p-[2px]';
+                storyRing.innerHTML = `
+                    <div class="bg-white dark:bg-black p-[1px] rounded-full">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                            <i class="fas fa-plus text-blue-500"></i>
+                        </div>
+                    </div>
+                `;
+                
+                // Replace the existing button content
+                addStoryButton.innerHTML = `
+                    <label class="cursor-pointer block">
+                        ${storyRing.outerHTML}
+                        <input type="file" 
+                               id="storyInput" 
+                               class="hidden" 
+                               accept="image/*,video/*" 
+                               onchange="handleStoryUpload(event)">
+                        <p class="text-xs mt-1 text-gray-600 dark:text-gray-400 font-medium">Your story</p>
+                    </label>
+                `;
+            }
+            
+            // Refresh stories list
+            setTimeout(() => {
+                loadStories();
+            }, 1000);
+        } else {
+            const errorMsg = data.error || 'Error uploading story';
+            showToast(errorMsg);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error uploading story. Please try again.');
+    }
+}
+
+// Close story preview
+function closeStoryPreview() {
+    const storyPreviewModal = document.getElementById('storyPreviewModal');
+    if (storyPreviewModal) {
+        storyPreviewModal.classList.add('hidden');
+    }
+    document.getElementById('storyInput').value = '';
+    storyFile = null;
 }
 
 // Socket connection for real-time updates
@@ -1315,6 +1853,90 @@ async function handlePostSubmit(e) {
         submitBtn.disabled = false;
     }
 }
+
+// Story handling functions
+let storyFile = null;
+let currentStories = [];
+let currentStoryIndex = 0;
+let currentUserIndex = 0;
+let storyTimer = null;
+
+// Fetch user ID from username
+function fetchUserIdFromUsername(username) {
+    return fetch(`/api/user/${username}/id`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.userId) {
+                return data.userId;
+            }
+            return null;
+        })
+        .catch(error => {
+            console.error('Error fetching user ID:', error);
+            return null;
+        });
+}
+
+// Update all story rings in the UI when new stories are added/viewed
+function updateAllStoryRings() {
+    fetch('/stories')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.stories || data.stories.length === 0) return;
+            
+            // Group stories by user
+            const userIdsWithStories = new Set();
+            const userIdsWithUnviewedStories = new Set();
+            
+            data.stories.forEach(story => {
+                userIdsWithStories.add(story.user._id);
+                
+                // Check if the current user has viewed this story
+                if (!story.viewers || !story.viewers.includes(window.currentUserId)) {
+                    userIdsWithUnviewedStories.add(story.user._id);
+                }
+            });
+            
+            // Update story rings in post headers
+            document.querySelectorAll('.post-container').forEach(post => {
+                const username = post.getAttribute('data-username');
+                if (!username) return;
+                
+                // Find the user ID for this username
+                fetchUserIdFromUsername(username).then(userId => {
+                    if (!userId) return;
+                    
+                    const profileImgContainer = post.querySelector('.relative > div');
+                    if (!profileImgContainer) return;
+                    
+                    if (userIdsWithStories.has(userId)) {
+                        // Add story ring with appropriate style (viewed/unviewed)
+                        const isPulsing = userIdsWithUnviewedStories.has(userId);
+                        profileImgContainer.className = `story-ring ${isPulsing ? 'pulse-ring' : 'story-ring-viewed'} rounded-full p-[2px]`;
+                        
+                        // Add click handler if not already present
+                        const img = profileImgContainer.querySelector('img');
+                        if (img && !img.hasAttribute('data-has-story-handler')) {
+                            img.setAttribute('data-has-story-handler', 'true');
+                            img.parentElement.parentElement.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                openStory(userId);
+                                return false;
+                            });
+                        }
+                    } else {
+                        // Remove story ring if no stories
+                        profileImgContainer.className = '';
+                    }
+                });
+            });
+        })
+        .catch(error => console.error('Error updating story rings:', error));
+}
+
+// Set interval to refresh stories every minute
+setInterval(updateAllStoryRings, 60000);
 </script>
 
 <%- include('partials/footer') %>
