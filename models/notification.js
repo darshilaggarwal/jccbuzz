@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['like', 'comment', 'follow', 'reply', 'comment_like', 'story_view', 'mention', 'new_post'],
+        enum: ['like', 'comment', 'follow', 'reply', 'comment_like', 'story_view', 'mention', 'new_post', 'followAccepted', 'followRequest'],
         required: true
     },
     post: {
@@ -57,6 +57,10 @@ notificationSchema.virtual('text').get(function() {
             return 'mentioned you in a comment';
         case 'new_post':
             return 'shared a new post';
+        case 'followRequest':
+            return 'requested to follow you';
+        case 'followAccepted':
+            return 'accepted your follow request';
         default:
             return 'interacted with your content';
     }

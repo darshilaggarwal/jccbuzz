@@ -88,12 +88,24 @@
         </h2>
         
         <% 
+        // Helper function to check if arrays contain a value
+        function idArrayIncludes(array, targetId) {
+            if (!array || !Array.isArray(array) || array.length === 0) return false;
+            return array.some(id => id && id.toString() === targetId.toString());
+        }
+        
         // Check if user should be allowed to see posts
         const canViewPosts = isOwnProfile || 
                            !profileUser.isPrivate || 
-                           (user.following && user.following.some(id => id.toString() === profileUser._id.toString()));
+                           (user && user.following && idArrayIncludes(user.following, profileUser._id));
         %>
         
+        <!-- Hidden field to store profile data for JS -->
+        <input type="hidden" id="profileUserId" value="<%= profileUser._id %>">
+        <input type="hidden" id="isProfilePrivate" value="<%= profileUser.isPrivate %>">
+        <input type="hidden" id="canViewPosts" value="<%= canViewPosts %>">
+        
+        <div id="postsContainer">
         <% if (profileUser.isPrivate && !canViewPosts) { %>
             <!-- Private account notice -->
             <div class="flex flex-col items-center justify-center py-12 text-center">
@@ -159,6 +171,7 @@
                 <% }) %>
             </div>
         <% } %>
+        </div>
     </div>
 </div>
 
@@ -757,6 +770,64 @@ function showToast(message) {
         }, 300);
     }, 3000);
 }
+
+// Function to check if user has been accepted as a follower
+async function checkFollowStatus() {
+    const profileUserId = document.getElementById('profileUserId').value;
+    const isProfilePrivate = document.getElementById('isProfilePrivate').value === 'true';
+    const canViewPosts = document.getElementById('canViewPosts').value === 'true';
+    
+    if (!isProfilePrivate || canViewPosts) {
+        return; // Only check for private profiles that we can't view yet
+    }
+    
+    try {
+        // First check localStorage for accepted follow requests
+        const acceptedFollowRequests = JSON.parse(localStorage.getItem('acceptedFollowRequests') || '[]');
+        const thisProfileAccepted = acceptedFollowRequests.find(req => req.profileId === profileUserId);
+        
+        if (thisProfileAccepted) {
+            console.log('This profile has accepted your follow request, reloading page...');
+            
+            // Remove this profile from the accepted list before reloading
+            const updatedRequests = acceptedFollowRequests.filter(req => req.profileId !== profileUserId);
+            localStorage.setItem('acceptedFollowRequests', JSON.stringify(updatedRequests));
+            
+            // Reload the page only once
+            window.location.reload();
+            return;
+        }
+        
+        // If no localStorage indicator, make a direct API call to check follow status
+        // Only make this call once when the page loads
+        const response = await fetch(`/api/follow-status/${profileUserId}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.following) {
+                console.log('Server confirmed following status is now true, reloading page...');
+                
+                // Set a flag in sessionStorage to prevent further reloads
+                sessionStorage.setItem(`checked_${profileUserId}`, 'true');
+                
+                window.location.reload();
+            }
+        }
+    } catch (error) {
+        console.error('Error checking follow status:', error);
+    }
+}
+
+// Run the check only once on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const profileUserId = document.getElementById('profileUserId').value;
+    
+    // Check if we've already performed this check in the current session
+    if (sessionStorage.getItem(`checked_${profileUserId}`) !== 'true') {
+        checkFollowStatus();
+        // Mark that we've checked this profile in this session
+        sessionStorage.setItem(`checked_${profileUserId}`, 'true');
+    }
+});
 </script>
 
 </body>
