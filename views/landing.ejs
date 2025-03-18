@@ -844,8 +844,23 @@
                     },
                     body: JSON.stringify(formData),
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    // Check if response is ok before parsing JSON
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            console.error('Response error:', text);
+                            throw new Error('Server responded with an error');
+                        });
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Form submission success:', data);
+                    
                     // Reset the form
                     contactForm.reset();
                     

@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en" class="<%= locals.user && locals.user.darkMode ? 'dark' : '' %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinspire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/swiper@8/swiper-bundle.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    lineClamp: {
+                        1: '1',
+                        2: '2',
+                        3: '3',
+                        4: '4',
+                        5: '5',
+                        6: '6',
+                        7: '7',
+                        8: '8',
+                        9: '9',
+                        10: '10'
+                    }
+                }
+            },
+            plugins: [
+                function({ addUtilities }) {
+                    const newUtilities = {
+                        '.line-clamp-1': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '1',
+                        },
+                        '.line-clamp-2': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '2',
+                        },
+                        '.line-clamp-3': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '3',
+                        },
+                        '.line-clamp-4': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '4',
+                        },
+                        '.line-clamp-5': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '5',
+                        },
+                        '.line-clamp-6': {
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            '-webkit-box-orient': 'vertical',
+                            '-webkit-line-clamp': '6',
+                        },
+                        '.line-clamp-none': {
+                            '-webkit-line-clamp': 'unset',
+                        }
+                    }
+                    addUtilities(newUtilities);
+                }
+            ]
+        }
+    </script>
+    <style>
+        /* Hide scrollbars but keep scrolling functionality */
+        * {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        *::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        /* Animation for comment fade-in */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Theme variables */
+        :root {
+            --bg-main: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --bg-tertiary: #e5e7eb;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-tertiary: #6b7280;
+            --border-color: #e5e7eb;
+        }
+        
+        .dark {
+            --bg-main: #000000;
+            --bg-secondary: #111111;
+            --bg-tertiary: #222222;
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-tertiary: rgba(255, 255, 255, 0.65);
+            --border-color: #333333;
+        }
+        
+        /* Base styles */
+        body {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* Card and container backgrounds */
+        .bg-white {
+            background-color: var(--bg-main) !important;
+        }
+        
+        .dark .bg-white {
+            background-color: var(--bg-main) !important;
+        }
+        
+        .bg-gray-100, .bg-gray-50, .bg-gray-200 {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        .dark .bg-gray-100, .dark .bg-gray-50, .dark .bg-gray-200 {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        /* Text colors */
+        .text-gray-800, .text-gray-900 {
+            color: var(--text-primary) !important;
+        }
+        
+        .text-gray-600, .text-gray-700 {
+            color: var(--text-secondary) !important;
+        }
+        
+        .text-gray-400, .text-gray-500 {
+            color: var(--text-tertiary) !important;
+        }
+        
+        /* Border colors */
+        .border-gray-200, .border-gray-300 {
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Form elements */
+        input, textarea, select {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+        
+        .dark input, .dark textarea, .dark select {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Heart animation for double-tap like */
+        .heart-animation {
+            animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        }
+
+        @keyframes scale-in-center {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Post image container styles */
+        .post-image {
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* Like button transitions */
+        .like-btn,
+        .save-btn {
+            transition: all 0.2s ease;
+        }
+
+        .like-btn.text-red-500,
+        .save-btn.text-blue-500 {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-black transition-colors duration-200">
+    <nav class="bg-white dark:bg-black shadow-lg sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <a href="/feed" class="text-xl font-bold text-gray-800 dark:text-white">
+                        JCCbuzz
+                    </a>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button type="button" onclick="toggleMobileMenu()" 
+                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 dark:text-gray-300">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+
+                <!-- Desktop menu (icons only) -->
+                <div class="hidden md:flex md:items-center md:space-x-6">
+                    <% if (locals.user) { %>
+                        <!-- Feed Icon -->
+                        <a href="/feed" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Feed">
+                            <i class="fas fa-home text-xl"></i>
+                        </a>
+                        
+                        <!-- Explore Icon -->
+                        <a href="/explore" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Explore">
+                            <i class="fas fa-compass text-xl"></i>
+                        </a>
+                        
+                        <!-- Saved Posts Icon -->
+                        <a href="/saved-posts" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Saved Posts">
+                            <i class="fas fa-bookmark text-xl"></i>
+                        </a>
+                        
+                        <!-- Profile Icon -->
+                        <a href="/profile" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative" title="Profile">
+                            <i class="fas fa-user text-xl"></i>
+                            <% if (locals.followRequestsCount && locals.followRequestsCount > 0) { %>
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5">
+                                    <%= locals.followRequestsCount %>
+                                </span>
+                            <% } %>
+                        </a>
+                        
+                        <!-- Notifications Icon -->
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Notifications">
+                                <i class="fas fa-bell text-xl"></i>
+                                <% if (locals.unreadNotifications && locals.unreadNotifications > 0) { %>
+                                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5">
+                                        <%= locals.unreadNotifications %>
+                                    </span>
+                                <% } %>
+                            </button>
+                            
+                            <!-- Notification Dropdown Panel (same as before) -->
+                            <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-96 bg-white dark:bg-gray-900 rounded-md shadow-lg py-1 z-50">
+                                <!-- Same notification panel content -->
+                                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                                    <h3 class="text-base font-semibold">Notifications</h3>
+                                    <button id="markAllReadBtn" class="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
+                                        Mark all as read
+                                    </button>
+                                </div>
+                                
+                                <div id="notificationsContainer" class="max-h-[480px] overflow-y-auto">
+                                    <!-- Notifications will be loaded here via JavaScript -->
+                                    <div class="notification-loading px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i> Loading notifications...
+                                    </div>
+                                </div>
+                                
+                                <div class="border-t border-gray-200 dark:border-gray-700 p-3">
+                                    <a href="/notifications" class="block text-center text-sm text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
+                                        See all notifications
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Icon -->
+                        <a href="/chats" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative" title="Messages">
+                            <i class="fas fa-paper-plane text-xl"></i>
+                            <% if (locals.unreadMessages && locals.unreadMessages > 0) { %>
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5"><%= locals.unreadMessages %></span>
+                            <% } %>
+                        </a>
+                        
+                        <!-- Settings Dropdown -->
+                        <div class="relative">
+                            <button id="settingsBtn" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Settings">
+                                <i class="fas fa-cog text-xl"></i>
+                            </button>
+                            
+                            <!-- Settings Dropdown Panel -->
+                            <div id="settingsPanel" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-md shadow-lg py-1 z-50">
+                                <a href="/edit-profile" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    <i class="fas fa-user-edit mr-2"></i> Edit Profile
+                                </a>
+                                <a href="/follow-requests" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    <i class="fas fa-user-check mr-2"></i> Follow Requests
+                                    <% if (locals.user && locals.user.followRequests && locals.user.followRequests.length > 0) { %>
+                                        <span class="inline-flex items-center justify-center ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                            <%= locals.user.followRequests.length %>
+                                        </span>
+                                    <% } %>
+                                </a>
+                                <!-- <button onclick="toggleDarkMode()" class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    <i class="fas fa-moon mr-2 dark:hidden"></i>
+                                    <i class="fas fa-sun mr-2 hidden dark:block"></i>
+                                    <span class="dark:hidden">Dark Mode</span>
+                                    <span class="hidden dark:block">Light Mode</span>
+                                </button> -->
+                                <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
+                                <a href="/logout" class="block px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <a href="/login" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">Login</a>
+                        <a href="/register" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">Register</a>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Mobile menu -->
+            <div id="mobileMenu" class="hidden md:hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <% if (locals.user) { %>
+                        <div class="grid grid-cols-3 gap-2 py-2">
+                            <a href="/feed" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                                <i class="fas fa-home text-xl mb-1"></i>
+                                <span class="text-xs">Feed</span>
+                            </a>
+                            <a href="/explore" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                                <i class="fas fa-compass text-xl mb-1"></i>
+                                <span class="text-xs">Explore</span>
+                            </a>
+                            <a href="/profile" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                                <i class="fas fa-user text-xl mb-1"></i>
+                                <span class="text-xs">Profile</span>
+                            </a>
+                            <a href="/notifications" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                                <i class="fas fa-bell text-xl mb-1"></i>
+                                <span class="text-xs">Alerts</span>
+                            </a>
+                            <a href="/follow-requests" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                                <i class="fas fa-user-check text-xl mb-1"></i>
+                                <span class="text-xs">Requests</span>
+                                <% if (locals.user && locals.user.followRequests && locals.user.followRequests.length > 0) { %>
+                                    <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-xs rounded-full bg-red-500 text-white">
+                                        <%= locals.user.followRequests.length %>
+                                    </span>
+                                <% } %>
+                            </a>
+                            <a href="/edit-profile" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                                <i class="fas fa-cog text-xl mb-1"></i>
+                                <span class="text-xs">Settings</span>
+                            </a>
+                        </div>
+                        <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                        <a href="/logout" class="block px-3 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                        </a>
+                    <% } else { %>
+                        <a href="/login" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900">Login</a>
+                        <a href="/register" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900">Register</a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+        
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const body = document.body;
+            
+            // Toggle dark class
+            html.classList.toggle('dark');
+            
+            // Update body class and all container elements
+            if (html.classList.contains('dark')) {
+                localStorage.setItem('darkMode', 'enabled');
+                // Apply dark mode variables to any problematic elements
+                document.querySelectorAll('.bg-white, .bg-gray-100, .card, .container-bg').forEach(el => {
+                    el.style.backgroundColor = 'var(--bg-main)';
+                });
+                document.querySelectorAll('.bg-gray-50, .bg-gray-200').forEach(el => {
+                    el.style.backgroundColor = 'var(--bg-secondary)';
+                });
+                // Also save to database if user is logged in
+                updateUserDarkModePreference(true);
+            } else {
+                localStorage.setItem('darkMode', 'disabled');
+                // Reset inline styles for light mode
+                document.querySelectorAll('.bg-white, .bg-gray-100, .card, .container-bg').forEach(el => {
+                    el.style.backgroundColor = '';
+                });
+                document.querySelectorAll('.bg-gray-50, .bg-gray-200').forEach(el => {
+                    el.style.backgroundColor = '';
+                });
+                // Also save to database if user is logged in
+                updateUserDarkModePreference(false);
+            }
+        }
+        
+        function updateUserDarkModePreference(isDarkMode) {
+            /* eslint-disable */
+            // NOTE: The following EJS template syntax may trigger linter warnings
+            // These warnings can be safely ignored as EJS syntax is processed server-side
+            <% if (locals.user) { %>
+                fetch('/user/preferences/theme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ darkMode: isDarkMode })
+                })
+                .catch(error => console.error('Error updating theme preference:', error));
+            <% } %>
+            /* eslint-enable */
+        }
+        
+        // Check if dark mode is enabled in localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const html = document.documentElement;
+            
+            if (localStorage.getItem('darkMode') === 'enabled' || html.classList.contains('dark')) {
+                html.classList.add('dark');
+                
+                // Apply dark mode variables to any problematic elements
+                document.querySelectorAll('.bg-white, .bg-gray-100, .card, .container-bg').forEach(el => {
+                    el.style.backgroundColor = 'var(--bg-main)';
+                });
+                document.querySelectorAll('.bg-gray-50, .bg-gray-200').forEach(el => {
+                    el.style.backgroundColor = 'var(--bg-secondary)';
+                });
+            }
+            
+            // Set up settings dropdown
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsPanel = document.getElementById('settingsPanel');
+            
+            if (settingsBtn && settingsPanel) {
+                settingsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    settingsPanel.classList.toggle('hidden');
+                });
+                
+                // Close panel when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+                        settingsPanel.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
+        // Handle notifications panel
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationBtn = document.getElementById('notificationBtn');
+            const notificationPanel = document.getElementById('notificationPanel');
+            const markAllReadBtn = document.getElementById('markAllReadBtn');
+            
+            if (notificationBtn) {
+                notificationBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationPanel.classList.toggle('hidden');
+                    
+                    // Load notifications if panel is visible
+                    if (!notificationPanel.classList.contains('hidden')) {
+                        loadNotifications();
+                    }
+                });
+                
+                // Close panel when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
+                        notificationPanel.classList.add('hidden');
+                    }
+                });
+                
+                // Mark all as read button
+                if (markAllReadBtn) {
+                    markAllReadBtn.addEventListener('click', function() {
+                        markAllNotificationsAsRead();
+                    });
+                }
+            }
+        });
+        
+        // Function to load notifications via AJAX
+        function loadNotifications() {
+            const container = document.getElementById('notificationsContainer');
+            if (!container) return;
+            
+            fetch('/api/notifications?limit=10')
+                .then(response => response.json())
+                .then(data => {
+                    container.innerHTML = '';
+                    
+                    if (data.notifications.length === 0) {
+                        container.innerHTML = `
+                            <div class="p-6 text-center">
+                                <div class="text-5xl text-gray-300 dark:text-gray-700 mb-4">
+                                    <i class="fas fa-bell-slash"></i>
+                                </div>
+                                <p class="text-gray-500 dark:text-gray-400">No notifications yet</p>
+                                <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                                    When you get notifications, they'll show up here
+                                </p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    data.notifications.forEach(notification => {
+                        const isUnread = !notification.read;
+                        const notificationType = notification.type;
+                        
+                        // Generate action icon based on notification type
+                        let actionIcon = '';
+                        let actionClass = '';
+                        
+                        switch (notificationType) {
+                            case 'like':
+                                actionIcon = '<i class="fas fa-heart text-red-500"></i>';
+                                actionClass = 'bg-red-50 dark:bg-red-900/10';
+                                break;
+                            case 'comment':
+                            case 'reply':
+                                actionIcon = '<i class="fas fa-comment text-blue-500"></i>';
+                                actionClass = 'bg-blue-50 dark:bg-blue-900/10';
+                                break;
+                            case 'follow':
+                                actionIcon = '<i class="fas fa-user-plus text-green-500"></i>';
+                                actionClass = 'bg-green-50 dark:bg-green-900/10';
+                                break;
+                            case 'new_post':
+                                actionIcon = '<i class="fas fa-image text-purple-500"></i>';
+                                actionClass = 'bg-purple-50 dark:bg-purple-900/10';
+                                break;
+                            default:
+                                actionIcon = '<i class="fas fa-bell text-gray-500"></i>';
+                                actionClass = 'bg-gray-50 dark:bg-gray-900/10';
+                        }
+                        
+                        // Generate post thumbnail if available
+                        let postThumbnail = '';
+                        if (notification.post && notification.post.images && notification.post.images.length > 0) {
+                            postThumbnail = `
+                                <div class="ml-auto">
+                                    <a href="/post/${notification.post._id}" class="block w-12 h-12 rounded overflow-hidden">
+                                        <img src="${notification.post.images[0].url}" 
+                                             alt="Post" 
+                                             class="w-full h-full object-cover">
+                                    </a>
+                                </div>
+                            `;
+                        }
+                        
+                        container.innerHTML += `
+                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 ${isUnread ? 'bg-blue-50 dark:bg-blue-900/20' : ''} group" data-id="${notification._id}">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 mr-3 relative">
+                                        <img src="${notification.sender.profileImage}" 
+                                             alt="${notification.sender.name}" 
+                                             class="w-10 h-10 rounded-full object-cover">
+                                        <div class="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full ${actionClass}">
+                                            ${actionIcon}
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm">
+                                            <span class="font-semibold">${notification.sender.name}</span> 
+                                            ${notification.text}
+                                        </p>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">${formatNotificationTime(notification.createdAt)}</span>
+                                    </div>
+                                    ${postThumbnail}
+                                </div>
+                                
+                                <!-- Interactive actions that appear on hover -->
+                                <div class="mt-2 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3" 
+                                            onclick="event.stopPropagation(); markNotificationAsRead('${notification._id}');">
+                                        Mark as ${isUnread ? 'read' : 'unread'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    // Add event listeners to notification items for navigation
+                    document.querySelectorAll('.notification-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const notificationId = this.dataset.id;
+                            markNotificationAsRead(notificationId);
+                            
+                            // Navigate based on notification type and data
+                            const notificationData = data.notifications.find(n => n._id === notificationId);
+                            if (notificationData) {
+                                if (notificationData.post) {
+                                    window.location.href = `/post/${notificationData.post._id}`;
+                                } else if (notificationData.type === 'follow') {
+                                    window.location.href = `/user/${notificationData.sender.username}`;
+                                } else {
+                                    window.location.href = '/notifications';
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    container.innerHTML = `
+                        <div class="px-4 py-3 text-center text-sm text-red-500">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Failed to load notifications
+                        </div>
+                    `;
+                });
+        }
+        
+        // Format notification time to relative time (e.g., "2 hours ago")
+        function formatNotificationTime(timestamp) {
+            const now = new Date();
+            const notificationTime = new Date(timestamp);
+            const diffInSeconds = Math.floor((now - notificationTime) / 1000);
+            
+            if (diffInSeconds < 60) {
+                return 'just now';
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            } else if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diffInSeconds / 86400);
+                if (days === 1) {
+                    return 'yesterday';
+                } else if (days < 7) {
+                    return `${days} days ago`;
+                } else {
+                    return notificationTime.toLocaleDateString();
+                }
+            }
+        }
+        
+        // Mark a notification as read
+        function markNotificationAsRead(notificationId) {
+            fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update UI to reflect read status
+                const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                if (notificationItem) {
+                    notificationItem.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                }
+                
+                // Update notification badge count
+                updateNotificationBadge(data.unreadCount);
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+            });
+        }
+        
+        // Mark all notifications as read
+        function markAllNotificationsAsRead() {
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update UI
+                document.querySelectorAll('.notification-item').forEach(item => {
+                    item.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                });
+                
+                // Remove notification badge
+                updateNotificationBadge(0);
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+            });
+        }
+        
+        // Update notification badge count
+        function updateNotificationBadge(count) {
+            const badgeDesktop = document.querySelector('#notificationBtn > span');
+            const badgeMobile = document.querySelector('a[href="/notifications"] > span');
+            
+            if (count === 0) {
+                // Remove badges if they exist
+                if (badgeDesktop) badgeDesktop.remove();
+                if (badgeMobile) badgeMobile.remove();
+            } else {
+                // Display the actual count, no longer limiting to 9+
+                const displayCount = count.toString();
+                
+                // Update or create desktop badge
+                if (badgeDesktop) {
+                    badgeDesktop.textContent = displayCount;
+                } else {
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5';
+                    newBadge.textContent = displayCount;
+                    document.getElementById('notificationBtn').appendChild(newBadge);
+                }
+                
+                // Update or create mobile badge
+                if (badgeMobile) {
+                    badgeMobile.textContent = displayCount;
+                } else {
+                    const mobileNotificationLink = document.querySelector('a[href="/notifications"]');
+                    if (mobileNotificationLink) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5';
+                        newBadge.textContent = displayCount;
+                        mobileNotificationLink.appendChild(newBadge);
+                    }
+                }
+            }
+        }
+
+        // Add socket.io notification handling
+        if (typeof io !== 'undefined') {
+            const socket = io();
+            
+            // Listen for new notifications
+            socket.on('newNotification', function(data) {
+                // Update the notification count
+                const currentBadge = document.querySelector('#notificationBtn > span');
+                const currentCount = currentBadge ? parseInt(currentBadge.textContent) : 0;
+                
+                // Only increment if the notification is truly new
+                if (data.notification && !data.notification.read) {
+                    updateNotificationBadge(isNaN(currentCount) ? 1 : currentCount + 1);
+                    
+                    // If this is a follow acceptance notification, store it for userProfile.ejs
+                    if (data.notification.type === 'followAccepted') {
+                        const acceptedBy = data.notification.sender;
+                        
+                        // Get existing accepted requests or initialize empty array
+                        const existingAcceptedForProfile = JSON.parse(localStorage.getItem('acceptedFollowRequests') || '[]');
+                        
+                        // Add this profile to the list of accepted follow requests
+                        existingAcceptedForProfile.push({
+                            profileId: acceptedBy._id,
+                            username: acceptedBy.username,
+                            acceptedAt: new Date().toISOString()
+                        });
+                        
+                        // Store back in localStorage
+                        localStorage.setItem('acceptedFollowRequests', JSON.stringify(existingAcceptedForProfile));
+                    }
+                    
+                    // Show a toast notification if supported
+                    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                        const notification = new Notification('Pinspire', {
+                            body: `${data.notification.sender.name} ${data.notification.text}`,
+                            icon: data.notification.sender.profileImage
+                        });
+                        
+                        // Close after 5 seconds
+                        setTimeout(() => notification.close(), 5000);
+                        
+                        // Navigate to related content when clicked
+                        notification.onclick = function() {
+                            window.focus();
+                            // Navigate based on notification type
+                            if (data.notification.post) {
+                                window.location.href = `/post/${data.notification.post._id}`;
+                            } else if (data.notification.type === 'follow') {
+                                window.location.href = `/user/${data.notification.sender.username}`;
+                            } else {
+                                window.location.href = '/notifications';
+                            }
+                        };
+                    }
+                }
+                
+                // If notification panel is open, add the new notification at the top
+                const notificationPanel = document.getElementById('notificationPanel');
+                if (notificationPanel && !notificationPanel.classList.contains('hidden')) {
+                    const container = document.getElementById('notificationsContainer');
+                    if (container) {
+                        const emptyMessage = container.querySelector('.text-center');
+                        if (emptyMessage) {
+                            container.innerHTML = ''; // Remove "no notifications" message
+                        }
+                        
+                        // Generate action icon based on notification type
+                        let actionIcon = '';
+                        let actionClass = '';
+                        
+                        switch (data.notification.type) {
+                            case 'like':
+                                actionIcon = '<i class="fas fa-heart text-red-500"></i>';
+                                actionClass = 'bg-red-50 dark:bg-red-900/10';
+                                break;
+                            case 'comment':
+                            case 'reply':
+                                actionIcon = '<i class="fas fa-comment text-blue-500"></i>';
+                                actionClass = 'bg-blue-50 dark:bg-blue-900/10';
+                                break;
+                            case 'follow':
+                                actionIcon = '<i class="fas fa-user-plus text-green-500"></i>';
+                                actionClass = 'bg-green-50 dark:bg-green-900/10';
+                                break;
+                            case 'new_post':
+                                actionIcon = '<i class="fas fa-image text-purple-500"></i>';
+                                actionClass = 'bg-purple-50 dark:bg-purple-900/10';
+                                break;
+                            default:
+                                actionIcon = '<i class="fas fa-bell text-gray-500"></i>';
+                                actionClass = 'bg-gray-50 dark:bg-gray-900/10';
+                        }
+                        
+                        // Generate post thumbnail if available
+                        let postThumbnail = '';
+                        if (data.notification.post && data.notification.post.images && data.notification.post.images.length > 0) {
+                            postThumbnail = `
+                                <div class="ml-auto">
+                                    <a href="/post/${data.notification.post._id}" class="block w-12 h-12 rounded overflow-hidden">
+                                        <img src="${data.notification.post.images[0].url}" 
+                                             alt="Post" 
+                                             class="w-full h-full object-cover">
+                                    </a>
+                                </div>
+                            `;
+                        }
+                        
+                        const notificationHTML = `
+                            <div class="notification-item px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 bg-blue-50 dark:bg-blue-900/20 group" data-id="${data.notification._id}">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 mr-3 relative">
+                                        <img src="${data.notification.sender.profileImage}" 
+                                             alt="${data.notification.sender.name}" 
+                                             class="w-10 h-10 rounded-full object-cover">
+                                        <div class="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full ${actionClass}">
+                                            ${actionIcon}
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm">
+                                            <span class="font-semibold">${data.notification.sender.name}</span> 
+                                            ${data.notification.text}
+                                        </p>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
+                                    </div>
+                                    ${postThumbnail}
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Add at the top of the container
+                        container.insertAdjacentHTML('afterbegin', notificationHTML);
+                    }
+                }
+            });
+            
+            // Request notification permission
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                    // Ask for permission after user interacts with the page
+                    document.addEventListener('click', function askNotificationPermission() {
+                        Notification.requestPermission();
+                        // Remove this event listener
+                        document.removeEventListener('click', askNotificationPermission);
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
