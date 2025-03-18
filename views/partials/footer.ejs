@@ -2,5 +2,49 @@
     <script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Theme consistency script -->
+    <script>
+        // Make sure theme is consistently applied across all elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to apply theme consistency
+            function applyThemeConsistency() {
+                const isDarkMode = document.documentElement.classList.contains('dark');
+                
+                // Fix container backgrounds
+                if (isDarkMode) {
+                    // Apply dark background to any white containers
+                    document.querySelectorAll('.bg-white, .card, .container-bg').forEach(el => {
+                        el.style.backgroundColor = 'var(--bg-main, #000)';
+                    });
+                    document.querySelectorAll('.bg-gray-50, .bg-gray-100, .bg-gray-200').forEach(el => {
+                        el.style.backgroundColor = 'var(--bg-secondary, #111)';
+                    });
+                } else {
+                    // Reset inline styles for light mode
+                    document.querySelectorAll('.bg-white, .card, .container-bg').forEach(el => {
+                        el.style.backgroundColor = '';
+                    });
+                    document.querySelectorAll('.bg-gray-50, .bg-gray-100, .bg-gray-200').forEach(el => {
+                        el.style.backgroundColor = '';
+                    });
+                }
+            }
+            
+            // Apply theme consistency on load
+            applyThemeConsistency();
+            
+            // Also watch for theme changes (like toggle events)
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'class' && mutation.target === document.documentElement) {
+                        applyThemeConsistency();
+                    }
+                });
+            });
+            
+            observer.observe(document.documentElement, { attributes: true });
+        });
+    </script>
 </body>
 </html> 
