@@ -1623,6 +1623,12 @@ function replyToStory(event) {
     const userStories = currentStories[currentUserIndex];
     const story = userStories.stories[currentStoryIndex];
     
+    // Show loading state in button
+    const submitBtn = event.target.querySelector('button');
+    const originalBtnHTML = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    submitBtn.disabled = true;
+    
     fetch(`/story/${story._id}/reply`, {
         method: 'POST',
         headers: {
@@ -1635,204 +1641,21 @@ function replyToStory(event) {
         if (data.message) {
             showToast('Reply sent');
             replyInput.value = '';
+            
+            // Redirect to the chat with the story owner
+            if (data.chatId) {
+                // Close story modal
+                closeStoryModal();
+                
+                // Wait for toast to be visible before redirecting
+                setTimeout(() => {
+                    window.location.href = `/chat/${data.chatId}`;
+                }, 1000);
+            }
         }
     })
     .catch(error => {
         console.error('Error sending reply:', error);
-        showToast('Failed to send reply');
-    });
-}
-
-// Handle story upload
-function handleStoryUpload(event) {
-    const file = event.target.files[0];
-    
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        showToast('Please select an image or video file');
-        return;
-    }
-
-    storyFile = file;
-    
-    // Create modal if it doesn't exist yet
-    let storyPreviewModal = document.getElementById('storyPreviewModal');
-    if (!storyPreviewModal) {
-        storyPreviewModal = document.createElement('div');
-        storyPreviewModal.id = 'storyPreviewModal';
-        storyPreviewModal.className = 'hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center story-preview-modal backdrop-blur-sm';
-        storyPreviewModal.innerHTML = `
-            <div class="bg-white dark:bg-gray-900 rounded-lg overflow-hidden max-w-md w-full mx-auto story-preview-container shadow-xl">
-                <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Preview Story</h3>
-                    <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="aspect-[9/16] bg-black relative overflow-hidden">
-                    <div id="storyPreviewContainer" class="w-full h-full">
-                        <div class="w-full h-full flex items-center justify-center">
-                            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-3 border-t border-gray-200 dark:border-gray-700 flex justify-between">
-                    <button onclick="closeStoryPreview()"
-                            class="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-md">
-                        Cancel
-                    </button>
-                    <button onclick="uploadStory()"
-                            class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition">
-                        Share Story
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(storyPreviewModal);
-    }
-    
-    // Show preview with loading indicator
-    const previewContainer = document.getElementById('storyPreviewContainer');
-    previewContainer.innerHTML = '<div class="w-full h-full flex items-center justify-center"><div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div></div>';
-    storyPreviewModal.classList.remove('hidden');
-
-    if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            previewContainer.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
-        };
-        reader.readAsDataURL(file);
-    } else if (file.type.startsWith('video/')) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            previewContainer.innerHTML = `
-                <video src="${e.target.result}" class="w-full h-full object-cover" autoplay muted loop></video>
-            `;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-// Upload story
-async function uploadStory() {
-    if (!storyFile) {
-        showToast('Please select a file first');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('story', storyFile);
-
-    try {
-        const response = await fetch('/story', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.message) {
-            closeStoryPreview();
-            showToast('Story uploaded successfully!');
-            
-            // Update UI to show active story
-            const addStoryButton = document.querySelector('.flex-shrink-0.text-center');
-            if (addStoryButton) {
-                // Add story ring to the user's story button
-                const storyRing = document.createElement('div');
-                storyRing.className = 'story-ring rounded-full p-[2px]';
-                storyRing.innerHTML = `
-                    <div class="bg-white dark:bg-black p-[1px] rounded-full">
-                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-                            <i class="fas fa-plus text-blue-500"></i>
-                        </div>
-                    </div>
-                `;
-                
-                // Replace the existing button content
-                addStoryButton.innerHTML = `
-                    <label class="cursor-pointer block">
-                        ${storyRing.outerHTML}
-                        <input type="file" 
-                               id="storyInput" 
-                               class="hidden" 
-                               accept="image/*,video/*" 
-                               onchange="handleStoryUpload(event)">
-                        <p class="text-xs mt-1 text-gray-600 dark:text-gray-400 font-medium">Your story</p>
-                    </label>
-                `;
-            }
-            
-            // Refresh stories list
-            setTimeout(() => {
-                loadStories();
-            }, 1000);
-        } else {
-            const errorMsg = data.error || 'Error uploading story';
-            showToast(errorMsg);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showToast('Error uploading story. Please try again.');
-    }
-}
-
-// Close story preview
-function closeStoryPreview() {
-    const storyPreviewModal = document.getElementById('storyPreviewModal');
-    if (storyPreviewModal) {
-        storyPreviewModal.classList.add('hidden');
-    }
-    document.getElementById('storyInput').value = '';
-    storyFile = null;
-}
-
-// Socket connection for real-time updates
-function initializeSocketConnection() {
-    const socket = io();
-    
-    socket.on('connect', () => {
-        console.log('Connected to socket.io server');
-    });
-    
-    socket.on('newPost', data => {
-        // Add new post to the feed
-        console.log('New post received:', data);
-        // Implement if needed
-    });
-    
-    socket.on('newLike', data => {
-        // Update like count for a post
-        console.log('New like received:', data);
-        updateLikeCount(data.postId, 1);
-    });
-    
-    socket.on('newComment', data => {
-        // Add new comment to a post
-        console.log('New comment received:', data);
-        // Implement if needed
-    });
-}
-
-// Load more posts for infinite scrolling
-function loadMorePosts() {
-    const loadingSpinner = document.querySelector('.loading-spinner');
-    loadingSpinner.classList.remove('hidden');
-    
-    fetch(`/api/posts?page=${page + 1}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.posts && data.posts.length > 0) {
-                page++;
-                // Append new posts to the feed
-                // Implementation depends on how your server returns data
-            }
-            
-            isLoading = false;
-            loadingSpinner.classList.add('hidden');
-        })
-        .catch(error => {
             console.error('Error loading more posts:', error);
             isLoading = false;
             loadingSpinner.classList.add('hidden');

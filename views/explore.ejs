@@ -18,7 +18,7 @@
         </div>
 
         <!-- Search Bar -->
-        <div class="mb-6">
+        <div class="mb-6 relative">
             <div class="relative">
                 <input type="text" 
                        id="searchInput" 
@@ -26,6 +26,19 @@
                        class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                     <i class="fas fa-search"></i>
+                </div>
+            </div>
+            
+            <!-- Search Results Dropdown -->
+            <div id="searchResults" class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto hidden">
+                <div id="searchLoading" class="py-4 text-center hidden">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                </div>
+                <div id="searchResultsList">
+                    <!-- Search results will appear here -->
+                </div>
+                <div id="noResultsMessage" class="py-6 text-center hidden">
+                    <p class="text-gray-500 dark:text-gray-400">No users found</p>
                 </div>
             </div>
         </div>
@@ -169,7 +182,85 @@
         document.getElementById('tab-posts').classList.add('text-gray-500', 'dark:text-gray-400');
     });
     
-    // Search functionality
+    // Real-time search functionality
+    let searchTimeout;
+    
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.trim();
+        
+        // Clear previous timeout
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        const searchResults = document.getElementById('searchResults');
+        const searchLoading = document.getElementById('searchLoading');
+        const searchResultsList = document.getElementById('searchResultsList');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        
+        // Hide results if search term is empty
+        if (searchTerm.length < 2) {
+            searchResults.classList.add('hidden');
+            return;
+        }
+        
+        // Show loading indicator and results container
+        searchResults.classList.remove('hidden');
+        searchLoading.classList.remove('hidden');
+        searchResultsList.innerHTML = '';
+        noResultsMessage.classList.add('hidden');
+        
+        // Set a small timeout to prevent too many requests while typing
+        searchTimeout = setTimeout(() => {
+            // Fetch users from API
+            fetch(`/api/search-users?q=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicator
+                    searchLoading.classList.add('hidden');
+                    
+                    if (!data.users || data.users.length === 0) {
+                        // Show no results message
+                        noResultsMessage.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    // Build results HTML
+                    let resultsHTML = '';
+                    data.users.forEach(user => {
+                        resultsHTML += `
+                            <a href="/user/${user.username}" class="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg mb-1">
+                                <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
+                                <div class="ml-3">
+                                    <h4 class="font-medium text-gray-800 dark:text-white">${user.name}</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</p>
+                                </div>
+                            </a>
+                        `;
+                    });
+                    
+                    // Update results container
+                    searchResultsList.innerHTML = resultsHTML;
+                })
+                .catch(error => {
+                    console.error('Error searching users:', error);
+                    searchLoading.classList.add('hidden');
+                    searchResultsList.innerHTML = '<div class="p-3 text-red-500 text-center">Error fetching results</div>';
+                });
+        }, 300); // 300ms delay before search
+    });
+    
+    // Close search results when clicking elsewhere
+    document.addEventListener('click', function(e) {
+        const searchResults = document.getElementById('searchResults');
+        const searchInput = document.getElementById('searchInput');
+        
+        if (e.target !== searchInput && !searchResults.contains(e.target)) {
+            searchResults.classList.add('hidden');
+        }
+    });
+    
+    // Legacy search for user cards (keep for when viewing the "Discover People" tab)
     document.getElementById('searchInput').addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
         const userCards = document.querySelectorAll('.user-card');

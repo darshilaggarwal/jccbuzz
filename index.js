@@ -1497,9 +1497,18 @@ app.post("/story/:storyId/reply", isLoggedIn, async (req, res) => {
             return res.status(404).json({ error: "Story not found" });
         }
 
+        const message = req.body.message;
+        
+        if (!message || message.trim() === '') {
+            return res.status(400).json({ error: "Message cannot be empty" });
+        }
+
         // Create or get existing chat
         let chat = await chatModel.findOne({
-            participants: { $all: [user._id, story.user._id] }
+            participants: { 
+                $all: [user._id, story.user._id],
+                $size: 2
+            }
         });
 
         if (!chat) {
@@ -1510,33 +1519,46 @@ app.post("/story/:storyId/reply", isLoggedIn, async (req, res) => {
         }
 
         // Add story reply message
-        const message = {
+        const newMessage = {
             sender: user._id,
-            content: req.body.content,
+            content: message,
             isStoryReply: true,
-            storyId: story._id
+            storyId: story._id,
+            read: false,
+            createdAt: Date.now()
         };
 
-        chat.messages.push(message);
+        chat.messages.push(newMessage);
         chat.lastMessage = Date.now();
         await chat.save();
+
+        // Populate the sender information
+        await chat.populate('messages.sender', 'name username profileImage');
+        
+        // Get the newly created message with populated data
+        const populatedMessage = chat.messages[chat.messages.length - 1];
 
         // Notify story owner through socket
         const storyOwnerSocketId = connectedUsers.get(story.user._id.toString());
         if (storyOwnerSocketId) {
-            io.to(storyOwnerSocketId).emit('storyReply', {
+            io.to(storyOwnerSocketId).emit('newMessage', {
+                chatId: chat._id,
+                message: populatedMessage,
                 from: {
                     _id: user._id,
                     name: user.name,
                     username: user.username,
                     profileImage: user.profileImage
                 },
-                content: req.body.content,
+                isStoryReply: true,
                 storyId: story._id
             });
         }
 
-        res.json({ message: "Reply sent successfully" });
+        res.json({ 
+            message: "Reply sent successfully",
+            chatId: chat._id 
+        });
     } catch (error) {
         console.error('Error sending story reply:', error);
         res.status(500).json({ error: "Error sending reply" });
@@ -3534,15 +3556,26 @@ app.get("/explore", isLoggedIn, async (req, res) => {
         // Get users that the current user doesn't follow
         const following = currentUser.following || [];
         
-        // Find users not already followed and not the current user
-        const suggestedUsers = await userModel.find({
-            _id: { 
-                $ne: currentUser._id,
-                $nin: following
-            }
-        })
-        .select('username name profileImage bio')
-        .limit(20);
+        // Find random users not already followed and not the current user
+        // Using aggregation to get a random sample
+        const suggestedUsers = await userModel.aggregate([
+            {
+                $match: {
+                    _id: { 
+                        $ne: currentUser._id,
+                        $nin: following.map(id => typeof id === 'object' ? id : new mongoose.Types.ObjectId(id.toString())) 
+                    }
+                }
+            },
+            { $sample: { size: 20 } }, // Get random sample of 20 users
+            { $project: { username: 1, name: 1, profileImage: 1, bio: 1 } }
+        ]);
+        
+        // Convert ObjectIds to strings for proper rendering
+        const formattedSuggestedUsers = suggestedUsers.map(user => ({
+            ...user,
+            _id: user._id.toString()
+        }));
         
         // Get posts from all users for the explore grid
         // First fetch posts from all users, we'll filter private accounts after populating
@@ -3577,7 +3610,7 @@ app.get("/explore", isLoggedIn, async (req, res) => {
 
         res.render("explore", { 
             user: currentUser,
-            suggestedUsers,
+            suggestedUsers: formattedSuggestedUsers,
             explorePosts: filteredPosts
         });
     } catch (error) {
@@ -3649,5 +3682,38 @@ app.delete('/post/:postId/delete', isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error("Error deleting post:", error);
         res.status(500).json({ error: "Error deleting post" });
+    }
+});
+
+// Search users API endpoint
+app.get("/api/search-users", isLoggedIn, async (req, res) => {
+    try {
+        const searchQuery = req.query.q;
+        
+        if (!searchQuery || searchQuery.length < 2) {
+            return res.json({ users: [] });
+        }
+        
+        // Find current user
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        
+        // Create regex for case-insensitive search
+        const searchRegex = new RegExp(searchQuery, 'i');
+        
+        // Search in username and name fields
+        const users = await userModel.find({
+            $or: [
+                { username: searchRegex },
+                { name: searchRegex }
+            ],
+            _id: { $ne: currentUser._id } // Exclude current user
+        })
+        .select('username name profileImage bio')
+        .limit(15);
+        
+        res.json({ users });
+    } catch (error) {
+        console.error("Error searching users:", error);
+        res.status(500).json({ error: "Failed to search users" });
     }
 });
