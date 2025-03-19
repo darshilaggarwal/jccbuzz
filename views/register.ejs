@@ -1,172 +1,284 @@
-<%- include('partials/header') %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="icon" type="image/svg+xml" href="/placeholder/JccBUZZ logo.svg">
+    <link rel="shortcut icon" href="/placeholder/JccBUZZ logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/placeholder/JccBUZZ logo.svg">
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-<div class="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-        <div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Create your account
-            </h2>
-            <p class="mt-2 text-center text-sm text-gray-600">
-                Or
-                <a href="/login" class="font-medium text-blue-600 hover:text-blue-500">
-                    sign in to your account
-                </a>
-            </p>
-        </div>
+    <title>Register</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
         
-        <% if (locals.error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <span class="block sm:inline"><%= error %></span>
-            </div>
-        <% } %>
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
-        <div id="toast" class="fixed top-4 right-4 max-w-xs bg-red-500 text-white px-4 py-3 rounded shadow-lg transform transition-all duration-500 opacity-0 translate-y-8 pointer-events-none" role="alert">
-            <div class="flex items-center">
-                <div class="py-1"><svg class="fill-current h-6 w-6 text-white mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
-                <div id="toastMessage"></div>
-            </div>
-        </div>
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
         
-        <!-- Step 1: Enter enrollment number and request OTP -->
-        <div id="step1" class="mt-8 space-y-6">
-            <div class="rounded-md shadow-sm">
-                <div>
-                    <label for="enrollment_number" class="block text-sm font-medium text-gray-700 mb-1">Enrollment Number</label>
-                    <input id="enrollment_number" name="enrollment_number" type="text" required 
-                           class="appearance-none rounded-md relative block w-full px-3 py-2 border
-                                  border-gray-300 placeholder-gray-500 text-gray-900
-                                  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="e.g. 021323001">
-                    <p id="enrollmentError" class="mt-1 hidden text-xs text-red-600"></p>
+        /* Logo styling */
+        .logo-image {
+            height: 38px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+            transition: all 0.3s ease;
+        }
+        
+        .logo-image:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        /* Decorative rings */
+        .decor-ring {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.6;
+            z-index: 0;
+        }
+        
+        /* Button hover effects */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        
+        .btn-primary:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.6s ease;
+            z-index: -1;
+        }
+        
+        .btn-primary:hover:before {
+            left: 100%;
+        }
+        
+        .otp-input {
+            transition: all 0.3s ease;
+        }
+        
+        .otp-input:focus {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Simple Navbar -->
+    <header class="bg-white shadow py-2">
+        <div class="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+            <div class="flex justify-between items-center h-16">
+                <!-- Left: Logo -->
+                <div class="flex-shrink-0">
+                    <a href="/" class="flex items-center">
+                        <img class="h-40 mt-3 object-contain filter drop-shadow-md max-w-full transform transition hover:scale-105 duration-300" src="/placeholder/JccBUZZ_logo-removebg-preview.png" alt="JCCbuzz Logo">
+                    </a>
+                </div>
+                
+                <!-- Right: Auth Links -->
+                <div class="flex items-center space-x-4">
+                    <a href="/login" class="btn-primary px-4 py-2 border border-transparent text-base font-semibold rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all duration-300 shadow-sm">
+                        Sign In
+                    </a>
+                    <a href="/register" class="btn-primary px-4 py-2 border border-transparent text-base font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 shadow-sm">
+                        Sign Up
+                    </a>
                 </div>
             </div>
-            <div>
-                <button id="requestOtpBtn" type="button" 
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent
-                               text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Request OTP
-                </button>
-            </div>
         </div>
+    </header>
+
+    <div class="min-h-screen flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8 relative">
+        <!-- Decorative rings -->
+        <div class="decor-ring w-32 h-32 bg-purple-400 blur-xl -top-10 -left-10"></div>
+        <div class="decor-ring w-40 h-40 bg-indigo-300 blur-xl bottom-40 -right-10"></div>
+        <div class="decor-ring w-24 h-24 bg-blue-300 blur-xl top-40 right-1/4"></div>
         
-        <!-- Step 2: Enter OTP -->
-        <div id="step2" class="mt-8 space-y-6 hidden">
-            <div class="rounded-md shadow-sm">
-                <div>
-                    <label for="otp" class="block text-sm font-medium text-gray-700 mb-1">Enter OTP sent to <span id="maskedEmail" class="font-medium text-blue-600"></span></label>
-                    <div class="flex space-x-2 justify-center">
-                        <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <p id="otpError" class="mt-1 hidden text-xs text-red-600"></p>
-                    <p class="mt-2 text-center text-sm text-gray-600">
-                        <span id="countdownTimer" class="font-medium">2:00</span>
-                    </p>
-                    <p class="mt-2 text-center text-sm text-gray-600">
-                        <button id="resendOtp" class="font-medium text-blue-600 hover:text-blue-500 hidden">
-                            Resend OTP
-                        </button>
-                    </p>
-                </div>
-            </div>
+        <div class="max-w-md w-full space-y-6 bg-white p-8 rounded-xl shadow-lg relative z-10 animate-fade-in my-8">
             <div>
-                <button id="verifyOtpBtn" type="button" 
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent
-                               text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Verify OTP
-                </button>
+                <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900">
+                    Create your account
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Or
+                    <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                        sign in to your account
+                    </a>
+                </p>
             </div>
-        </div>
-        
-        <!-- Step 3: Complete Registration -->
-        <form id="registerForm" class="mt-8 space-y-6 hidden" action="/register" method="POST" novalidate>
-            <input type="hidden" id="verified_enrollment" name="enrollment_number" value="">
-            <input type="hidden" id="verified_email" name="verified_email" value="">
             
-            <div class="rounded-md shadow-sm -space-y-px">
-                <div>
-                    <label for="name" class="sr-only">Full Name</label>
-                    <input id="name" name="name" type="text" required readonly
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border
-                                  border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md
-                                  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Full Name">
-                    <p id="nameError" class="mt-1 hidden text-xs text-red-600"></p>
+            <% if (locals.error) { %>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline"><%= error %></span>
                 </div>
-                <div>
-                    <label for="username" class="sr-only">Username</label>
-                    <input id="username" name="username" type="text" required 
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border
-                                  border-gray-300 placeholder-gray-500 text-gray-900
-                                  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Username">
-                    <p id="usernameError" class="mt-1 hidden text-xs text-red-600"></p>
-                </div>
-                <div>
-                    <label for="email" class="sr-only">Email address</label>
-                    <input id="email" name="email" type="email" required readonly
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border
-                                  border-gray-300 placeholder-gray-500 text-gray-900
-                                  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Email address">
-                    <p id="emailError" class="mt-1 hidden text-xs text-red-600"></p>
-                </div>
-                <div>
-                    <label for="password" class="sr-only">Password</label>
-                    <input id="password" name="password" type="password" required 
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border
-                                  border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md
-                                  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Password">
-                    <p id="passwordError" class="mt-1 hidden text-xs text-red-600"></p>
+            <% } %>
+            
+            <div id="toast" class="fixed top-4 right-4 max-w-xs bg-red-500 text-white px-4 py-3 rounded shadow-lg transform transition-all duration-500 opacity-0 translate-y-8 pointer-events-none" role="alert">
+                <div class="flex items-center">
+                    <div class="py-1"><svg class="fill-current h-6 w-6 text-white mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
+                    <div id="toastMessage"></div>
                 </div>
             </div>
-
-            <div class="flex items-center">
-                <div class="flex items-center">
-                    <div class="text-sm w-full">
-                        <p class="font-medium text-gray-700">Password requirements:</p>
-                        <ul class="list-none pl-0 text-xs mt-2 space-y-2">
-                            <li id="length-check" class="flex items-center text-red-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                At least 8 characters long
-                            </li>
-                            <li id="uppercase-check" class="flex items-center text-red-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Include at least one uppercase letter
-                            </li>
-                            <li id="special-check" class="flex items-center text-red-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Include at least one special character
-                            </li>
-                        </ul>
+            
+            <!-- Step 1: Enter enrollment number and request OTP -->
+            <div id="step1" class="mt-6 space-y-6">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="enrollment_number" class="block text-sm font-medium text-gray-700 mb-1">Enrollment Number</label>
+                        <input id="enrollment_number" name="enrollment_number" type="text" required 
+                                class="appearance-none rounded-md relative block w-full px-3 py-3 border
+                                      border-gray-300 placeholder-gray-500 text-gray-900
+                                      focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="e.g. 021323001">
+                        <p id="enrollmentError" class="mt-1 hidden text-xs text-red-600"></p>
                     </div>
                 </div>
+                <div>
+                    <button id="requestOtpBtn" type="button" 
+                            class="btn-primary group relative w-full flex justify-center py-3 px-4 border border-transparent
+                                    text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md">
+                        Request OTP
+                    </button>
+                </div>
             </div>
-
-            <div>
-                <button type="submit" 
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent
-                               text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Register
-                </button>
+            
+            <!-- Step 2: Enter OTP -->
+            <div id="step2" class="mt-6 space-y-6 hidden">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="otp" class="block text-sm font-medium text-gray-700 mb-2">Enter OTP sent to <span id="maskedEmail" class="font-medium text-indigo-600"></span></label>
+                        <div class="flex space-x-2 justify-center">
+                            <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <p id="otpError" class="mt-1 hidden text-xs text-red-600"></p>
+                        <p class="mt-2 text-center text-sm text-gray-600">
+                            <span id="countdownTimer" class="font-medium">2:00</span>
+                        </p>
+                        <p class="mt-2 text-center text-sm text-gray-600">
+                            <button id="resendOtp" class="font-medium text-indigo-600 hover:text-indigo-500 hidden">
+                                Resend OTP
+                            </button>
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <button id="verifyOtpBtn" type="button" 
+                            class="btn-primary group relative w-full flex justify-center py-3 px-4 border border-transparent
+                                    text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md">
+                        Verify OTP
+                    </button>
+                </div>
             </div>
-        </form>
+            
+            <!-- Step 3: Complete Registration -->
+            <form id="registerForm" class="mt-6 space-y-6 hidden" action="/register" method="POST" novalidate>
+                <input type="hidden" id="verified_enrollment" name="enrollment_number" value="">
+                <input type="hidden" id="verified_email" name="verified_email" value="">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input id="name" name="name" type="text" required readonly
+                                class="appearance-none rounded-md relative block w-full px-3 py-3 border
+                                      border-gray-300 placeholder-gray-500 text-gray-900
+                                      focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Full Name">
+                        <p id="nameError" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <input id="username" name="username" type="text" required 
+                                class="appearance-none rounded-md relative block w-full px-3 py-3 border
+                                      border-gray-300 placeholder-gray-500 text-gray-900
+                                      focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Username">
+                        <p id="usernameError" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+                        <input id="email" name="email" type="email" required readonly
+                                class="appearance-none rounded-md relative block w-full px-3 py-3 border
+                                      border-gray-300 placeholder-gray-500 text-gray-900
+                                      focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Email address">
+                        <p id="emailError" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input id="password" name="password" type="password" required 
+                                class="appearance-none rounded-md relative block w-full px-3 py-3 border
+                                      border-gray-300 placeholder-gray-500 text-gray-900
+                                      focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Password">
+                        <p id="passwordError" class="mt-1 hidden text-xs text-red-600"></p>
+                    </div>
+                </div>
+    
+                <div class="flex items-center">
+                    <div class="flex items-center">
+                        <div class="text-sm w-full">
+                            <p class="font-medium text-gray-700">Password requirements:</p>
+                            <ul class="list-none pl-0 text-xs mt-2 space-y-2">
+                                <li id="length-check" class="flex items-center text-red-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    At least 8 characters long
+                                </li>
+                                <li id="uppercase-check" class="flex items-center text-red-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Include at least one uppercase letter
+                                </li>
+                                <li id="special-check" class="flex items-center text-red-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Include at least one special character
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+    
+                <div>
+                    <button type="submit" 
+                            class="btn-primary group relative w-full flex justify-center py-3 px-4 border border-transparent
+                                    text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md">
+                        Register
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

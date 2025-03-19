@@ -3714,3 +3714,4 @@ app.get("/api/search-users", isLoggedIn, async (req, res) => {
         res.status(500).json({ error: "Failed to search users" });
     }
 });
+
