@@ -24,9 +24,15 @@ const projectSchema = new mongoose.Schema({
     startDate: {
         type: Date,
         required: [true, 'Start date is required'],
+        default: function() {
+            return this.type === 'upcoming' 
+                ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Default to 1 week from now
+                : new Date(); // Default to now
+        },
         validate: {
             validator: function(v) {
-                if (this.type === 'upcoming') {
+                // Only validate for upcoming projects that the date is in the future
+                if (this.type === 'upcoming' && this.isNew) {
                     return v > new Date();
                 }
                 return true;

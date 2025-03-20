@@ -1002,42 +1002,48 @@ function formatTimeAgo(date) {
 // Toggle post like
 function toggleLike(postId) {
     const likeBtn = document.getElementById(`like-btn-${postId}`);
+    
+    // Get current like state
     const isLiked = likeBtn.classList.contains('text-red-500');
     
-    // Optimistic UI update
-    if (isLiked) {
-        likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
-        likeBtn.classList.remove('text-red-500');
-        likeBtn.classList.add('text-gray-800', 'dark:text-white');
-    } else {
-        likeBtn.innerHTML = '<i class="fas fa-heart text-2xl"></i>';
-        likeBtn.classList.remove('text-gray-800', 'dark:text-white');
-        likeBtn.classList.add('text-red-500');
-        likeBtn.classList.add('liked');
-        setTimeout(() => likeBtn.classList.remove('liked'), 300);
-    }
-    
-    // Update the like count in feed with animation
-    updateLikeCount(postId, isLiked ? -1 : 1);
-    
-    // Send request to server
+    // Send request to server first, don't update UI optimistically
     fetch(`/post/${postId}/like`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include'
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to process like');
+        }
+        return response.json();
+    })
     .then(data => {
-        if (data.error) {
-            // Revert UI if request fails
-            showToast(data.error);
-            toggleLike(postId); // This will reverse the change
+        // Update UI based on server response
+        // Update like count with exact number from server
+        const countElements = document.querySelectorAll(`.like-count-${postId}`);
+        countElements.forEach(element => {
+            element.textContent = data.likes;
+        });
+        
+        // Update like button state
+        if (data.isLiked) {
+            likeBtn.innerHTML = '<i class="fas fa-heart text-2xl"></i>';
+            likeBtn.classList.remove('text-gray-800', 'dark:text-white');
+            likeBtn.classList.add('text-red-500');
+            likeBtn.classList.add('liked');
+            setTimeout(() => likeBtn.classList.remove('liked'), 300);
+        } else {
+            likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
+            likeBtn.classList.remove('text-red-500');
+            likeBtn.classList.add('text-gray-800', 'dark:text-white');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        toggleLike(postId); // Revert on error
+        showToast('Failed to process like. Please try again.');
     });
 }
 
@@ -1093,13 +1099,9 @@ function followUser(userId) {
     });
 }
 
-// Update like count in UI
+// Update like count in UI (removed - we'll update counts directly from server response)
 function updateLikeCount(postId, change) {
-    const countElements = document.querySelectorAll(`.like-count-${postId}`);
-    countElements.forEach(element => {
-        const currentCount = parseInt(element.textContent);
-        element.textContent = currentCount + change;
-    });
+    // This function is now deprecated - we update counts directly from server response
 }
 
 // Double tap to like
@@ -1435,8 +1437,6 @@ function displayCurrentStory() {
             closeStoryModal();
             return;
         }
-        displayCurrentStory();
-        return;
     }
     
     const story = userStories.stories[currentStoryIndex];

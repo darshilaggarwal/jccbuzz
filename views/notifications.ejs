@@ -1,66 +1,101 @@
 <%- include('partials/header2') %>
 
-<div class="max-w-4xl mx-auto mt-8 px-4">
-    <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h1 class="text-xl font-semibold text-gray-800 dark:text-white">Notifications</h1>
-            <% if (notifications.length > 0) { %>
-                <button id="markAllReadBtn" class="text-sm text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
-                    Mark all as read
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+            <i class="fas fa-bell text-blue-500 mr-3"></i>
+            Notifications
+        </h1>
+        <button id="mark-all-read" class="px-4 py-2 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200 flex items-center text-sm font-medium">
+            <i class="fas fa-check-double mr-2"></i> Mark all as read
+        </button>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <!-- Notification Filters -->
+        <div class="border-b border-gray-100 dark:border-gray-700 p-4">
+            <div class="flex flex-wrap gap-2">
+                <button data-filter="all" class="notification-filter px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
+                    All
                 </button>
-            <% } %>
+                <button data-filter="unread" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    Unread
+                </button>
+                <button data-filter="project" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    Projects
+                </button>
+                <button data-filter="social" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    Social
+                </button>
+            </div>
         </div>
         
-        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+        <!-- Notifications List -->
+        <div id="notifications-container" class="divide-y divide-gray-100 dark:divide-gray-700 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <% if (notifications.length === 0) { %>
-                <div class="p-6 text-center">
-                    <div class="text-5xl text-gray-300 dark:text-gray-700 mb-4">
-                        <i class="fas fa-bell-slash"></i>
+                <div class="p-10 text-center">
+                    <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-bell text-blue-500 text-xl"></i>
                     </div>
-                    <p class="text-gray-500 dark:text-gray-400">No notifications yet</p>
-                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                        When you get notifications, they'll show up here
-                    </p>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No notifications yet</h3>
+                    <p class="text-gray-500 dark:text-gray-400">When you get notifications, they'll appear here.</p>
                 </div>
             <% } else { %>
-                <% notifications.forEach(notification => { %>
-                    <div class="notification-item p-4 hover:bg-gray-50 dark:hover:bg-gray-900 <%= !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : '' %>" 
-                         data-id="<%= notification._id %>"
-                         onclick="handleNotificationClick('<%= notification._id %>', '<%= notification.type %>', '<%= notification.post ? notification.post._id : '' %>', '<%= notification.comment ? notification.comment._id : '' %>', '<%= notification.story ? notification.story._id : '' %>')">
-                        <div class="flex">
-                            <div class="flex-shrink-0 mr-3">
-                                <% if (notification.sender) { %>
-                                    <img src="<%= notification.sender.profileImage %>" 
-                                         alt="<%= notification.sender.name %>" 
-                                         class="w-12 h-12 rounded-full object-cover">
-                                <% } else { %>
-                                    <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                        <i class="fas fa-user text-gray-400"></i>
-                                    </div>
-                                <% } %>
+                <% notifications.forEach(notification => { 
+                    let notificationClass = notification.read ? '' : 'bg-blue-50 dark:bg-blue-900/10';
+                    let iconClass = '';
+                    let iconBgClass = '';
+                    
+                    // Determine icon and background based on notification type
+                    if (notification.type.includes('project_join')) {
+                        iconClass = 'fas fa-project-diagram';
+                        iconBgClass = 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400';
+                    } else if (notification.type.includes('follow')) {
+                        iconClass = 'fas fa-user-plus';
+                        iconBgClass = 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
+                    } else if (notification.type === 'like') {
+                        iconClass = 'fas fa-heart';
+                        iconBgClass = 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+                    } else if (notification.type.includes('comment') || notification.type === 'reply') {
+                        iconClass = 'fas fa-comment';
+                        iconBgClass = 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400';
+                    } else {
+                        iconClass = 'fas fa-bell';
+                        iconBgClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
+                    }
+                    
+                    let timeAgo = new Date(notification.createdAt).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // Determine data-type for filtering
+                    let dataType = notification.type.includes('project_join') ? 'project' : 'social';
+                %>
+                    <div class="notification-item p-4 <%= notificationClass %>" data-id="<%= notification._id %>" data-type="<%= dataType %>" data-read="<%= notification.read ? 'true' : 'false' %>">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 mr-4">
+                                <div class="w-10 h-10 rounded-full <%= iconBgClass %> flex items-center justify-center shadow-sm">
+                                    <i class="<%= iconClass %> text-lg"></i>
+                                </div>
                             </div>
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-800 dark:text-gray-200">
-                                    <% if (notification.sender) { %>
-                                        <span class="font-semibold"><%= notification.sender.name %></span> 
-                                    <% } else { %>
-                                        <span class="font-semibold">User</span>
-                                    <% } %>
-                                    <%= notification.text %>
-                                    <% if (notification.type === 'like' || notification.type === 'comment') { %>
-                                        <span class="text-gray-500 dark:text-gray-400"> on your post</span>
-                                    <% } %>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                                        <%= notification.title %>
+                                    </h3>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2"><%= timeAgo %></span>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                    <%= notification.message || notification.displayMessage %>
                                 </p>
-                                <span class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(notification.createdAt).toLocaleString() %></span>
-                                
-                                <% if (notification.post && notification.post.images && notification.post.images.length > 0) { %>
-                                    <div class="mt-2">
-                                        <a href="/post/<%= notification.post._id %>" class="block w-16 h-16 rounded overflow-hidden">
-                                            <img src="<%= notification.post.images[0].url %>" 
-                                                alt="Post image" 
-                                                class="w-full h-full object-cover">
-                                        </a>
-                                    </div>
+                                <% if (!notification.read) { %>
+                                    <button class="mark-read-btn text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
+                                        Mark as read
+                                    </button>
                                 <% } %>
                             </div>
                         </div>
@@ -71,82 +106,293 @@
     </div>
 </div>
 
+<style>
+    /* Custom scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    }
+    
+    /* Animation for notifications */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .notification-item {
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Pulse animation for unread notifications */
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+        }
+        70% {
+            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        }
+    }
+    
+    .bg-blue-50 {
+        animation: pulse 2s infinite;
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const markAllReadBtn = document.getElementById('markAllReadBtn');
+        // Filter notifications
+        const filterButtons = document.querySelectorAll('.notification-filter');
+        const notifications = document.querySelectorAll('.notification-item');
         
-        if (markAllReadBtn) {
-            markAllReadBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                markAllNotificationsAsRead();
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active filter button
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-600', 'dark:bg-gray-700', 'dark:text-gray-300');
+                });
+                this.classList.remove('bg-gray-100', 'text-gray-600', 'dark:bg-gray-700', 'dark:text-gray-300');
+                this.classList.add('bg-blue-500', 'text-white');
+                
+                const filter = this.getAttribute('data-filter');
+                
+                notifications.forEach(notification => {
+                    if (filter === 'all') {
+                        notification.style.display = '';
+                    } else if (filter === 'unread') {
+                        notification.style.display = notification.getAttribute('data-read') === 'false' ? '' : 'none';
+                    } else {
+                        notification.style.display = notification.getAttribute('data-type') === filter ? '' : 'none';
+                    }
+                });
+                
+                // Show empty state if no visible notifications
+                checkEmptyState();
             });
+        });
+        
+        // Mark single notification as read
+        const markReadButtons = document.querySelectorAll('.mark-read-btn');
+        markReadButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation(); // Don't trigger parent click
+                const notificationItem = this.closest('.notification-item');
+                const notificationId = notificationItem.getAttribute('data-id');
+                
+                // Show loading indicator
+                const originalText = this.textContent;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Marking...';
+                this.disabled = true;
+                
+                fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to mark notification as read');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    // Update UI
+                    notificationItem.classList.remove('bg-blue-50', 'dark:bg-blue-900/10');
+                    notificationItem.setAttribute('data-read', 'true');
+                    this.remove();
+                    
+                    // Show toast
+                    showToast('Notification marked as read');
+                })
+                .catch(error => {
+                    console.error('Error marking notification as read:', error);
+                    this.textContent = originalText;
+                    this.disabled = false;
+                    showToast('Failed to mark notification as read', 'error');
+                });
+            });
+        });
+        
+        // Make notification items clickable
+        notifications.forEach(notification => {
+            notification.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                const isRead = this.getAttribute('data-read') === 'true';
+                
+                // Only mark as read if it's unread
+                if (!isRead) {
+                    fetch(`/api/notifications/${notificationId}/read`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to mark notification as read');
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        // Update UI
+                        this.classList.remove('bg-blue-50', 'dark:bg-blue-900/10');
+                        this.setAttribute('data-read', 'true');
+                        const markReadBtn = this.querySelector('.mark-read-btn');
+                        if (markReadBtn) markReadBtn.remove();
+                    })
+                    .catch(error => {
+                        console.error('Error marking notification as read:', error);
+                    });
+                }
+                
+                // Navigate based on notification type (optional)
+                // You can add navigation logic here if you want notifications to link somewhere
+            });
+        });
+        
+        // Mark all notifications as read
+        const markAllReadButton = document.getElementById('mark-all-read');
+        markAllReadButton.addEventListener('click', function() {
+            // Show loading indicator
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Marking all as read...';
+            this.disabled = true;
+            
+            fetch('/api/notifications/read-all', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to mark all notifications as read');
+                }
+                return response.json();
+            })
+            .then(() => {
+                // Update UI
+                notifications.forEach(notification => {
+                    notification.classList.remove('bg-blue-50', 'dark:bg-blue-900/10');
+                    notification.setAttribute('data-read', 'true');
+                    const markReadBtn = notification.querySelector('.mark-read-btn');
+                    if (markReadBtn) markReadBtn.remove();
+                });
+                
+                // Reset button
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                // Show toast
+                showToast('All notifications marked as read');
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+                this.innerHTML = originalText;
+                this.disabled = false;
+                showToast('Failed to mark all notifications as read', 'error');
+            });
+        });
+        
+        // Check if there are no visible notifications to show empty state
+        function checkEmptyState() {
+            const visibleNotifications = Array.from(notifications).filter(notification => 
+                notification.style.display !== 'none'
+            );
+            
+            const container = document.getElementById('notifications-container');
+            if (visibleNotifications.length === 0) {
+                // Create empty state
+                container.innerHTML = `
+                    <div class="p-10 text-center">
+                        <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-bell-slash text-blue-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No notifications found</h3>
+                        <p class="text-gray-500 dark:text-gray-400">There are no notifications matching the selected filter.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            // Remove existing toast if present
+            const existingToast = document.getElementById('toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // Create new toast
+            const toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white shadow-lg transform transition-all duration-300 z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Animate entry
+            setTimeout(() => {
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 10);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
         }
     });
-    
-    function handleNotificationClick(notificationId, type, postId, commentId, storyId) {
-        // Mark as read
-        markNotificationAsRead(notificationId);
-        
-        // Navigate based on notification type
-        if (type === 'like' || type === 'comment' || type === 'comment_like') {
-            // For post-related notifications
-            if (postId) {
-                window.location.href = `/post/${postId}`;
-            }
-        } else if (type === 'follow') {
-            // Navigate to the follower's profile
-            // This requires getting the sender's username, which we would need to add to the data-attributes
-            // For now, we'll just reload the page to refresh the read status
-            window.location.reload();
-        } else if (type === 'story_view') {
-            // For story-related notifications
-            if (storyId) {
-                window.location.href = `/stories?highlight=${storyId}`;
-            }
-        } else {
-            // Default behavior - just reload to update read status
-            window.location.reload();
-        }
-    }
-    
-    function markNotificationAsRead(notificationId) {
-        fetch(`/api/notifications/${notificationId}/read`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Update UI to reflect read status
-            const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
-            if (notificationItem) {
-                notificationItem.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
-            }
-        })
-        .catch(error => {
-            console.error('Error marking notification as read:', error);
-        });
-    }
-    
-    function markAllNotificationsAsRead() {
-        fetch('/api/notifications/mark-all-read', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Update UI
-            document.querySelectorAll('.notification-item').forEach(item => {
-                item.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
-            });
-        })
-        .catch(error => {
-            console.error('Error marking all notifications as read:', error);
-        });
-    }
 </script>
 
 <%- include('partials/footer') %> 

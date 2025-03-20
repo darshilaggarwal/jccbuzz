@@ -152,49 +152,126 @@
 </div>
 
 <!-- Participants Modal -->
-<div id="participantsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 overflow-y-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-auto my-8 transform transition-all">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Project Participants</h2>
-                <button onclick="hideParticipantsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+<div id="participantsModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-auto my-8 transform transition-all duration-300 overflow-hidden">
+        <div class="relative">
+            <!-- Header with gradient background -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Project Participants</h2>
+                    <button onclick="hideParticipantsModal()" class="text-white hover:text-gray-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div id="participantsList" class="space-y-4">
-                <!-- Participants will be loaded here -->
+            
+            <!-- Content with scrollable area -->
+            <div class="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div id="participantsList" class="space-y-4">
+                    <!-- Participants will be loaded here -->
+                    <div class="animate-pulse flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div class="rounded-full bg-gray-200 dark:bg-gray-600 h-10 w-10 mr-3"></div>
+                        <div class="flex-1">
+                            <div class="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-2"></div>
+                            <div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer with action button -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <button onclick="hideParticipantsModal()" 
+                        class="w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300">
+                    Close
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Join Request Modal -->
-<div id="join-request-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Join Project Request</h3>
-            <div class="mb-4">
-                <label for="join-message" class="block text-sm font-medium text-gray-700">Message (optional)</label>
-                <textarea id="join-message" 
-                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
-                          rows="3" 
-                          placeholder="Why do you want to join this project?"></textarea>
+<div id="join-request-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-auto my-8 transform transition-all duration-300 overflow-hidden">
+        <div class="relative">
+            <!-- Header with gradient background -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Join Project</h2>
+                    <button onclick="closeJoinRequestModal()" class="text-white hover:text-gray-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-blue-100 mt-2">Send a request to join this exciting project!</p>
             </div>
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeJoinRequestModal()" 
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                    Cancel
-                </button>
-                <button onclick="submitJoinRequest()" 
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Send Request
-                </button>
+            
+            <!-- Content -->
+            <div class="p-6">
+                <div class="mb-5">
+                    <label for="join-message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Why do you want to join this project?
+                    </label>
+                    <textarea id="join-message" 
+                              class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                              rows="4" 
+                              placeholder="Share your experience, skills, and why you're interested in this project..."></textarea>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your message will be sent to the project admin</p>
+                </div>
+                
+                <!-- Footer with action buttons -->
+                <div class="flex space-x-3 pt-4">
+                    <button onclick="closeJoinRequestModal()" 
+                            class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300">
+                        Cancel
+                    </button>
+                    <button onclick="submitJoinRequest()" 
+                            class="flex-1 px-4 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors duration-300">
+                        Send Request
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Custom scrollbar for modals */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    }
+</style>
 
 <script>
     // Tab switching functionality with animation
@@ -958,71 +1035,187 @@
     }
 
     // Add functions for participants modal
-    async function showParticipants(projectId) {
-        try {
-            const response = await fetch(`/api/projects/${projectId}`, {
-                credentials: 'include'
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch project details');
-            }
-            
-            const project = await response.json();
-            const participantsList = document.getElementById('participantsList');
-            
-            // Clear previous content
-            participantsList.innerHTML = '';
-            
-            // Add admin first
-            participantsList.innerHTML += `
-                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <img src="${project.admin.profileImage || '/placeholder/placeholder.webp'}" 
+    function showParticipants(projectId) {
+        currentProjectId = projectId;
+        const modal = document.getElementById('participantsModal');
+        const participantsList = document.getElementById('participantsList');
+        
+        // Show loading state
+        participantsList.innerHTML = `
+            <div class="animate-pulse flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div class="rounded-full bg-gray-200 dark:bg-gray-600 h-10 w-10 mr-3"></div>
+                <div class="flex-1">
+                    <div class="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-2"></div>
+                    <div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/3"></div>
+                </div>
+            </div>
+        `;
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Fetch project details
+        fetch(`/api/projects/${projectId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch project details');
+                }
+                return response.json();
+            })
+            .then(project => {
+                // First add the admin with special styling
+                let participantsHtml = `
+                    <div class="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                        <img src="${project.admin.profileImage || '/images/placeholder.webp'}" 
                              alt="${project.admin.name}" 
-                             class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-                             onerror="this.src='/placeholder/placeholder.webp'">
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <span class="font-medium text-gray-900 dark:text-white">${project.admin.name}</span>
-                                <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                             class="w-12 h-12 rounded-full object-cover border-2 border-blue-300 dark:border-blue-700 mr-4"
+                             onerror="this.src='/images/placeholder.webp'">
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">${project.admin.name}</h3>
+                                <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                     Admin
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">${project.admin.email}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add participants
-            project.participants.forEach(participant => {
-                participantsList.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <img src="${participant.profileImage || '/placeholder/placeholder.webp'}" 
-                                 alt="${participant.name}" 
-                                 class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-                                 onerror="this.src='/placeholder/placeholder.webp'">
-                            <div>
-                                <span class="font-medium text-gray-900 dark:text-white">${participant.name}</span>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">${participant.email}</p>
-                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">${project.admin.email || ''}</p>
                         </div>
                     </div>
                 `;
+                
+                // Now add other participants
+                if (project.participants.length > 1) {
+                    participantsHtml += `<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-4 mb-2">Other Participants</h4>`;
+                    
+                    participantsHtml += project.participants
+                        .filter(p => p._id !== project.admin._id)
+                        .map(p => `
+                            <div class="flex items-center p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                                <img src="${p.profileImage || '/images/placeholder.webp'}" 
+                                     alt="${p.name}" 
+                                     class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700 mr-3"
+                                     onerror="this.src='/images/placeholder.webp'">
+                                <div>
+                                    <h3 class="font-medium text-gray-900 dark:text-white">${p.name}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">${p.email || ''}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                } else {
+                    participantsHtml += `
+                        <div class="text-center p-4 mt-4 bg-gray-50 dark:bg-gray-700/20 rounded-lg">
+                            <p class="text-gray-500 dark:text-gray-400">No other participants yet</p>
+                        </div>
+                    `;
+                }
+                
+                // If there are pending join requests and user is admin, show them
+                if (project.admin._id === currentUserId && project.joinRequests && project.joinRequests.length > 0) {
+                    const pendingRequests = project.joinRequests.filter(r => r.status === 'pending');
+                    
+                    if (pendingRequests.length > 0) {
+                        participantsHtml += `
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-6 mb-2">
+                                Pending Join Requests (${pendingRequests.length})
+                            </h4>
+                        `;
+                        
+                        participantsHtml += pendingRequests.map(request => `
+                            <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800">
+                                <div class="flex items-center mb-2">
+                                    <img src="${request.user.profileImage || '/images/placeholder.webp'}" 
+                                         alt="${request.user.name}" 
+                                         class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700 mr-3"
+                                         onerror="this.src='/images/placeholder.webp'">
+                                    <div>
+                                        <h3 class="font-medium text-gray-900 dark:text-white">${request.user.name}</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">${request.user.email || ''}</p>
+                                    </div>
+                                </div>
+                                ${request.message ? `
+                                    <div class="mt-2 mb-3 p-2 bg-gray-50 dark:bg-gray-700/30 rounded text-sm text-gray-600 dark:text-gray-300">
+                                        "${request.message}"
+                                    </div>
+                                ` : ''}
+                                <div class="flex space-x-2 mt-2">
+                                    <button onclick="handleJoinRequest('${project._id}', '${request._id}', 'accepted')" 
+                                            class="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors">
+                                        Accept
+                                    </button>
+                                    <button onclick="handleJoinRequest('${project._id}', '${request._id}', 'rejected')" 
+                                            class="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors">
+                                        Reject
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                participantsList.innerHTML = participantsHtml;
+            })
+            .catch(error => {
+                console.error('Error fetching project details:', error);
+                participantsList.innerHTML = `
+                    <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400 text-center">
+                        <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>Error loading participants</p>
+                    </div>
+                `;
             });
-            
-            // Show modal
-            const modal = document.getElementById('participantsModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        } catch (error) {
-            console.error('Error fetching participants:', error);
-            showToast('Failed to fetch participants', 'error');
-        }
     }
 
+    // Add function to handle join requests
+    function handleJoinRequest(projectId, requestId, status) {
+        const button = event.target;
+        const buttonText = button.textContent.trim();
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            ${status === 'accepted' ? 'Accepting...' : 'Rejecting...'}
+        `;
+        
+        fetch(`/api/projects/${projectId}/join-request/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status }),
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || `Failed to ${status} join request`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            showToast(data.message || `Join request ${status} successfully`, 'success');
+            // Refresh participants modal
+            showParticipants(projectId);
+            // Refresh projects to update UI
+            loadProjects();
+        })
+        .catch(error => {
+            console.error(`Error ${status} join request:`, error);
+            // Reset button state
+            button.disabled = false;
+            button.textContent = status === 'accepted' ? 'Accept' : 'Reject';
+            showToast(error.message || `Failed to ${status} join request`, 'error');
+        });
+    }
+
+    // Close participants modal
     function hideParticipantsModal() {
         const modal = document.getElementById('participantsModal');
         if (modal) {
@@ -1030,91 +1223,32 @@
             modal.classList.remove('flex');
         }
     }
-
-    let currentProjectId = null;
-
-    function showParticipants(projectId) {
-        currentProjectId = projectId;
-        const modal = document.getElementById('participantsModal');
-        const participantsList = document.getElementById('participantsList');
-        
-        // Fetch project details
-        fetch(`/api/projects/${projectId}`)
-            .then(response => response.json())
-            .then(project => {
-                participantsList.innerHTML = `
-                    <div class="mb-4">
-                        <div class="flex items-center space-x-3">
-                            <img src="${project.admin.profileImage || '/images/placeholder.webp'}" 
-                                 alt="${project.admin.name}" 
-                                 class="w-10 h-10 rounded-full border-2 border-gray-200">
-                            <div>
-                                <p class="font-medium text-gray-900">${project.admin.name}</p>
-                                <span class="text-sm text-blue-600">Admin</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        ${project.participants
-                            .filter(p => p._id !== project.admin._id)
-                            .map(p => `
-                                <div class="flex items-center space-x-3">
-                                    <img src="${p.profileImage || '/images/placeholder.webp'}" 
-                                         alt="${p.name}" 
-                                         class="w-8 h-8 rounded-full border border-gray-200">
-                                    <p class="text-sm text-gray-900">${p.name}</p>
-                                </div>
-                            `).join('')}
-                    </div>
-                `;
-            })
-            .catch(error => {
-                console.error('Error fetching project details:', error);
-                participantsList.innerHTML = '<p class="text-red-600">Error loading participants</p>';
-            });
-
-        modal.classList.remove('hidden');
-    }
-
-    function closeParticipantsModal() {
-        document.getElementById('participantsModal').classList.add('hidden');
-        currentProjectId = null;
-    }
-
-    function sendJoinRequest(projectId) {
-        currentProjectId = projectId;
-        document.getElementById('join-request-modal').classList.remove('hidden');
-    }
-
+    
+    // Close join request modal
     function closeJoinRequestModal() {
-        document.getElementById('join-request-modal').classList.add('hidden');
-        document.getElementById('join-message').value = '';
-        currentProjectId = null;
+        const modal = document.getElementById('join-request-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
     }
-
-    function submitJoinRequest() {
-        const message = document.getElementById('join-message').value;
-        
-        fetch(`/api/projects/${currentProjectId}/join-request`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ message })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message) {
-                alert(data.message);
-                closeJoinRequestModal();
-            } else {
-                throw new Error('Failed to send join request');
-            }
-        })
-        .catch(error => {
-            console.error('Error sending join request:', error);
-            alert('Failed to send join request. Please try again.');
-        });
+    
+    // Open join request modal
+    function sendJoinRequest(projectId) {
+        if (!projectId) {
+            showToast('Invalid project selected', 'error');
+            return;
+        }
+        currentProjectId = projectId;
+        const modal = document.getElementById('join-request-modal');
+        if (modal) {
+            // Reset form
+            document.getElementById('join-message').value = '';
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
     }
 
     // Close modals when clicking outside
@@ -1128,6 +1262,72 @@
         if (event.target === joinRequestModal) {
             closeJoinRequestModal();
         }
+    }
+
+    // Add function to submit a join request
+    function submitJoinRequest() {
+        if (!currentProjectId) {
+            showToast('Invalid project selected', 'error');
+            return;
+        }
+
+        const message = document.getElementById('join-message').value.trim();
+        if (!message) {
+            showToast('Please enter a message explaining why you want to join', 'error');
+            return;
+        }
+
+        const button = document.querySelector('#join-request-modal button[onclick="submitJoinRequest()"]');
+        const buttonText = button.textContent.trim();
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Sending...
+        `;
+        
+        fetch(`/api/projects/${currentProjectId}/join-request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ message }),
+            credentials: 'include'
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to send join request');
+            }
+            return data;
+        })
+        .then(data => {
+            // Reset button state
+            button.disabled = false;
+            button.textContent = buttonText;
+            
+            // Show success message and close modal
+            showToast(data.message || 'Join request sent successfully', 'success');
+            closeJoinRequestModal();
+            
+            // Refresh projects to update UI
+            loadProjects();
+        })
+        .catch(error => {
+            console.error('Error sending join request:', error);
+            
+            // Reset button state
+            button.disabled = false;
+            button.textContent = buttonText;
+            
+            // Show error message
+            showToast(error.message || 'Failed to send join request. Please try again.', 'error');
+        });
     }
 </script>
 

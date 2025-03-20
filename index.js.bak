@@ -34,10 +34,10 @@ const io = new Server(server);
 // Add this near the top of the file where other environment variables are setup
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
 
-// MongoDB connection - commented out to avoid duplicate connections
-// mongoose.connect('mongodb://localhost:27017/jccbuzz')
-//     .then(() => console.log('Connected to MongoDB'))
-//     .catch(err => console.error('MongoDB connection error:', err));
+// MongoDB connection
+mongoose.connect('mongodb://localhost:27017/jccbuzz')
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 app.set("view engine", "ejs");
 app.use(express.json());
@@ -857,12 +857,12 @@ app.post("/post/:postId/like", isLoggedIn, async (req, res) => {
             return res.status(404).json({ error: "Post not found" });
         }
 
-        // Check if the user ID is actually in the likes array
-        const isLiked = post.likes.some(likeId => likeId.toString() === user._id.toString());
+        const index = post.likes.indexOf(user._id);
+        const isLiked = index !== -1;
 
         if (isLiked) {
             // User has already liked the post, so unlike it
-            post.likes = post.likes.filter(likeId => likeId.toString() !== user._id.toString());
+            post.likes.splice(index, 1);
             await post.save();
             return res.json({ likes: post.likes.length, isLiked: false });
         } else {
@@ -3727,7 +3727,11 @@ app.use('/api/projects', function(req, res, next) {
 const notificationRoutes = require('./routes/api/notifications');
 
 // Apply notification routes with isLoggedIn middleware
-app.use('/api/notifications', notificationRoutes);
+app.use('/api/notifications', function(req, res, next) {
+    isLoggedIn(req, res, function() {
+        next();
+    });
+}, notificationRoutes);
 
 // Projects page route
 app.get('/projects', isLoggedIn, async (req, res) => {
@@ -3746,5 +3750,8 @@ app.get('/projects', isLoggedIn, async (req, res) => {
         console.error('Error loading projects page:', error);
         res.status(500).render('error', { message: 'Error loading projects page' });
     }
+});
+
+  }
 });
 
