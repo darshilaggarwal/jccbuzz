@@ -42,13 +42,6 @@
         <!-- Projects will be loaded here dynamically -->
     </div>
 
-    <!-- Loading State -->
-    <div id="loading-state" class="hidden">
-        <div class="flex justify-center items-center py-16">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-    </div>
-
     <!-- Empty State -->
     <div id="empty-state" class="hidden text-center py-16">
         <i class="fas fa-folder-open text-6xl text-gray-400 mb-6"></i>
@@ -154,6 +147,51 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Participants Modal -->
+<div id="participantsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-auto my-8 transform transition-all">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Project Participants</h2>
+                <button onclick="hideParticipantsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="participantsList" class="space-y-4">
+                <!-- Participants will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Join Request Modal -->
+<div id="join-request-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Join Project Request</h3>
+            <div class="mb-4">
+                <label for="join-message" class="block text-sm font-medium text-gray-700">Message (optional)</label>
+                <textarea id="join-message" 
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
+                          rows="3" 
+                          placeholder="Why do you want to join this project?"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeJoinRequestModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    Cancel
+                </button>
+                <button onclick="submitJoinRequest()" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Send Request
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -336,12 +374,10 @@
 
     // Function to load projects with authentication
     async function loadProjects() {
-        const loadingState = document.getElementById('loading-state');
         const emptyState = document.getElementById('empty-state');
         const ongoingContainer = document.getElementById('ongoing-projects');
         const upcomingContainer = document.getElementById('upcoming-projects');
         
-        loadingState.classList.remove('hidden');
         ongoingContainer.innerHTML = '';
         upcomingContainer.innerHTML = '';
         
@@ -363,7 +399,6 @@
             renderProjects(data.projects);
         } catch (error) {
             console.error('Error loading projects:', error);
-            loadingState.classList.add('hidden');
             showToast('Failed to load projects', 'error');
         }
     }
@@ -463,7 +498,7 @@
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                ${dateLabel}
+                                ${dateLabel}: ${formattedDate}
                             </div>
                             <div class="flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -483,7 +518,14 @@
                     </div>
                     
                     <!-- Action Buttons Section -->
-                    <div class="flex justify-end items-center mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <button onclick="showParticipants('${project._id}')" 
+                                class="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            View Participants
+                        </button>
                         ${isAdmin ? `
                             <div class="flex gap-3">
                                 <button onclick="editProject('${project._id}')" 
@@ -913,6 +955,179 @@
                 document.body.removeChild(toast);
             }, 300);
         }, 3000);
+    }
+
+    // Add functions for participants modal
+    async function showParticipants(projectId) {
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch project details');
+            }
+            
+            const project = await response.json();
+            const participantsList = document.getElementById('participantsList');
+            
+            // Clear previous content
+            participantsList.innerHTML = '';
+            
+            // Add admin first
+            participantsList.innerHTML += `
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <img src="${project.admin.profileImage || '/placeholder/placeholder.webp'}" 
+                             alt="${project.admin.name}" 
+                             class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                             onerror="this.src='/placeholder/placeholder.webp'">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-medium text-gray-900 dark:text-white">${project.admin.name}</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    Admin
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">${project.admin.email}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add participants
+            project.participants.forEach(participant => {
+                participantsList.innerHTML += `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <img src="${participant.profileImage || '/placeholder/placeholder.webp'}" 
+                                 alt="${participant.name}" 
+                                 class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                                 onerror="this.src='/placeholder/placeholder.webp'">
+                            <div>
+                                <span class="font-medium text-gray-900 dark:text-white">${participant.name}</span>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${participant.email}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Show modal
+            const modal = document.getElementById('participantsModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        } catch (error) {
+            console.error('Error fetching participants:', error);
+            showToast('Failed to fetch participants', 'error');
+        }
+    }
+
+    function hideParticipantsModal() {
+        const modal = document.getElementById('participantsModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
+    let currentProjectId = null;
+
+    function showParticipants(projectId) {
+        currentProjectId = projectId;
+        const modal = document.getElementById('participantsModal');
+        const participantsList = document.getElementById('participantsList');
+        
+        // Fetch project details
+        fetch(`/api/projects/${projectId}`)
+            .then(response => response.json())
+            .then(project => {
+                participantsList.innerHTML = `
+                    <div class="mb-4">
+                        <div class="flex items-center space-x-3">
+                            <img src="${project.admin.profileImage || '/images/placeholder.webp'}" 
+                                 alt="${project.admin.name}" 
+                                 class="w-10 h-10 rounded-full border-2 border-gray-200">
+                            <div>
+                                <p class="font-medium text-gray-900">${project.admin.name}</p>
+                                <span class="text-sm text-blue-600">Admin</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        ${project.participants
+                            .filter(p => p._id !== project.admin._id)
+                            .map(p => `
+                                <div class="flex items-center space-x-3">
+                                    <img src="${p.profileImage || '/images/placeholder.webp'}" 
+                                         alt="${p.name}" 
+                                         class="w-8 h-8 rounded-full border border-gray-200">
+                                    <p class="text-sm text-gray-900">${p.name}</p>
+                                </div>
+                            `).join('')}
+                    </div>
+                `;
+            })
+            .catch(error => {
+                console.error('Error fetching project details:', error);
+                participantsList.innerHTML = '<p class="text-red-600">Error loading participants</p>';
+            });
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeParticipantsModal() {
+        document.getElementById('participantsModal').classList.add('hidden');
+        currentProjectId = null;
+    }
+
+    function sendJoinRequest(projectId) {
+        currentProjectId = projectId;
+        document.getElementById('join-request-modal').classList.remove('hidden');
+    }
+
+    function closeJoinRequestModal() {
+        document.getElementById('join-request-modal').classList.add('hidden');
+        document.getElementById('join-message').value = '';
+        currentProjectId = null;
+    }
+
+    function submitJoinRequest() {
+        const message = document.getElementById('join-message').value;
+        
+        fetch(`/api/projects/${currentProjectId}/join-request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+                closeJoinRequestModal();
+            } else {
+                throw new Error('Failed to send join request');
+            }
+        })
+        .catch(error => {
+            console.error('Error sending join request:', error);
+            alert('Failed to send join request. Please try again.');
+        });
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const participantsModal = document.getElementById('participantsModal');
+        const joinRequestModal = document.getElementById('join-request-modal');
+        
+        if (event.target === participantsModal) {
+            closeParticipantsModal();
+        }
+        if (event.target === joinRequestModal) {
+            closeJoinRequestModal();
+        }
     }
 </script>
 

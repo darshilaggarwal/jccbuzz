@@ -1,19 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const Project = require('../models/Project');
-const userModel = require('../models/user');
+const User = require('../models/user');
+const Notification = require('../models/notification');
 const { createNotification } = require('../utils/notifications');
 const { isLoggedIn } = require('../index.js');
-
 
 // Get all projects
 router.get('/', async (req, res) => {
     try {
         const projects = await Project.find()
-            .populate('admin', 'name username profileImage')
-            .populate('participants', 'name username profileImage')
+            .populate('admin', 'name email profileImage')
+            .populate('participants', 'name email profileImage')
+            .populate('joinRequests.user', 'name email profileImage')
             .sort({ createdAt: -1 });
-
         res.json({ projects });
     } catch (error) {
         console.error('Error fetching projects:', error);
@@ -24,156 +24,93 @@ router.get('/', async (req, res) => {
 // Create a new project
 router.post('/', async (req, res) => {
     try {
-        const {
-            title,
-            type,
-            startDate,
-            description,
-            techStack,
-            githubLink,
-            maxParticipants
-        } = req.body;
-
-        // Log the request data for debugging
-        console.log('Project creation request:', {
-            title,
-            type,
-            startDate,
-            description,
-            techStack,
-            githubLink,
-            maxParticipants,
-            user: req.user
-        });
-
+        const { title, description, type, maxParticipants, techStack, githubLink, startDate } = req.body;
+        
         // Validate required fields
-        if (!title || !description || !techStack || !maxParticipants) {
-            return res.status(400).json({ 
-                message: 'Missing required fields',
-                details: {
-                    title: !title,
-                    description: !description,
-                    techStack: !techStack,
-                    maxParticipants: !maxParticipants
-                }
-            });
+        if (!title || !description || !type || !maxParticipants || !techStack) {
+            return res.status(400).json({ message: 'Missing required fields' });
         }
 
         // Validate project type
         if (!['ongoing', 'upcoming'].includes(type)) {
-            return res.status(400).json({ message: 'Invalid project type. Must be either "ongoing" or "upcoming"' });
+            return res.status(400).json({ message: 'Invalid project type' });
         }
 
         // Validate start date for upcoming projects
-        if (type === 'upcoming') {
-            if (!startDate) {
-                return res.status(400).json({ message: 'Start date is required for upcoming projects' });
-            }
-            const startDateObj = new Date(startDate);
-            if (isNaN(startDateObj.getTime())) {
-                return res.status(400).json({ message: 'Invalid start date format' });
-            }
-            if (startDateObj < new Date()) {
-                return res.status(400).json({ message: 'Start date must be in the future for upcoming projects' });
-            }
+        if (type === 'upcoming' && !startDate) {
+            return res.status(400).json({ message: 'Start date is required for upcoming projects' });
         }
 
-        // Validate max participants
-        if (maxParticipants < 1) {
-            return res.status(400).json({ message: 'Maximum participants must be at least 1' });
-        }
-
-        // Get the user from the database using email
-        const user = await userModel.findOne({ email: req.user.email });
-        if (!user) {
-            console.error('User not found in database:', req.user.email);
-            return res.status(401).json({ message: 'User not found' });
-        }
-
-        // Create the project
+        // Create project
         const project = new Project({
             title,
-            type,
-            startDate: type === 'upcoming' ? startDate : null,
             description,
-            techStack: Array.isArray(techStack) ? techStack : techStack.split(',').map(tech => tech.trim()),
-            githubLink: githubLink || '',
+            type,
             maxParticipants,
-            admin: user._id,
-            participants: [user._id]
+            techStack: Array.isArray(techStack) ? techStack : techStack.split(',').map(tech => tech.trim()),
+            githubLink,
+            startDate: type === 'upcoming' ? startDate : new Date(),
+            admin: req.user._id,
+            participants: [req.user._id]
         });
 
-        // Validate the project before saving
-        const validationError = project.validateSync();
-        if (validationError) {
-            console.error('Project validation error:', validationError);
-            return res.status(400).json({ 
-                message: 'Project validation failed',
-                details: validationError.errors
-            });
-        }
-
-        // Save the project
         await project.save();
-        console.log('Project created successfully:', project._id);
-
-        // Populate the response with user details
-        const populatedProject = await Project.findById(project._id)
-            .populate('admin', 'name username profileImage')
-            .populate('participants', 'name username profileImage');
-
-        res.status(201).json(populatedProject);
+        res.status(201).json(project);
     } catch (error) {
         console.error('Error creating project:', error);
-        res.status(500).json({ 
-            message: 'Error creating project',
-            error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        res.status(500).json({ message: 'Error creating project' });
     }
 });
 
-// Request to join a project
+// Send join request
 router.post('/:projectId/join-request', async (req, res) => {
     try {
-        const project = await Project.findById(req.params.projectId);
-        
+        const project = await Project.findById(req.params.projectId)
+            .populate('admin', 'name email profileImage')
+            .populate('participants', 'name email profileImage');
+
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         // Check if user is already a participant
-        if (project.participants.includes(req.user._id)) {
-            return res.status(400).json({ message: 'You are already a participant in this project' });
+        if (project.participants.some(p => p._id.toString() === req.user._id.toString())) {
+            return res.status(400).json({ message: 'You are already a participant' });
         }
 
-        // Check if user has already sent a request
+        // Check if project is full
+        if (project.participants.length >= project.maxParticipants) {
+            return res.status(400).json({ message: 'Project is full' });
+        }
+
+        // Check if user already has a pending request
         const existingRequest = project.joinRequests.find(
-            request => request.user.equals(req.user._id) && request.status === 'pending'
+            request => request.user.toString() === req.user._id.toString() && request.status === 'pending'
         );
-        if (existingRequest) {
-            return res.status(400).json({ message: 'You have already sent a join request' });
-        }
 
-        if (!project.canJoin(req.user._id)) {
-            return res.status(400).json({ message: 'Cannot join this project' });
+        if (existingRequest) {
+            return res.status(400).json({ message: 'You already have a pending request' });
         }
 
         // Add join request
         project.joinRequests.push({
             user: req.user._id,
-            status: 'pending'
+            status: 'pending',
+            message: req.body.message || 'I would like to join this project'
         });
 
         await project.save();
 
         // Create notification for project admin
         await createNotification({
-            recipient: project.admin,
-            sender: req.user._id,
+            recipient: project.admin._id,
             type: 'project_join_request',
-            text: 'requested to join your project',
-            project: project._id
+            title: 'New Project Join Request',
+            message: `${req.user.name} wants to join your project "${project.title}"`,
+            data: {
+                projectId: project._id,
+                requestId: project.joinRequests[project.joinRequests.length - 1]._id
+            }
         });
 
         res.json({ message: 'Join request sent successfully' });
@@ -184,22 +121,21 @@ router.post('/:projectId/join-request', async (req, res) => {
 });
 
 // Handle join request (accept/reject)
-router.post('/:projectId/join-request/:requestId', async (req, res) => {
+router.put('/:projectId/join-request/:requestId', async (req, res) => {
     try {
-        const project = await Project.findById(req.params.projectId);
-        
+        const { status } = req.body;
+        const project = await Project.findById(req.params.projectId)
+            .populate('admin', 'name email profileImage')
+            .populate('participants', 'name email profileImage')
+            .populate('joinRequests.user', 'name email profileImage');
+
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         // Check if user is project admin
-        if (!project.admin.equals(req.user._id)) {
-            return res.status(403).json({ message: 'Not authorized to handle join requests' });
-        }
-
-        const { status } = req.body;
-        if (!['accepted', 'rejected'].includes(status)) {
-            return res.status(400).json({ message: 'Invalid status' });
+        if (project.admin._id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Only project admin can handle join requests' });
         }
 
         const request = project.joinRequests.id(req.params.requestId);
@@ -207,22 +143,47 @@ router.post('/:projectId/join-request/:requestId', async (req, res) => {
             return res.status(404).json({ message: 'Join request not found' });
         }
 
-        const success = project.handleJoinRequest(request.user, status);
-        if (!success) {
-            return res.status(400).json({ message: 'Failed to handle join request' });
+        if (request.status !== 'pending') {
+            return res.status(400).json({ message: 'This request has already been handled' });
+        }
+
+        // Update request status
+        request.status = status;
+        request.respondedAt = new Date();
+
+        if (status === 'accepted') {
+            // Check if project is still not full
+            if (project.participants.length >= project.maxParticipants) {
+                return res.status(400).json({ message: 'Project is now full' });
+            }
+
+            // Add user to participants
+            project.participants.push(request.user._id);
+
+            // Create notification for accepted user
+            await createNotification({
+                recipient: request.user._id,
+                type: 'project_join_accepted',
+                title: 'Project Join Request Accepted',
+                message: `Your request to join "${project.title}" has been accepted`,
+                data: {
+                    projectId: project._id
+                }
+            });
+        } else {
+            // Create notification for rejected user
+            await createNotification({
+                recipient: request.user._id,
+                type: 'project_join_rejected',
+                title: 'Project Join Request Rejected',
+                message: `Your request to join "${project.title}" has been rejected`,
+                data: {
+                    projectId: project._id
+                }
+            });
         }
 
         await project.save();
-
-        // Create notification for the user who requested to join
-        await createNotification({
-            recipient: request.user,
-            sender: req.user._id,
-            type: status === 'accepted' ? 'project_join_accepted' : 'project_join_rejected',
-            text: status === 'accepted' ? 'accepted your request to join their project' : 'rejected your request to join their project',
-            project: project._id
-        });
-
         res.json({ message: `Join request ${status} successfully` });
     } catch (error) {
         console.error('Error handling join request:', error);
@@ -234,9 +195,9 @@ router.post('/:projectId/join-request/:requestId', async (req, res) => {
 router.get('/:projectId', async (req, res) => {
     try {
         const project = await Project.findById(req.params.projectId)
-            .populate('admin', 'name username profileImage')
-            .populate('participants', 'name username profileImage')
-            .populate('joinRequests.user', 'name username profileImage');
+            .populate('admin', 'name email profileImage')
+            .populate('participants', 'name email profileImage')
+            .populate('joinRequests.user', 'name email profileImage');
 
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
@@ -244,109 +205,60 @@ router.get('/:projectId', async (req, res) => {
 
         res.json(project);
     } catch (error) {
-        console.error('Error fetching project details:', error);
-        res.status(500).json({ message: 'Error fetching project details' });
+        console.error('Error fetching project:', error);
+        res.status(500).json({ message: 'Error fetching project' });
     }
 });
 
-// Update project details
-router.put('/:id', isLoggedIn, async (req, res) => {
+// Update project
+router.put('/:projectId', async (req, res) => {
     try {
-        const project = await Project.findById(req.params.id).populate('admin');
-        
+        const project = await Project.findById(req.params.projectId);
+
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
-        
-        // Check if the user is the admin of the project
-        if (project.admin.email !== req.user.email) {
-            return res.status(403).json({ message: 'You are not authorized to update this project' });
+
+        // Check if user is project admin
+        if (project.admin.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Only project admin can update project' });
         }
-        
-        const {
-            title,
-            type,
-            description,
-            techStack,
-            maxParticipants,
-            githubLink,
-            startDate
-        } = req.body;
-        
-        // Validate required fields
-        if (!title || !type || !description || !techStack || !maxParticipants) {
-            return res.status(400).json({ message: 'Missing required fields' });
-        }
-        
-        // Validate project type
-        if (!['ongoing', 'upcoming'].includes(type)) {
-            return res.status(400).json({ message: 'Invalid project type' });
-        }
-        
-        // Validate start date for upcoming projects
-        if (type === 'upcoming') {
-            if (!startDate) {
-                return res.status(400).json({ message: 'Start date is required for upcoming projects' });
-            }
-            
-            const startDateObj = new Date(startDate);
-            if (isNaN(startDateObj.getTime())) {
-                return res.status(400).json({ message: 'Invalid start date format' });
-            }
-            
-            if (startDateObj < new Date()) {
-                return res.status(400).json({ message: 'Start date must be in the future' });
-            }
-            
-            project.startDate = startDateObj;
-        } else {
-            project.startDate = new Date();
-        }
-        
-        // Update project fields
-        project.title = title;
-        project.type = type;
-        project.description = description;
-        project.techStack = Array.isArray(techStack) ? techStack : techStack.split(',').map(tech => tech.trim());
-        project.maxParticipants = maxParticipants;
-        project.githubLink = githubLink || '';
-        
-        // Validate the updated project
-        const validationError = project.validateSync();
-        if (validationError) {
-            return res.status(400).json({ message: validationError.message });
-        }
-        
+
+        const { title, description, type, maxParticipants, techStack, githubLink, startDate } = req.body;
+
+        // Update fields
+        if (title) project.title = title;
+        if (description) project.description = description;
+        if (type) project.type = type;
+        if (maxParticipants) project.maxParticipants = maxParticipants;
+        if (techStack) project.techStack = Array.isArray(techStack) ? techStack : techStack.split(',').map(tech => tech.trim());
+        if (githubLink !== undefined) project.githubLink = githubLink;
+        if (startDate) project.startDate = startDate;
+
         await project.save();
-        
-        // Populate the response with user details
-        await project.populate('admin', 'name email profilePicture');
-        
-        res.status(200).json(project);
+        res.json(project);
     } catch (error) {
         console.error('Error updating project:', error);
         res.status(500).json({ message: 'Error updating project' });
     }
 });
 
-// Delete a project
-router.delete('/:id', isLoggedIn, async (req, res) => {
+// Delete project
+router.delete('/:projectId', async (req, res) => {
     try {
-        const project = await Project.findById(req.params.id).populate('admin');
-        
+        const project = await Project.findById(req.params.projectId);
+
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
-        
-        // Check if the user is the admin of the project
-        if (project.admin.email !== req.user.email) {
-            return res.status(403).json({ message: 'You are not authorized to delete this project' });
+
+        // Check if user is project admin
+        if (project.admin.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Only project admin can delete project' });
         }
-        
-        // Use findByIdAndDelete instead of project.remove
-        await Project.findByIdAndDelete(req.params.id);
-        
-        res.status(200).json({ message: 'Project deleted successfully' });
+
+        await project.remove();
+        res.json({ message: 'Project deleted successfully' });
     } catch (error) {
         console.error('Error deleting project:', error);
         res.status(500).json({ message: 'Error deleting project' });

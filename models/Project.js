@@ -3,50 +3,73 @@ const mongoose = require('mongoose');
 const projectSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: [true, 'Project title is required'],
-        trim: true
+        required: [true, 'Title is required'],
+        trim: true,
+        maxlength: [100, 'Title cannot be more than 100 characters']
+    },
+    description: {
+        type: String,
+        required: [true, 'Description is required'],
+        trim: true,
+        maxlength: [1000, 'Description cannot be more than 1000 characters']
     },
     type: {
         type: String,
         required: [true, 'Project type is required'],
-        enum: ['ongoing', 'upcoming'],
-        default: 'ongoing'
+        enum: {
+            values: ['ongoing', 'upcoming'],
+            message: 'Project type must be either ongoing or upcoming'
+        }
     },
     startDate: {
         type: Date,
-        required: function() {
-            return this.type === 'upcoming';
+        required: [true, 'Start date is required'],
+        validate: {
+            validator: function(v) {
+                if (this.type === 'upcoming') {
+                    return v > new Date();
+                }
+                return true;
+            },
+            message: 'Start date must be in the future for upcoming projects'
         }
-    },
-    description: {
-        type: String,
-        required: [true, 'Project description is required'],
-        trim: true
     },
     techStack: {
         type: [String],
-        required: [true, 'At least one technology is required'],
+        required: [true, 'Tech stack is required'],
         validate: {
             validator: function(v) {
-                return v && v.length > 0 && v.every(tech => tech.trim().length > 0);
+                return v.length > 0;
             },
-            message: 'At least one technology is required'
+            message: 'At least one technology must be specified'
         }
     },
     githubLink: {
         type: String,
         trim: true,
-        default: ''
+        validate: {
+            validator: function(v) {
+                if (!v) return true;
+                return /^https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+$/.test(v);
+            },
+            message: 'Invalid GitHub repository URL'
+        }
+    },
+    maxParticipants: {
+        type: Number,
+        required: [true, 'Maximum number of participants is required'],
+        min: [1, 'Maximum participants must be at least 1'],
+        validate: {
+            validator: function(v) {
+                return v >= this.participants.length;
+            },
+            message: 'Maximum participants cannot be less than current number of participants'
+        }
     },
     admin: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
-    },
-    maxParticipants: {
-        type: Number,
-        required: [true, 'Maximum participants is required'],
-        min: [1, 'Maximum participants must be at least 1']
+        required: [true, 'Project admin is required']
     },
     participants: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -55,28 +78,32 @@ const projectSchema = new mongoose.Schema({
     joinRequests: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
+            ref: 'User',
+            required: true
         },
         status: {
             type: String,
             enum: ['pending', 'accepted', 'rejected'],
             default: 'pending'
         },
+        message: {
+            type: String,
+            trim: true,
+            maxlength: [200, 'Message cannot be more than 200 characters']
+        },
         createdAt: {
             type: Date,
             default: Date.now
-        }
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+        },
+        respondedAt: Date
+    }]
 }, {
     timestamps: true
 });
 
-// Index for efficient queries
-projectSchema.index({ type: 1, createdAt: -1 });
+// Indexes for better query performance
+projectSchema.index({ title: 'text', description: 'text' });
+projectSchema.index({ type: 1, startDate: 1 });
 projectSchema.index({ admin: 1 });
 projectSchema.index({ participants: 1 });
 
@@ -85,7 +112,7 @@ projectSchema.virtual('isFull').get(function() {
     return this.participants.length >= this.maxParticipants;
 });
 
-// Method to check if a user can join
+// Method to check if a user can join the project
 projectSchema.methods.canJoin = function(userId) {
     return !this.isFull && 
            !this.participants.includes(userId) && 
@@ -94,40 +121,13 @@ projectSchema.methods.canJoin = function(userId) {
            );
 };
 
-// Method to add a participant
-projectSchema.methods.addParticipant = function(userId) {
-    if (!this.isFull && !this.participants.includes(userId)) {
-        this.participants.push(userId);
-        return true;
+// Pre-save middleware to ensure admin is always a participant
+projectSchema.pre('save', function(next) {
+    if (!this.participants.includes(this.admin)) {
+        this.participants.push(this.admin);
     }
-    return false;
-};
-
-// Method to remove a participant
-projectSchema.methods.removeParticipant = function(userId) {
-    const index = this.participants.indexOf(userId);
-    if (index > -1) {
-        this.participants.splice(index, 1);
-        return true;
-    }
-    return false;
-};
-
-// Method to handle join request
-projectSchema.methods.handleJoinRequest = function(userId, status) {
-    const request = this.joinRequests.find(req => 
-        req.user.equals(userId) && req.status === 'pending'
-    );
-    
-    if (request) {
-        request.status = status;
-        if (status === 'accepted') {
-            return this.addParticipant(userId);
-        }
-        return true;
-    }
-    return false;
-};
+    next();
+});
 
 const Project = mongoose.model('Project', projectSchema);
 

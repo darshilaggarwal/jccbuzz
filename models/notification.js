@@ -4,81 +4,66 @@ const notificationSchema = new mongoose.Schema({
     recipient: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
-    },
-    sender: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        required: [true, 'Recipient is required']
     },
     type: {
         type: String,
-        required: true,
-        enum: ['project_join_request', 'project_join_accepted', 'project_join_rejected', 'like', 'comment', 'follow', 'reply', 'comment_like', 'story_view', 'mention', 'new_post', 'followAccepted', 'followRequest']
+        required: [true, 'Notification type is required'],
+        enum: {
+            values: [
+                'project_join_request',
+                'project_join_accepted',
+                'project_join_rejected',
+                'project_created',
+                'project_updated',
+                'project_deleted'
+            ],
+            message: 'Invalid notification type'
+        }
     },
-    text: {
+    title: {
         type: String,
-        required: true
+        required: [true, 'Title is required'],
+        trim: true,
+        maxlength: [100, 'Title cannot be more than 100 characters']
     },
-    project: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Project'
+    message: {
+        type: String,
+        required: [true, 'Message is required'],
+        trim: true,
+        maxlength: [200, 'Message cannot be more than 200 characters']
     },
-    post: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Post'
-    },
-    comment: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Comment'
-    },
-    story: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Story'
+    data: {
+        projectId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Project'
+        },
+        requestId: {
+            type: mongoose.Schema.Types.ObjectId
+        }
     },
     read: {
         type: Boolean,
         default: false
-    }
+    },
+    readAt: Date
 }, {
     timestamps: true
 });
 
-// Create a display text field for UI (renamed from text to displayMessage)
-notificationSchema.virtual('displayMessage').get(function() {
-    switch(this.type) {
-        case 'like':
-            return 'liked your post';
-        case 'comment':
-            return 'commented on your post';
-        case 'follow':
-            return 'started following you';
-        case 'reply':
-            return 'replied to your comment';
-        case 'comment_like':
-            return 'liked your comment';
-        case 'story_view':
-            return 'viewed your story';
-        case 'mention':
-            return 'mentioned you in a comment';
-        case 'new_post':
-            return 'shared a new post';
-        case 'followRequest':
-            return 'requested to follow you';
-        case 'followAccepted':
-            return 'accepted your follow request';
-        case 'project_join_request':
-            return 'requested to join your project';
-        case 'project_join_accepted':
-            return 'accepted your project join request';
-        case 'project_join_rejected':
-            return 'rejected your project join request';
-        default:
-            return 'interacted with your content';
+// Indexes for better query performance
+notificationSchema.index({ recipient: 1, read: 1, createdAt: -1 });
+notificationSchema.index({ type: 1 });
+
+// Method to mark notification as read
+notificationSchema.methods.markAsRead = async function() {
+    if (!this.read) {
+        this.read = true;
+        this.readAt = new Date();
+        await this.save();
     }
-});
+};
 
-notificationSchema.set('toJSON', { virtuals: true });
-notificationSchema.set('toObject', { virtuals: true });
+const Notification = mongoose.model('Notification', notificationSchema);
 
-module.exports = mongoose.model('Notification', notificationSchema); 
+module.exports = Notification; 
