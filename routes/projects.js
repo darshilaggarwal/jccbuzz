@@ -3,6 +3,8 @@ const router = express.Router();
 const Project = require('../models/Project');
 const userModel = require('../models/user');
 const { createNotification } = require('../utils/notifications');
+const { isLoggedIn } = require('../index.js');
+
 
 // Get all projects
 router.get('/', async (req, res) => {
@@ -248,50 +250,103 @@ router.get('/:projectId', async (req, res) => {
 });
 
 // Update project details
-router.put('/:projectId', async (req, res) => {
+router.put('/:id', isLoggedIn, async (req, res) => {
     try {
-        const project = await Project.findById(req.params.projectId);
+        const project = await Project.findById(req.params.id).populate('admin');
         
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
-
-        // Check if user is project admin
-        if (!project.admin.equals(req.user._id)) {
-            return res.status(403).json({ message: 'Not authorized to update project' });
+        
+        // Check if the user is the admin of the project
+        if (project.admin.email !== req.user.email) {
+            return res.status(403).json({ message: 'You are not authorized to update this project' });
         }
-
-        const updates = req.body;
-        Object.keys(updates).forEach(key => {
-            if (key !== 'admin' && key !== 'participants' && key !== 'joinRequests') {
-                project[key] = updates[key];
+        
+        const {
+            title,
+            type,
+            description,
+            techStack,
+            maxParticipants,
+            githubLink,
+            startDate
+        } = req.body;
+        
+        // Validate required fields
+        if (!title || !type || !description || !techStack || !maxParticipants) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+        
+        // Validate project type
+        if (!['ongoing', 'upcoming'].includes(type)) {
+            return res.status(400).json({ message: 'Invalid project type' });
+        }
+        
+        // Validate start date for upcoming projects
+        if (type === 'upcoming') {
+            if (!startDate) {
+                return res.status(400).json({ message: 'Start date is required for upcoming projects' });
             }
-        });
-
+            
+            const startDateObj = new Date(startDate);
+            if (isNaN(startDateObj.getTime())) {
+                return res.status(400).json({ message: 'Invalid start date format' });
+            }
+            
+            if (startDateObj < new Date()) {
+                return res.status(400).json({ message: 'Start date must be in the future' });
+            }
+            
+            project.startDate = startDateObj;
+        } else {
+            project.startDate = new Date();
+        }
+        
+        // Update project fields
+        project.title = title;
+        project.type = type;
+        project.description = description;
+        project.techStack = Array.isArray(techStack) ? techStack : techStack.split(',').map(tech => tech.trim());
+        project.maxParticipants = maxParticipants;
+        project.githubLink = githubLink || '';
+        
+        // Validate the updated project
+        const validationError = project.validateSync();
+        if (validationError) {
+            return res.status(400).json({ message: validationError.message });
+        }
+        
         await project.save();
-        res.json(project);
+        
+        // Populate the response with user details
+        await project.populate('admin', 'name email profilePicture');
+        
+        res.status(200).json(project);
     } catch (error) {
         console.error('Error updating project:', error);
         res.status(500).json({ message: 'Error updating project' });
     }
 });
 
-// Delete project
-router.delete('/:projectId', async (req, res) => {
+// Delete a project
+router.delete('/:id', isLoggedIn, async (req, res) => {
     try {
-        const project = await Project.findById(req.params.projectId);
+        const project = await Project.findById(req.params.id).populate('admin');
         
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
-
-        // Check if user is project admin
-        if (!project.admin.equals(req.user._id)) {
-            return res.status(403).json({ message: 'Not authorized to delete project' });
+        
+        // Check if the user is the admin of the project
+        if (project.admin.email !== req.user.email) {
+            return res.status(403).json({ message: 'You are not authorized to delete this project' });
         }
-
-        await project.remove();
-        res.json({ message: 'Project deleted successfully' });
+        
+        // Use findByIdAndDelete instead of project.remove
+        await Project.findByIdAndDelete(req.params.id);
+        
+        res.status(200).json({ message: 'Project deleted successfully' });
     } catch (error) {
         console.error('Error deleting project:', error);
         res.status(500).json({ message: 'Error deleting project' });
@@ -299,6 +354,7 @@ router.delete('/:projectId', async (req, res) => {
 });
 
 module.exports = router; 
+
 
 
 

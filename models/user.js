@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
     },
     profileImage: {
         type: String,
-        default: '/placeholder/image.png' // Updated to use image.png from the placeholder folder
+        default: '/placeholder/placeholder.webp' // Updated to use placeholder.webp
     },
     posts: [{
         type: mongoose.Schema.Types.ObjectId,
