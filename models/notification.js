@@ -13,8 +13,16 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['like', 'comment', 'follow', 'reply', 'comment_like', 'story_view', 'mention', 'new_post', 'followAccepted', 'followRequest'],
+        required: true,
+        enum: ['project_join_request', 'project_join_accepted', 'project_join_rejected', 'like', 'comment', 'follow', 'reply', 'comment_like', 'story_view', 'mention', 'new_post', 'followAccepted', 'followRequest']
+    },
+    text: {
+        type: String,
         required: true
+    },
+    project: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Project'
     },
     post: {
         type: mongoose.Schema.Types.ObjectId,
@@ -31,15 +39,13 @@ const notificationSchema = new mongoose.Schema({
     read: {
         type: Boolean,
         default: false
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timestamps: true
 });
 
-// Create a text field for display in UI
-notificationSchema.virtual('text').get(function() {
+// Create a display text field for UI (renamed from text to displayMessage)
+notificationSchema.virtual('displayMessage').get(function() {
     switch(this.type) {
         case 'like':
             return 'liked your post';
@@ -61,6 +67,12 @@ notificationSchema.virtual('text').get(function() {
             return 'requested to follow you';
         case 'followAccepted':
             return 'accepted your follow request';
+        case 'project_join_request':
+            return 'requested to join your project';
+        case 'project_join_accepted':
+            return 'accepted your project join request';
+        case 'project_join_rejected':
+            return 'rejected your project join request';
         default:
             return 'interacted with your content';
     }

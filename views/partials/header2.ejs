@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pinspire</title>
+    <title>JCCbuzz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper@8/swiper-bundle.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="icon" type="image/svg+xml" href="/placeholder/JccBUZZ logo.svg">
+    <link rel="shortcut icon" href="/placeholder/JccBUZZ logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/placeholder/JccBUZZ logo.svg">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -213,12 +216,17 @@
             cursor: pointer;
         }
 
+
+
         /* Like button transitions */
         .like-btn,
         .save-btn {
             transition: all 0.2s ease;
         }
 
+
+
+    
         .like-btn.text-red-500,
         .save-btn.text-blue-500 {
             transform: scale(1.1);
@@ -238,7 +246,7 @@
                 <!-- Mobile menu button -->
                 <div class="md:hidden">
                     <button type="button" onclick="toggleMobileMenu()" 
-                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 dark:text-gray-300">
+                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200">
                         <i class="fas fa-bars"></i>
                     </button>
                 </div>
@@ -247,22 +255,22 @@
                 <div class="hidden md:flex md:items-center md:space-x-6">
                     <% if (locals.user) { %>
                         <!-- Feed Icon -->
-                        <a href="/feed" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Feed">
+                        <a href="/feed" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full navbar-icon" title="Feed">
                             <i class="fas fa-home text-xl"></i>
                         </a>
                         
                         <!-- Explore Icon -->
-                        <a href="/explore" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Explore">
+                        <a href="/explore" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full navbar-icon" title="Explore">
                             <i class="fas fa-compass text-xl"></i>
                         </a>
                         
                         <!-- Saved Posts Icon -->
-                        <a href="/saved-posts" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Saved Posts">
+                        <a href="/saved-posts" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full navbar-icon" title="Saved Posts">
                             <i class="fas fa-bookmark text-xl"></i>
                         </a>
                         
                         <!-- Profile Icon -->
-                        <a href="/profile" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative" title="Profile">
+                        <a href="/profile" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full relative navbar-icon" title="Profile">
                             <i class="fas fa-user text-xl"></i>
                             <% if (locals.followRequestsCount && locals.followRequestsCount > 0) { %>
                                 <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5">
@@ -273,7 +281,7 @@
                         
                         <!-- Notifications Icon -->
                         <div class="relative">
-                            <button id="notificationBtn" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Notifications">
+                            <button id="notificationBtn" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full navbar-icon" title="Notifications">
                                 <i class="fas fa-bell text-xl"></i>
                                 <% if (locals.unreadNotifications && locals.unreadNotifications > 0) { %>
                                     <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5">
@@ -308,25 +316,33 @@
                         </div>
                         
                         <!-- Chat Icon -->
-                        <a href="/chats" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative" title="Messages">
+                        <a href="/chats" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full relative navbar-icon" title="Messages">
                             <i class="fas fa-paper-plane text-xl"></i>
                             <% if (locals.unreadMessages && locals.unreadMessages > 0) { %>
                                 <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5"><%= locals.unreadMessages %></span>
                             <% } %>
                         </a>
+
+                        <!-- Projects Icon -->
+                        <a href="/projects" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full navbar-icon" title="Projects">
+                            <i class="fas fa-project-diagram text-xl"></i>
+                            <% if (locals.projectRequests && locals.projectRequests > 0) { %>
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5"><%= locals.projectRequests %></span>
+                            <% } %>
+                        </a>
                         
                         <!-- Settings Dropdown -->
                         <div class="relative">
-                            <button id="settingsBtn" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white p-2 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Settings">
+                            <button id="settingsBtn" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 p-2 transition-colors rounded-full navbar-icon" title="Settings">
                                 <i class="fas fa-cog text-xl"></i>
                             </button>
                             
                             <!-- Settings Dropdown Panel -->
                             <div id="settingsPanel" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-md shadow-lg py-1 z-50">
-                                <a href="/edit-profile" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <a href="/edit-profile" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors">
                                     <i class="fas fa-user-edit mr-2"></i> Edit Profile
                                 </a>
-                                <a href="/follow-requests" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <a href="/follow-requests" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors">
                                     <i class="fas fa-user-check mr-2"></i> Follow Requests
                                     <% if (locals.user && locals.user.followRequests && locals.user.followRequests.length > 0) { %>
                                         <span class="inline-flex items-center justify-center ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
@@ -334,21 +350,21 @@
                                         </span>
                                     <% } %>
                                 </a>
-                                <!-- <button onclick="toggleDarkMode()" class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <!-- <button onclick="toggleDarkMode()" class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors">
                                     <i class="fas fa-moon mr-2 dark:hidden"></i>
                                     <i class="fas fa-sun mr-2 hidden dark:block"></i>
                                     <span class="dark:hidden">Dark Mode</span>
                                     <span class="hidden dark:block">Light Mode</span>
                                 </button> -->
                                 <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
-                                <a href="/logout" class="block px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <a href="/logout" class="block px-4 py-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
                                     <i class="fas fa-sign-out-alt mr-2"></i> Logout
                                 </a>
                             </div>
                         </div>
                     <% } else { %>
-                        <a href="/login" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">Login</a>
-                        <a href="/register" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">Register</a>
+                        <a href="/login" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200">Login</a>
+                        <a href="/register" class="text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200">Register</a>
                     <% } %>
                 </div>
             </div>
@@ -358,23 +374,27 @@
                 <div class="px-2 pt-2 pb-3 space-y-1">
                     <% if (locals.user) { %>
                         <div class="grid grid-cols-3 gap-2 py-2">
-                            <a href="/feed" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                            <a href="/feed" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 rounded-lg">
                                 <i class="fas fa-home text-xl mb-1"></i>
                                 <span class="text-xs">Feed</span>
                             </a>
-                            <a href="/explore" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                            <a href="/explore" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 rounded-lg">
                                 <i class="fas fa-compass text-xl mb-1"></i>
                                 <span class="text-xs">Explore</span>
                             </a>
-                            <a href="/profile" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                            <a href="/profile" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 rounded-lg">
                                 <i class="fas fa-user text-xl mb-1"></i>
                                 <span class="text-xs">Profile</span>
                             </a>
-                            <a href="/notifications" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                            <a href="/notifications" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 rounded-lg">
                                 <i class="fas fa-bell text-xl mb-1"></i>
                                 <span class="text-xs">Alerts</span>
                             </a>
-                            <a href="/follow-requests" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                            <a href="/projects" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 rounded-lg">
+                                <i class="fas fa-project-diagram text-xl mb-1"></i>
+                                <span class="text-xs">Projects</span>
+                            </a>
+                            <a href="/follow-requests" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 rounded-lg">
                                 <i class="fas fa-user-check text-xl mb-1"></i>
                                 <span class="text-xs">Requests</span>
                                 <% if (locals.user && locals.user.followRequests && locals.user.followRequests.length > 0) { %>
@@ -383,18 +403,18 @@
                                     </span>
                                 <% } %>
                             </a>
-                            <a href="/edit-profile" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900 rounded-lg">
+                            <a href="/edit-profile" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 rounded-lg">
                                 <i class="fas fa-cog text-xl mb-1"></i>
                                 <span class="text-xs">Settings</span>
                             </a>
                         </div>
                         <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-                        <a href="/logout" class="block px-3 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
+                        <a href="/logout" class="block px-3 py-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-md transition-colors">
                             <i class="fas fa-sign-out-alt mr-2"></i> Logout
                         </a>
                     <% } else { %>
-                        <a href="/login" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900">Login</a>
-                        <a href="/register" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-900">Register</a>
+                        <a href="/login" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200">Login</a>
+                        <a href="/register" class="block px-3 py-2 rounded-md text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200">Register</a>
                     <% } %>
                 </div>
             </div>

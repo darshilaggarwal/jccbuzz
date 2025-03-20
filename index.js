@@ -11,6 +11,7 @@ const commentModel = require('./models/comment');
 const chatModel = require('./models/chat');
 const storyModel = require('./models/story');
 const notificationModel = require('./models/notification');
+const Project = require('./models/Project');
 const StudentVerification = require('./models/studentVerification');
 const LoginVerification = require('./models/loginVerification');
 const { sendOTPEmail } = require('./utils/emailSender');
@@ -722,18 +723,41 @@ function isLoggedIn(req, res, next) {
     if (!req.cookies.token || req.cookies.token === "") {
         console.log('No authentication token found, redirecting to login');
         return res.redirect("/login");
-    } 
-    
+    }
+
     try {
         let data = jwt.verify(req.cookies.token, JWT_SECRET);
-        req.user = data;
-        console.log('User authenticated via JWT');
-        next();
+        // First try to find the user by email
+        userModel.findOne({ email: data.email })
+            .then(user => {
+                if (!user) {
+                    console.error('User not found in database');
+                    return res.redirect("/login");
+                }
+                // Set the user object with the correct structure
+                req.user = {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    username: user.username
+                };
+                console.log('User authenticated via JWT:', req.user);
+                next();
+            })
+            .catch(error => {
+                console.error('Error finding user:', error);
+                res.redirect("/login");
+            });
     } catch (error) {
         console.error('JWT verification error:', error);
         res.redirect("/login?error=session_expired");
     }
 }
+
+// Export the middleware
+module.exports = {
+    isLoggedIn
+};
 
 app.post("/update/:id", isLoggedIn, async (req, res) => {
     const id = req.params.id.trim();
@@ -2054,7 +2078,7 @@ app.post("/message/:messageId/react", isLoggedIn, async (req, res) => {
                     reaction
                 });
             }
-        }
+        }rr
 
         res.json({
             success: true,
@@ -3712,6 +3736,35 @@ app.get("/api/search-users", isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error("Error searching users:", error);
         res.status(500).json({ error: "Failed to search users" });
+    }
+});
+
+// Import project routes
+const projectRoutes = require('./routes/projects');
+
+// Apply isLoggedIn middleware to all project routes
+app.use('/api/projects', function(req, res, next) {
+    isLoggedIn(req, res, function() {
+        next();
+    });
+}, projectRoutes);
+
+// Projects page route
+app.get('/projects', isLoggedIn, async (req, res) => {
+    try {
+        // Count pending project requests for the current user
+        const pendingRequests = await Project.countDocuments({
+            'joinRequests.user': req.user._id,
+            'joinRequests.status': 'pending'
+        });
+
+        res.render('projects', {
+            user: req.user,
+            pendingRequests
+        });
+    } catch (error) {
+        console.error('Error loading projects page:', error);
+        res.status(500).render('error', { message: 'Error loading projects page' });
     }
 });
 

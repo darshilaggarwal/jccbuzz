@@ -1,0 +1,597 @@
+<%- include('partials/header2') %>
+
+<script>
+    // Add currentUserId variable
+    const currentUserId = '<%= user._id %>';
+</script>
+
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Projects Hub</h1>
+        <p class="text-gray-600 dark:text-gray-400">Discover and join exciting projects or create your own</p>
+    </div>
+
+    <!-- Create Project Button -->
+    <div class="mb-8">
+        <button onclick="showCreateProjectModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <i class="fas fa-plus mr-2"></i> Create New Project
+        </button>
+    </div>
+
+    <!-- Project Tabs -->
+    <div class="mb-8">
+        <div class="border-b border-gray-200 dark:border-gray-700">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTab('ongoing')" class="tab-button border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600 dark:text-blue-400 transition-all duration-300">
+                    <i class="fas fa-code-branch mr-2"></i> Ongoing Projects
+                </button>
+                <button onclick="switchTab('upcoming')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 transition-all duration-300">
+                    <i class="fas fa-calendar-alt mr-2"></i> Upcoming Projects
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div id="ongoing-projects" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Projects will be loaded here dynamically -->
+    </div>
+
+    <div id="upcoming-projects" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Projects will be loaded here dynamically -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="hidden">
+        <div class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden text-center py-12">
+        <i class="fas fa-folder-open text-6xl text-gray-400 mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Projects Found</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">Be the first to create a project!</p>
+        <button onclick="showCreateProjectModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+            Create Project
+        </button>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<div id="createProjectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-auto my-8 transform transition-all">
+        <div class="p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-4 sm:mb-6">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Create New Project</h2>
+                <button onclick="hideCreateProjectModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="createProjectForm" class="space-y-4 sm:space-y-6" novalidate>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    <!-- Project Title -->
+                    <div class="col-span-2">
+                        <label for="projectTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Project Title</label>
+                        <input type="text" id="projectTitle" name="title" required
+                            class="w-full px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                            placeholder="Enter project title">
+                        <div class="error-message text-red-500 text-sm mt-1 hidden" data-for="title"></div>
+                    </div>
+
+                    <!-- Project Type -->
+                    <div>
+                        <label for="projectType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Project Type</label>
+                        <select id="projectType" name="type" required
+                            class="w-full px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors">
+                            <option value="">Select type</option>
+                            <option value="ongoing">Ongoing Project</option>
+                            <option value="upcoming">Upcoming Project</option>
+                        </select>
+                        <div class="error-message text-red-500 text-sm mt-1 hidden" data-for="type"></div>
+                    </div>
+
+                    <!-- Start Date (for upcoming projects) -->
+                    <div id="startDateContainer" class="hidden">
+                        <label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Expected Start Date</label>
+                        <input type="date" id="startDate" name="startDate"
+                            class="w-full px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors">
+                        <div class="error-message text-red-500 text-sm mt-1 hidden" data-for="startDate"></div>
+                    </div>
+
+                    <!-- Max Participants -->
+                    <div>
+                        <label for="maxParticipants" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Maximum Participants</label>
+                        <input type="number" id="maxParticipants" name="maxParticipants" min="1" required
+                            class="w-full px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                            placeholder="Enter max participants">
+                        <div class="error-message text-red-500 text-sm mt-1 hidden" data-for="maxParticipants"></div>
+                    </div>
+
+                    <!-- GitHub Link -->
+                    <div id="githubLinkContainer" class="col-span-2">
+                        <label for="githubLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">GitHub Repository Link (Optional)</label>
+                        <input type="url" id="githubLink" name="githubLink"
+                            class="w-full px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                            placeholder="https://github.com/username/repo">
+                        <div class="error-message text-red-500 text-sm mt-1 hidden" data-for="githubLink"></div>
+                    </div>
+
+                    <!-- Tech Stack -->
+                    <div class="col-span-2">
+                        <label for="techStack" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Tech Stack</label>
+                        <input type="text" id="techStack" name="techStack" required
+                            class="w-full px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                            placeholder="e.g., React, Node.js, MongoDB">
+                        <div class="error-message text-red-500 text-sm mt-1 hidden" data-for="techStack"></div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="col-span-2">
+                        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Project Description</label>
+                        <textarea id="description" name="description" rows="4" required
+                            class="w-full px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                            placeholder="Describe your project..."></textarea>
+                        <div class="error-message text-red-500 text-sm mt-1 hidden" data-for="description"></div>
+                    </div>
+                </div>
+
+                <div id="formErrorMessage" class="text-red-500 text-sm hidden"></div>
+
+                <div class="flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-2 sm:space-y-0 mt-4 sm:mt-6">
+                    <button type="button" onclick="hideCreateProjectModal()"
+                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors">
+                        Create Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching functionality with animation
+    function switchTab(tab) {
+        const ongoingTab = document.querySelector('.tab-button:first-child');
+        const upcomingTab = document.querySelector('.tab-button:last-child');
+        const ongoingProjects = document.getElementById('ongoing-projects');
+        const upcomingProjects = document.getElementById('upcoming-projects');
+        
+        if (tab === 'ongoing') {
+            ongoingTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+            ongoingTab.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            upcomingTab.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+            upcomingTab.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            ongoingProjects.classList.remove('hidden');
+            upcomingProjects.classList.add('hidden');
+        } else {
+            upcomingTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+            upcomingTab.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            ongoingTab.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+            ongoingTab.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            upcomingProjects.classList.remove('hidden');
+            ongoingProjects.classList.add('hidden');
+        }
+    }
+
+    // Project creation modal functionality with animations
+    function showCreateProjectModal() {
+        const modal = document.getElementById('createProjectModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    }
+
+    function hideCreateProjectModal() {
+        const modal = document.getElementById('createProjectModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
+    // Update the project type change handler
+    document.getElementById('projectType').addEventListener('change', function() {
+        const startDateContainer = document.getElementById('startDateContainer');
+        const startDateInput = document.getElementById('startDate');
+
+        if (this.value === 'upcoming') {
+            if (startDateContainer) startDateContainer.classList.remove('hidden');
+            if (startDateInput) startDateInput.required = true;
+        } else {
+            if (startDateContainer) startDateContainer.classList.add('hidden');
+            if (startDateInput) startDateInput.required = false;
+        }
+    });
+
+    // Form validation and submission
+    document.getElementById('createProjectForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Clear previous errors
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(el => {
+            if (el) {
+                el.classList.add('hidden');
+                el.textContent = '';
+            }
+        });
+
+        const formErrorMessage = document.getElementById('formErrorMessage');
+        if (formErrorMessage) {
+            formErrorMessage.classList.add('hidden');
+        }
+        
+        // Get form data
+        const formData = new FormData(this);
+        const projectData = {
+            title: formData.get('title'),
+            type: formData.get('type'),
+            maxParticipants: parseInt(formData.get('maxParticipants')),
+            description: formData.get('description'),
+            techStack: formData.get('techStack').split(',').map(tech => tech.trim()).filter(tech => tech.length > 0),
+            githubLink: formData.get('githubLink') || ''
+        };
+
+        // Add start date for upcoming projects
+        if (projectData.type === 'upcoming') {
+            const startDate = formData.get('startDate');
+            if (!startDate) {
+                const errorEl = document.querySelector('.error-message[data-for="startDate"]');
+                if (errorEl) {
+                    errorEl.textContent = 'Start date is required for upcoming projects';
+                    errorEl.classList.remove('hidden');
+                }
+                return;
+            }
+            projectData.startDate = startDate;
+        } else {
+            projectData.startDate = new Date().toISOString(); // Set current date for ongoing projects
+        }
+
+        // Validate required fields
+        let hasErrors = false;
+        const requiredFields = ['title', 'type', 'description', 'techStack', 'maxParticipants'];
+        
+        requiredFields.forEach(field => {
+            if (!projectData[field] || (Array.isArray(projectData[field]) && projectData[field].length === 0)) {
+                const errorEl = document.querySelector(`.error-message[data-for="${field}"]`);
+                if (errorEl) {
+                    errorEl.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+                    errorEl.classList.remove('hidden');
+                }
+                hasErrors = true;
+            }
+        });
+
+        if (hasErrors) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(projectData)
+            });
+
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                // Handle validation errors
+                if (response.status === 400) {
+                    if (responseData.details) {
+                        Object.entries(responseData.details).forEach(([field, error]) => {
+                            const errorEl = document.querySelector(`.error-message[data-for="${field}"]`);
+                            if (errorEl) {
+                                errorEl.textContent = error.message || `${field} is invalid`;
+                                errorEl.classList.remove('hidden');
+                            }
+                        });
+                    } else if (formErrorMessage) {
+                        formErrorMessage.textContent = responseData.message;
+                        formErrorMessage.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                throw new Error(responseData.message || 'Failed to create project');
+            }
+
+            showToast('Project created successfully!', 'success');
+            hideCreateProjectModal();
+            this.reset();
+            loadProjects();
+        } catch (error) {
+            console.error('Error creating project:', error);
+            if (formErrorMessage) {
+                formErrorMessage.textContent = error.message || 'Failed to create project. Please try again.';
+                formErrorMessage.classList.remove('hidden');
+            }
+        }
+    });
+
+    // Load projects when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProjects();
+    });
+
+    // Function to load projects with authentication
+    async function loadProjects() {
+        const loadingState = document.getElementById('loading-state');
+        const emptyState = document.getElementById('empty-state');
+        const ongoingContainer = document.getElementById('ongoing-projects');
+        const upcomingContainer = document.getElementById('upcoming-projects');
+        
+        loadingState.classList.remove('hidden');
+        ongoingContainer.innerHTML = '';
+        upcomingContainer.innerHTML = '';
+        
+        try {
+            const response = await fetch('/api/projects', {
+                credentials: 'include' // Include credentials for authentication
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // Handle unauthorized error
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error('Failed to load projects');
+            }
+            
+            const data = await response.json();
+            renderProjects(data.projects);
+        } catch (error) {
+            console.error('Error loading projects:', error);
+            loadingState.classList.add('hidden');
+            showToast('Failed to load projects', 'error');
+        }
+    }
+
+    // Function to render projects
+    function renderProjects(projects) {
+        const ongoingProjects = projects.filter(p => p.type === 'ongoing');
+        const upcomingProjects = projects.filter(p => p.type === 'upcoming');
+        
+        const ongoingContainer = document.getElementById('ongoing-projects');
+        const upcomingContainer = document.getElementById('upcoming-projects');
+        
+        // Render ongoing projects
+        if (ongoingProjects.length === 0) {
+            ongoingContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <p class="text-gray-500 dark:text-gray-400">No ongoing projects yet</p>
+                </div>
+            `;
+        } else {
+            ongoingContainer.innerHTML = ongoingProjects.map(project => createProjectCard(project)).join('');
+        }
+        
+        // Render upcoming projects
+        if (upcomingProjects.length === 0) {
+            upcomingContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <p class="text-gray-500 dark:text-gray-400">No upcoming projects yet</p>
+                </div>
+            `;
+        } else {
+            upcomingContainer.innerHTML = upcomingProjects.map(project => createProjectCard(project)).join('');
+        }
+    }
+
+    // Function to create project card
+    function createProjectCard(project) {
+        const isAdmin = project.admin._id === currentUserId;
+        const isParticipant = project.participants.some(p => p._id === currentUserId);
+        const hasPendingRequest = project.joinRequests.some(r => r.user._id === currentUserId && r.status === 'pending');
+        
+        // Format dates properly
+        const projectDate = project.startDate ? new Date(project.startDate) : new Date();
+        const formattedDate = projectDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const dateLabel = project.type === 'ongoing' ? 'Posted on' : 'Expected to start on';
+        
+        return `
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">${project.title}</h3>
+                        <span class="px-3 py-1 text-sm rounded-full ${
+                            project.type === 'ongoing' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                        }">
+                            ${project.type.charAt(0).toUpperCase() + project.type.slice(1)}
+                        </span>
+                    </div>
+                    
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">${project.description}</p>
+                    
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tech Stack:</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${project.techStack.map(tech => `
+                                <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                    ${tech}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            ${dateLabel}: ${formattedDate}
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            ${project.participants.length}/${project.maxParticipants} participants
+                        </div>
+                    </div>
+                    
+                    ${project.githubLink ? `
+                        <a href="${project.githubLink}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mb-4">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            View on GitHub
+                        </a>
+                    ` : ''}
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <img src="${project.admin.profilePicture || '/images/default-avatar.png'}" 
+                                 alt="${project.admin.name}" 
+                                 class="w-8 h-8 rounded-full mr-2 object-cover"
+                                 onerror="this.src='/images/default-avatar.png'">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">${project.admin.name}</span>
+                        </div>
+                        
+                        ${isAdmin ? `
+                            <div class="flex gap-2">
+                                <button onclick="editProject('${project._id}')" 
+                                        class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                                    Edit
+                                </button>
+                                <button onclick="deleteProject('${project._id}')" 
+                                        class="px-3 py-1 text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                    Delete
+                                </button>
+                            </div>
+                        ` : isParticipant ? `
+                            <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                Participating
+                            </span>
+                        ` : hasPendingRequest ? `
+                            <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                Request Pending
+                            </span>
+                        ` : project.participants.length >= project.maxParticipants ? `
+                            <span class="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                Full
+                            </span>
+                        ` : `
+                            <button onclick="sendJoinRequest('${project._id}')" 
+                                    class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                                Join Project
+                            </button>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Add edit and delete project functions
+    async function editProject(projectId) {
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch project details');
+            }
+            
+            const project = await response.json();
+            // TODO: Implement edit project modal
+            showToast('Edit functionality coming soon!', 'info');
+        } catch (error) {
+            console.error('Error fetching project:', error);
+            showToast('Failed to fetch project details', 'error');
+        }
+    }
+
+    async function deleteProject(projectId) {
+        if (!confirm('Are you sure you want to delete this project?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to delete project');
+            }
+            
+            showToast('Project deleted successfully!', 'success');
+            loadProjects();
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            showToast('Failed to delete project', 'error');
+        }
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white transform transition-all duration-300 translate-y-full ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(() => {
+            toast.classList.remove('translate-y-full');
+        }, 10);
+        
+        // Remove toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-y-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+
+<%- include('partials/footer') %> 
