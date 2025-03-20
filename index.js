@@ -872,7 +872,25 @@ app.post("/post/:postId/like", isLoggedIn, async (req, res) => {
             
             // Create notification for post like
             if (post.user.toString() !== user._id.toString()) {
-                await createNotification(post.user, user._id, 'like', post._id);
+                try {
+                    const postOwner = await userModel.findById(post.user);
+                    const sender = await userModel.findById(user._id);
+                    const senderName = sender ? sender.name : 'Someone';
+                    
+                    await createNotification({
+                        recipient: post.user,
+                        sender: user._id,
+                        type: 'like',
+                        title: 'New Like',
+                        message: `${senderName} liked your post`,
+                        data: {
+                            postId: post._id
+                        }
+                    });
+                } catch (notifError) {
+                    console.error('Error creating like notification:', notifError);
+                    // Continue even if notification fails
+                }
             }
             
             return res.json({ likes: post.likes.length, isLiked: true });
@@ -976,7 +994,25 @@ app.post("/post/:postId/comment", isLoggedIn, async (req, res) => {
         
         // Create notification for comment
         if (post.user.toString() !== user._id.toString()) {
-            await createNotification(post.user, user._id, 'comment', post._id, comment._id);
+            try {
+                const sender = await userModel.findById(user._id);
+                const senderName = sender ? sender.name : 'Someone';
+                
+                await createNotification({
+                    recipient: post.user,
+                    sender: user._id,
+                    type: 'comment',
+                    title: 'New Comment',
+                    message: `${senderName} commented on your post`,
+                    data: {
+                        postId: post._id,
+                        commentId: comment._id
+                    }
+                });
+            } catch (notifError) {
+                console.error('Error creating comment notification:', notifError);
+                // Continue even if notification fails
+            }
         }
         
         // Check for mentions in the comment
@@ -995,7 +1031,25 @@ app.post("/post/:postId/comment", isLoggedIn, async (req, res) => {
                 // Don't notify yourself or the post owner (who already gets a comment notification)
                 if (mentionedUser._id.toString() !== user._id.toString() && 
                     mentionedUser._id.toString() !== post.user.toString()) {
-                    await createNotification(mentionedUser._id, user._id, 'mention', post._id, comment._id);
+                    try {
+                        const sender = await userModel.findById(user._id);
+                        const senderName = sender ? sender.name : 'Someone';
+                        
+                        await createNotification({
+                            recipient: mentionedUser._id,
+                            sender: user._id,
+                            type: 'mention',
+                            title: 'You were mentioned',
+                            message: `${senderName} mentioned you in a comment`,
+                            data: {
+                                postId: post._id,
+                                commentId: comment._id
+                            }
+                        });
+                    } catch (notifError) {
+                        console.error('Error creating mention notification:', notifError);
+                        // Continue even if notification fails
+                    }
                 }
             }
         }
@@ -1051,7 +1105,25 @@ app.post("/comment/:commentId/reply", isLoggedIn, async (req, res) => {
         if (comment.user.toString() !== user._id.toString()) {
             // Get the post for context
             const post = await postModel.findById(comment.post);
-            await createNotification(comment.user, user._id, 'reply', post._id, comment._id);
+            try {
+                const sender = await userModel.findById(user._id);
+                const senderName = sender ? sender.name : 'Someone';
+                
+                await createNotification({
+                    recipient: comment.user,
+                    sender: user._id,
+                    type: 'reply',
+                    title: 'New Reply',
+                    message: `${senderName} replied to your comment`,
+                    data: {
+                        postId: post._id,
+                        commentId: comment._id
+                    }
+                });
+            } catch (notifError) {
+                console.error('Error creating reply notification:', notifError);
+                // Continue even if notification fails
+            }
         }
         
         // Check for mentions in the reply
@@ -1099,7 +1171,25 @@ app.post("/comment/:commentId/like", isLoggedIn, async (req, res) => {
             if (comment.user.toString() !== user._id.toString()) {
                 // Get the post for context
                 const post = await postModel.findById(comment.post);
-                await createNotification(comment.user, user._id, 'comment_like', post._id, comment._id);
+                try {
+                    const sender = await userModel.findById(user._id);
+                    const senderName = sender ? sender.name : 'Someone';
+                    
+                    await createNotification({
+                        recipient: comment.user,
+                        sender: user._id,
+                        type: 'comment_like',
+                        title: 'Comment Liked',
+                        message: `${senderName} liked your comment`,
+                        data: {
+                            postId: post._id,
+                            commentId: comment._id
+                        }
+                    });
+                } catch (notifError) {
+                    console.error('Error creating comment like notification:', notifError);
+                    // Continue even if notification fails
+                }
             }
         }
 
@@ -1135,7 +1225,25 @@ app.post("/comment/:commentId/reply/:replyIndex/like", isLoggedIn, async (req, r
             if (reply.user.toString() !== user._id.toString()) {
                 // Get the post for context
                 const post = await postModel.findById(comment.post);
-                await createNotification(reply.user, user._id, 'reply_like', post._id, comment._id);
+                try {
+                    const sender = await userModel.findById(user._id);
+                    const senderName = sender ? sender.name : 'Someone';
+                    
+                    await createNotification({
+                        recipient: reply.user,
+                        sender: user._id,
+                        type: 'reply_like',
+                        title: 'Reply Liked',
+                        message: `${senderName} liked your reply`,
+                        data: {
+                            postId: post._id,
+                            commentId: comment._id
+                        }
+                    });
+                } catch (notifError) {
+                    console.error('Error creating reply like notification:', notifError);
+                    // Continue even if notification fails
+                }
             }
         }
 
@@ -2078,7 +2186,7 @@ app.post("/message/:messageId/react", isLoggedIn, async (req, res) => {
                     reaction
                 });
             }
-        }rr
+        }
 
         res.json({
             success: true,
@@ -2757,103 +2865,6 @@ app.get('/user/:userId/following', isLoggedIn, async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });
-
-// Function to create a notification
-async function createNotification(recipientId, senderId, type, postId = null, commentId = null, storyId = null) {
-    try {
-        // Skip notification if sender and recipient are the same
-        if (recipientId.toString() === senderId.toString()) {
-            return null;
-        }
-        
-        // Get recipient's notification settings
-        const recipient = await userModel.findById(recipientId);
-        if (!recipient) {
-            console.log(`Notification not created: Recipient ${recipientId} not found`);
-            return null;
-        }
-        
-        // Check notification preferences
-        if (recipient.notificationSettings) {
-            // Skip if user has disabled this notification type
-            if (type === 'like' && recipient.notificationSettings.likes === false) return null;
-            if ((type === 'comment' || type === 'comment_like' || type === 'reply' || type === 'reply_like') && recipient.notificationSettings.comments === false) return null;
-            if ((type === 'follow' || type === 'followAccepted') && recipient.notificationSettings.follows === false) return null;
-            if (type === 'new_post' && recipient.notificationSettings.postUpdates === false) return null;
-        }
-        
-        // Set proper notification text
-        let text = '';
-        switch (type) {
-            case 'like':
-                text = 'liked your post.';
-                break;
-            case 'comment':
-                text = 'commented on your post.';
-                break;
-            case 'comment_like':
-                text = 'liked your comment.';
-                break;
-            case 'reply':
-                text = 'replied to your comment.';
-                break;
-            case 'reply_like':
-                text = 'liked your reply.';
-                break;
-            case 'follow':
-                text = 'started following you.';
-                break;
-            case 'followAccepted':
-                text = 'accepted your follow request.';
-                break;
-            case 'new_post':
-                text = 'shared a new post.';
-                break;
-            case 'mention':
-                text = 'mentioned you in a post.';
-                break;
-            default:
-                text = 'interacted with your content.';
-        }
-        
-        const notification = new notificationModel({
-            recipient: recipientId,
-            sender: senderId,
-            type: type,
-            text: text,
-            post: postId,
-            comment: commentId,
-            story: storyId,
-            read: false,
-            createdAt: new Date()
-        });
-        
-        await notification.save();
-        
-        // Populate notification data for socket emission
-        const populatedNotification = await notificationModel.findById(notification._id)
-            .populate('sender', 'name username profileImage')
-            .populate({
-                path: 'post',
-                select: 'images',
-                populate: {
-                    path: 'images',
-                    select: 'url'
-                }
-            });
-        
-        // Emit socket event if recipient is online
-        if (io && global.connectedUsers && global.connectedUsers[recipientId]) {
-            const socketId = global.connectedUsers[recipientId];
-            io.to(socketId).emit('newNotification', { notification: populatedNotification });
-        }
-        
-        return notification;
-    } catch (error) {
-        console.error('Error creating notification:', error);
-        return null;
-    }
-}
 
 // Modify follow route to include notification
 app.post("/user/:username/follow", isLoggedIn, async (req, res) => {

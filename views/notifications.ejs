@@ -80,7 +80,7 @@
                             <div class="flex-shrink-0 mr-4">
                                 <div class="w-10 h-10 rounded-full <%= iconBgClass %> flex items-center justify-center shadow-sm">
                                     <i class="<%= iconClass %> text-lg"></i>
-                                </div>
+                                    </div>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between mb-1">
@@ -219,10 +219,10 @@
                 this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Marking...';
                 this.disabled = true;
                 
-                fetch(`/api/notifications/${notificationId}/read`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
+        fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
                     },
                     credentials: 'include'
                 })
@@ -259,7 +259,7 @@
                 // Only mark as read if it's unread
                 if (!isRead) {
                     fetch(`/api/notifications/${notificationId}/read`, {
-                        method: 'PUT',
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
@@ -277,12 +277,12 @@
                         this.setAttribute('data-read', 'true');
                         const markReadBtn = this.querySelector('.mark-read-btn');
                         if (markReadBtn) markReadBtn.remove();
-                    })
-                    .catch(error => {
-                        console.error('Error marking notification as read:', error);
-                    });
-                }
-                
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+    
                 // Navigate based on notification type (optional)
                 // You can add navigation logic here if you want notifications to link somewhere
             });
@@ -296,8 +296,8 @@
             this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Marking all as read...';
             this.disabled = true;
             
-            fetch('/api/notifications/read-all', {
-                method: 'PUT',
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
