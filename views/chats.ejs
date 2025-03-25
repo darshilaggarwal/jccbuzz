@@ -21,9 +21,14 @@
                     <%= unreadCount > 0 ? `(${unreadCount})` : '' %>
                 </span>
             </div>
-            <button id="newMessageBtn" class="text-blue-500 hover:text-blue-600">
-                <i class="fas fa-edit text-lg"></i>
-            </button>
+            <div class="flex items-center">
+                <a href="/groups" class="text-blue-500 hover:text-blue-600 mr-4">
+                    <i class="fas fa-users text-lg" title="Group Chats"></i>
+                </a>
+                <button id="newMessageBtn" class="text-blue-500 hover:text-blue-600">
+                    <i class="fas fa-edit text-lg"></i>
+                </button>
+            </div>
         </div>
         
         <!-- Search Bar -->

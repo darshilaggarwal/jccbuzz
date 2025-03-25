@@ -1,8 +1,14 @@
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb://127.0.0.1:27017/pinspire")
+// Ensure MongoDB connection is established
+if (mongoose.connection.readyState !== 1) {
+    mongoose.connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/pinspire")
+        .then(() => console.log("MongoDB connected successfully"))
+        .catch(err => console.error("MongoDB connection error:", err));
+}
 
-const userSchema = new mongoose.Schema({
+// Check if the model already exists before defining
+const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
     name: {
         type: String,
         required: true
@@ -76,10 +82,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
-});
+}));
 
 // Update middleware to work with findOneAndDelete and findByIdAndDelete
-userSchema.pre(['remove', 'findOneAndDelete', 'deleteOne', 'findOneAndDelete'], async function(next) {
+User.schema.pre(['remove', 'findOneAndDelete', 'deleteOne', 'findOneAndDelete'], async function(next) {
     try {
         // Get the document that's about to be deleted
         const doc = this.getQuery ? await this.model.findOne(this.getQuery()) : this;
@@ -106,4 +112,4 @@ userSchema.pre(['remove', 'findOneAndDelete', 'deleteOne', 'findOneAndDelete'], 
     }
 });
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = User; 

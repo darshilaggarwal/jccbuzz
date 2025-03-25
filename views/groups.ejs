@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0095f6',
+                        secondary: '#262626',
+                        'dark-hover': '#1a1a1a'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-black text-gray-900 dark:text-white">
+    <%- include('partials/navbar') %>
+
+    <div class="flex h-screen pt-16 bg-white dark:bg-black">
+        <!-- Left Sidebar - Groups List -->
+        <div class="w-[350px] border-r border-gray-200 dark:border-gray-800 flex flex-col">
+            <!-- Header -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                <h2 class="text-xl font-semibold">Group Chats</h2>
+                <button onclick="showCreateGroupModal()" class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                    <i class="fas fa-plus text-sm"></i>
+                    <span>New Group</span>
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Search groups..." 
+                           onkeyup="searchGroups(this.value)"
+                           class="w-full px-4 py-2 pl-10 bg-gray-100 dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- Groups List -->
+            <div class="flex-1 overflow-y-auto" id="groupsList">
+                <!-- Empty State -->
+                <div id="emptyGroupsState" class="hidden flex flex-col items-center justify-center h-full p-8 text-center">
+                    <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-users-slash text-4xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">No Group Chats Yet</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-xs">
+                        Create a new group chat to start messaging with multiple friends at once.
+                    </p>
+                    <button onclick="showCreateGroupModal()" 
+                            class="bg-primary hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+                        Create Your First Group
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Chat Header -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <img id="currentGroupAvatar" src="/images/default-group.png" alt="Group" class="w-full h-full rounded-full object-cover">
+                    </div>
+                    <div>
+                        <h3 id="currentGroupName" class="text-lg font-semibold">Select a group</h3>
+                        <span id="memberCount" class="text-sm text-gray-500 dark:text-gray-400"></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleSearch()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button onclick="toggleGroupInfo()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900" id="chatMessages">
+                <!-- Messages will be populated here -->
+            </div>
+
+            <!-- Message Input -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-800">
+                <div class="flex items-center gap-2">
+                    <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                        <i class="far fa-smile text-xl"></i>
+                    </button>
+                    <input type="text" 
+                           id="messageInput" 
+                           placeholder="Type a message..." 
+                           class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+                           onkeyup="handleTyping(event)">
+                    <label for="fileInput" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full cursor-pointer transition-colors">
+                        <i class="fas fa-paperclip text-xl"></i>
+                    </label>
+                    <input type="file" id="fileInput" class="hidden" onchange="handleFileUpload(event)">
+                    <button onclick="sendMessage()" class="bg-primary hover:bg-blue-600 text-white px-6 py-2 rounded-full transition-colors">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Group Info -->
+        <div id="groupInfoPanel" class="w-[350px] border-l border-gray-200 dark:border-gray-800 hidden">
+            <div class="p-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold">Group Info</h3>
+                    <button onclick="toggleGroupInfo()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Group Avatar -->
+                <div class="flex flex-col items-center mb-6">
+                    <div class="w-24 h-24 bg-gray-200 dark:bg-gray-800 rounded-full mb-2 overflow-hidden">
+                        <img id="groupAvatar" src="/images/default-group.png" class="w-full h-full object-cover">
+                    </div>
+                    <button onclick="uploadGroupAvatar()" class="text-primary hover:text-blue-600 text-sm">
+                        Change Group Photo
+                    </button>
+                </div>
+
+                <!-- Group Description -->
+                <div class="mb-6">
+                    <h4 class="font-medium mb-2">About</h4>
+                    <div id="groupDescription" class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-sm">
+                    </div>
+                </div>
+
+                <!-- Members Section -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-medium">Members</h4>
+                        <button onclick="showAddMemberModal()" class="text-primary hover:text-blue-600 text-sm">
+                            Add Members
+                        </button>
+                    </div>
+                    <div id="memberList" class="max-h-[300px] overflow-y-auto">
+                        <!-- Members will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Group Actions -->
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button onclick="leaveGroup()" class="w-full py-2 text-red-500 hover:text-red-600 font-medium">
+                        Leave Group
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white dark:bg-gray-900 rounded-xl w-[480px] max-h-[90vh] overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                <h3 class="text-xl font-semibold">Create New Group</h3>
+                <button onclick="closeCreateGroupModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-4">
+                <!-- Group Name Input -->
+                <div class="mb-4">
+                    <input type="text" 
+                           id="groupNameInput" 
+                           placeholder="Group Name" 
+                           class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+
+                <!-- User Search -->
+                <div class="mb-4">
+                    <div class="relative">
+                        <input type="text" 
+                               id="userSearchInput" 
+                               placeholder="Search users to add..." 
+                               onkeyup="searchUsersForGroup(this.value)"
+                               class="w-full px-4 py-2 pl-10 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Selectable Users List -->
+                <div id="selectableMembers" class="max-h-[300px] overflow-y-auto">
+                    <!-- Users will be populated here -->
+                </div>
+
+                <button onclick="createGroup()" class="w-full mt-4 bg-primary hover:bg-blue-600 text-white py-2 rounded-lg transition-colors">
+                    Create Group
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white dark:bg-gray-900 rounded-xl w-[480px] max-h-[90vh] overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                <h3 class="text-xl font-semibold">Add Members</h3>
+                <button onclick="closeAddMemberModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-4">
+                <div class="relative mb-4">
+                    <input type="text" 
+                           id="memberSearchInput" 
+                           placeholder="Search users..." 
+                           onkeyup="searchUsers(this.value)"
+                           class="w-full px-4 py-2 pl-10 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <div id="searchResults" class="max-h-[300px] overflow-y-auto">
+                    <!-- Search results will be populated here -->
+                </div>
+
+                <button onclick="addSelectedMembers()" class="w-full mt-4 bg-primary hover:bg-blue-600 text-white py-2 rounded-lg transition-colors">
+                    Add Selected Members
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentGroupId = null;
+        let currentUser = null;
+        let typingTimeout = null;
+        let emojiPicker = null;
+
+        // Initialize emoji picker
+        window.addEventListener('DOMContentLoaded', () => {
+            emojiPicker = new EmojiMart.Picker({
+                onEmojiSelect: (emoji) => {
+                    const input = document.getElementById('messageInput');
+                    input.value += emoji.native;
+                    input.focus();
+                }
+            });
+            document.getElementById('emojiPicker').appendChild(emojiPicker);
+        });
+
+        // Get current user info and initialize
+        fetch('/api/user/current')
+            .then(res => res.json())
+            .then(user => {
+                currentUser = user;
+                loadGroups();
+                socket.auth = { userId: user._id };
+                socket.connect();
+            });
+
+        // Enhanced group loading with unread counts
+        function loadGroups() {
+            fetch('/api/groups')
+                .then(res => res.json())
+                .then(groups => {
+                    updateEmptyState(groups);
+                    const groupsList = document.getElementById('groupsList');
+                    if (groups && groups.length > 0) {
+                        groupsList.innerHTML = groups.map(group => `
+                            <div class="group-item" onclick="selectGroup('${group._id}')">
+                                <div class="group-avatar">
+                                    <img src="${group.avatar || '/images/default-group.png'}" alt="${group.name}">
+                                </div>
+                                <div class="group-info">
+                                    <div class="group-name">
+                                        ${group.name}
+                                        ${group.unreadCount ? `<span class="unread-badge">${group.unreadCount}</span>` : ''}
+                                    </div>
+                                    <div class="last-message">
+                                        ${group.lastMessage ? `${group.lastMessage.sender.name}: ${group.lastMessage.content}` : 'No messages yet'}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                });
+        }
+
+        // Select a group to chat
+        function selectGroup(groupId) {
+            currentGroupId = groupId;
+            fetch(`/api/groups/${groupId}`)
+                .then(res => res.json())
+                .then(group => {
+                    document.getElementById('currentGroupName').textContent = group.name;
+                    document.getElementById('memberCount').textContent = `${group.members.length} members`;
+                    loadMessages(groupId);
+                    loadMembers(groupId);
+                });
+        }
+
+        // Load messages for selected group
+        function loadMessages(groupId) {
+            fetch(`/api/groups/${groupId}/messages`)
+                .then(res => res.json())
+                .then(messages => {
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = messages.map(msg => `
+                        <div class="message ${msg.sender._id === currentUser._id ? 'sent' : ''}">
+                            ${msg.replyTo ? `
+                                <div class="reply-to">
+                                    <strong>${msg.replyTo.sender.name}</strong>: ${msg.replyTo.content}
+                                </div>
+                            ` : ''}
+                            <div class="message-content">
+                                ${msg.sender._id !== currentUser._id ? `<strong>${msg.sender.name}</strong><br>` : ''}
+                                ${msg.content}
+                            </div>
+                            <div class="message-timestamp">
+                                ${formatTimestamp(msg.timestamp)}
+                            </div>
+                            <div class="message-reactions">
+                                ${renderReactions(msg.reactions)}
+                            </div>
+                            <div class="message-options">
+                                <button onclick="reactToMessage('${msg._id}')">
+                                    <i class="far fa-smile"></i>
+                                </button>
+                                <button onclick="replyToMessage('${msg._id}')">
+                                    <i class="fas fa-reply"></i>
+                                </button>
+                            </div>
+                            <div class="message-status">
+                                ${msg.sender._id === currentUser._id ? getMessageStatus(msg) : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                });
+        }
+
+        // Load group members
+        function loadMembers(groupId) {
+            fetch(`/api/groups/${groupId}/members`)
+                .then(res => res.json())
+                .then(members => {
+                    const memberList = document.getElementById('memberList');
+                    memberList.innerHTML = members.map(member => `
+                        <div class="member-item">
+                            <img src="${member.profileImage || '/images/default-avatar.png'}" class="member-avatar">
+                            <div>
+                                <div>${member.name}</div>
+                                <div style="color: #8e8e8e;">${member.isAdmin ? 'Admin' : 'Member'}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content || !currentGroupId) return;
+
+            socket.emit('groupMessage', {
+                groupId: currentGroupId,
+                content: content
+            });
+
+            input.value = '';
+        }
+
+        // Socket events
+        socket.on('groupMessage', (message) => {
+            if (message.groupId === currentGroupId) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${message.sender._id === currentUser._id ? 'sent' : ''}`;
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        ${message.sender._id !== currentUser._id ? `<strong>${message.sender.name}</strong><br>` : ''}
+                        ${message.content}
+                    </div>
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+
+        // Group management functions
+        function showCreateGroupModal() {
+            document.getElementById('createGroupModal').style.display = 'flex';
+            loadSelectableMembers();
+        }
+
+        function closeCreateGroupModal() {
+            document.getElementById('createGroupModal').style.display = 'none';
+        }
+
+        function loadSelectableMembers() {
+            fetch('/api/users')
+                .then(res => res.json())
+                .then(users => {
+                    const selectableMembers = document.getElementById('selectableMembers');
+                    selectableMembers.innerHTML = users
+                        .filter(user => user._id !== currentUser._id)
+                        .map(user => `
+                            <div class="member-item">
+                                <input type="checkbox" value="${user._id}">
+                                <img src="${user.profileImage || '/images/default-avatar.png'}" class="member-avatar">
+                                <div>${user.name}</div>
+                            </div>
+                        `).join('');
+                });
+        }
+
+        function createGroup() {
+            const groupName = document.getElementById('groupNameInput').value.trim();
+            const selectedMembers = Array.from(document.querySelectorAll('#selectableMembers input:checked'))
+                .map(input => input.value);
+
+            if (!groupName || selectedMembers.length === 0) {
+                alert('Please enter a group name and select at least one member');
+                return;
+            }
+
+            fetch('/api/groups', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: groupName,
+                    members: selectedMembers
+                })
+            })
+            .then(res => res.json())
+            .then(group => {
+                closeCreateGroupModal();
+                loadGroups();
+                selectGroup(group._id);
+            });
+        }
+
+        function toggleGroupInfo() {
+            const panel = document.getElementById('groupInfoPanel');
+            panel.classList.toggle('active');
+        }
+
+        function showAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'flex';
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'none';
+        }
+
+        function searchGroups(query) {
+            const items = document.querySelectorAll('.group-item');
+            items.forEach(item => {
+                const name = item.querySelector('.group-name').textContent.toLowerCase();
+                item.style.display = name.includes(query.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        function searchMessages(query) {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(msg => {
+                const content = msg.querySelector('.message-content').textContent.toLowerCase();
+                msg.style.display = content.includes(query.toLowerCase()) ? 'block' : 'none';
+            });
+        }
+
+        function handleTyping(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                sendMessage();
+                return;
+            }
+
+            if (!currentGroupId) return;
+
+            if (typingTimeout) clearTimeout(typingTimeout);
+
+            socket.emit('groupTyping', {
+                groupId: currentGroupId,
+                isTyping: true
+            });
+
+            typingTimeout = setTimeout(() => {
+                socket.emit('groupTyping', {
+                    groupId: currentGroupId,
+                    isTyping: false
+                });
+            }, 1000);
+        }
+
+        socket.on('groupTyping', (data) => {
+            if (data.groupId === currentGroupId && data.userId !== currentUser._id) {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (data.isTyping) {
+                    typingIndicator.textContent = `${data.userName} is typing...`;
+                } else {
+                    typingIndicator.textContent = '';
+                }
+            }
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch(`/api/groups/${currentGroupId}/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                socket.emit('groupMessage', {
+                    groupId: currentGroupId,
+                    content: data.fileUrl,
+                    type: 'file'
+                });
+            });
+        }
+
+        function getMessageStatus(msg) {
+            if (msg.readBy && msg.readBy.length > 0) return 'Read';
+            if (msg.deliveredTo && msg.deliveredTo.length > 0) return 'Delivered';
+            return 'Sent';
+        }
+
+        function renderReactions(reactions) {
+            if (!reactions) return '';
+            return Object.entries(reactions).map(([emoji, users]) => `
+                <span class="reaction ${users.includes(currentUser._id) ? 'active' : ''}" 
+                      onclick="toggleReaction('${emoji}')">
+                    ${emoji} ${users.length}
+                </span>
+            `).join('');
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            if (date.toDateString() === now.toDateString()) {
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            return date.toLocaleDateString();
+        }
+
+        function toggleEmojiPicker() {
+            const emojiPicker = document.getElementById('emojiPicker');
+            emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function leaveGroup() {
+            if (!currentGroupId) return;
+
+            if (confirm('Are you sure you want to leave this group?')) {
+                fetch(`/api/groups/${currentGroupId}/leave`, { method: 'POST' })
+                    .then(() => {
+                        loadGroups();
+                        document.getElementById('currentGroupName').textContent = 'Select a group';
+                        document.getElementById('memberCount').textContent = '';
+                        document.getElementById('chatMessages').innerHTML = '';
+                        document.getElementById('groupInfoPanel').classList.remove('active');
+                        currentGroupId = null;
+                    });
+            }
+        }
+
+        // Show empty state when no groups
+        function updateEmptyState(groups) {
+            const emptyState = document.getElementById('emptyGroupsState');
+            if (!groups || groups.length === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+        }
+
+        // Enhanced user search for group creation
+        function searchUsersForGroup(query) {
+            if (query.length < 2) {
+                document.getElementById('selectableMembers').innerHTML = `
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                        Type at least 2 characters to search
+                    </div>`;
+                return;
+            }
+
+            fetch(`/api/search-users?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const selectableMembers = document.getElementById('selectableMembers');
+                    if (!data.users || data.users.length === 0) {
+                        selectableMembers.innerHTML = `
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                                No users found
+                            </div>`;
+                        return;
+                    }
+
+                    selectableMembers.innerHTML = data.users
+                        .filter(user => user._id !== currentUser._id)
+                        .map(user => `
+                            <div class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg">
+                                <input type="checkbox" 
+                                       value="${user._id}" 
+                                       class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary">
+                                <img src="${user.profileImage || '/images/default-avatar.png'}" 
+                                     alt="${user.name}" 
+                                     class="w-10 h-10 rounded-full object-cover">
+                                <div>
+                                    <div class="font-medium">${user.name}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                });
+        }
+
+        // Enhanced user search for adding members
+        function searchUsers(query) {
+            if (query.length < 2) {
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                        Type at least 2 characters to search
+                    </div>`;
+                return;
+            }
+
+            fetch(`/api/search-users?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const searchResults = document.getElementById('searchResults');
+                    if (!data.users || data.users.length === 0) {
+                        searchResults.innerHTML = `
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                                No users found
+                            </div>`;
+                        return;
+                    }
+
+                    searchResults.innerHTML = data.users
+                        .filter(user => user._id !== currentUser._id)
+                        .map(user => `
+                            <div class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg">
+                                <input type="checkbox" 
+                                       value="${user._id}" 
+                                       class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary">
+                                <img src="${user.profileImage || '/images/default-avatar.png'}" 
+                                     alt="${user.name}" 
+                                     class="w-10 h-10 rounded-full object-cover">
+                                <div>
+                                    <div class="font-medium">${user.name}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                });
+        }
+    </script>
+</body>
+</html> 

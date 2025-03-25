@@ -299,22 +299,6 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md mx-4 p-6">
-        <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Delete Post</h3>
-        <p class="mb-6 text-gray-600 dark:text-gray-300">Are you sure you want to delete this post? This action cannot be undone.</p>
-        <div class="flex justify-end space-x-3">
-            <button onclick="closeDeleteConfirmModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-800 dark:text-white">
-                Cancel
-            </button>
-            <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                Delete
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- Post Options Menu -->
 <div id="postOptionsMenu" class="fixed hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl z-50 overflow-hidden w-48">
     <ul class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -329,6 +313,22 @@
             </button>
         </li>
     </ul>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md mx-4 p-6">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Delete Post</h3>
+        <p class="mb-6 text-gray-600 dark:text-gray-300">Are you sure you want to delete this post? This action cannot be undone.</p>
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeDeleteConfirmModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-800 dark:text-white">
+                Cancel
+            </button>
+            <button onclick="deletePost(postIdToDelete)" id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                Delete
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Style tweaks for the profile page -->
@@ -394,8 +394,12 @@
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
 <script>
+// Add cache busting timestamp
+console.log('Loading userProfile.js - version <%= Date.now() %>');
+
 // Track the currently selected post
 let currentPostId = null;
+let postIdToDelete = null;
 
 // Variables for story handling
 let currentStories = [];
@@ -658,6 +662,339 @@ function replyToStory(event) {
         submitBtn.disabled = false;
     });
 }
+
+// Function to show post menu
+function showPostMenu(event, postId) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Get elements
+    const menu = document.getElementById('postOptionsMenu');
+    const editOption = document.getElementById('editPostOption');
+    const deleteOption = document.getElementById('deletePostOption');
+    
+    // Set current post ID and update edit link
+    currentPostId = postId;
+    if (editOption) {
+        editOption.href = '/edit/' + postId;
+    }
+    
+    // Position the menu near the button that was clicked
+    const buttonRect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 192; // w-48 = 12rem = 192px
+    
+    // Calculate position (try to keep it within viewport)
+    const leftPosition = Math.min(
+        buttonRect.left,
+        window.innerWidth - menuWidth - 10
+    );
+    
+    menu.style.left = `${leftPosition}px`;
+    menu.style.top = `${buttonRect.bottom + 5}px`;
+    
+    // Show the menu with animation
+    menu.style.opacity = '0';
+    menu.style.transform = 'translateY(-10px)';
+    menu.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    menu.classList.remove('hidden');
+    
+    // Trigger animation
+    setTimeout(() => {
+        menu.style.opacity = '1';
+        menu.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Set up event handlers for menu options
+    if (deleteOption) {
+        deleteOption.onclick = function(e) {
+            e.preventDefault();
+            closePostMenu();
+            showDeleteConfirmation(postId);
+        };
+    }
+
+    // Add a backdrop that will close the menu when clicked
+    const backdrop = document.createElement('div');
+    backdrop.className = 'fixed inset-0 z-40';
+    backdrop.id = 'menuBackdrop';
+    backdrop.addEventListener('click', closePostMenu);
+    document.body.appendChild(backdrop);
+}
+
+// Function to close post menu
+function closePostMenu() {
+    const menu = document.getElementById('postOptionsMenu');
+    const backdrop = document.getElementById('menuBackdrop');
+    
+    if (menu) {
+        menu.style.opacity = '0';
+        menu.style.transform = 'translateY(-10px)';
+        
+        setTimeout(() => {
+            menu.classList.add('hidden');
+        }, 200);
+    }
+    
+    if (backdrop) {
+        document.body.removeChild(backdrop);
+    }
+}
+
+// Function to show delete confirmation
+function showDeleteConfirmation(postId) {
+    postIdToDelete = postId;
+    const modal = document.getElementById('deleteConfirmModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Function to close delete confirmation
+function closeDeleteConfirmModal() {
+    const modal = document.getElementById('deleteConfirmModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        postIdToDelete = null;
+        document.body.style.overflow = '';
+    }
+}
+
+// Function to delete post
+async function deletePost(postId) {
+    if (!postId) {
+        showToast('Post ID not found', 'error');
+        return;
+    }
+    
+    try {
+        console.log(`Sending delete request for post: ${postId}`);
+        
+        // Show loading state
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Deleting...';
+            deleteBtn.disabled = true;
+        }
+        
+        // Use the new API endpoint
+        const response = await fetch(`/api/post/${postId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            console.log('Post deleted successfully');
+            
+            // Find and remove the post element
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            if (postElement) {
+                postElement.classList.add('scale-0', 'opacity-0');
+                setTimeout(() => {
+                    postElement.remove();
+                    
+                    // Check if no posts left
+                    const postsGrid = document.querySelector('.grid');
+                    if (postsGrid && postsGrid.children.length === 0) {
+                        const postsContainer = document.getElementById('postsContainer');
+                        if (postsContainer) {
+                            postsContainer.innerHTML = `
+                                <div class="flex flex-col items-center justify-center py-12 text-center">
+                                    <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                                        <i class="fas fa-camera"></i>
+                                    </div>
+                                    <p class="text-gray-500 dark:text-gray-400 mb-2">No posts yet</p>
+                                    <p class="text-sm text-gray-400 dark:text-gray-500">When you share photos, they'll appear here.</p>
+                                </div>
+                            `;
+                        }
+                    }
+                }, 300);
+            }
+            
+            // Update the post count
+            const postsCount = document.querySelector('div:not(.flex) > span.text-gray-900.dark:text-white.font-semibold');
+            if (postsCount) {
+                const currentCount = parseInt(postsCount.textContent) || 0;
+                if (currentCount > 0) {
+                    postsCount.textContent = (currentCount - 1).toString();
+                }
+            }
+            
+            showToast('Post deleted successfully', 'success');
+        } else {
+            console.error('Failed to delete post:', data);
+            showToast(data.message || 'Failed to delete post', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting post:', error);
+        showToast('An error occurred while deleting the post', 'error');
+    } finally {
+        closeDeleteConfirmModal();
+        
+        // Reset button state
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = 'Delete';
+            deleteBtn.disabled = false;
+        }
+    }
+}
+
+// Toast notification function 
+function showToast(message, type = 'info') {
+    // Remove existing toast if present
+    const existingToast = document.getElementById('toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.id = 'toast';
+    
+    // Set appropriate background color based on type
+    let bgColor = 'bg-blue-500';
+    if (type === 'success') bgColor = 'bg-green-500';
+    if (type === 'error') bgColor = 'bg-red-500';
+    if (type === 'warning') bgColor = 'bg-yellow-500';
+    
+    toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-2 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-2 opacity-0`;
+    toast.textContent = message;
+    
+    // Add to DOM
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+    }, 10);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Function to show followers
+function showFollowers(userId) {
+    console.log('Showing followers for user:', userId);
+    fetchAndShowFollowers(userId, 'followers');
+}
+
+// Function to show following
+function showFollowing(userId) {
+    console.log('Showing following for user:', userId);
+    fetchAndShowFollowers(userId, 'following');
+}
+
+// Function to fetch and show follower/following data
+async function fetchAndShowFollowers(userId, type) {
+    try {
+        const response = await fetch(`/api/user/${userId}/${type}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to fetch users');
+        }
+        
+        const users = data[type] || [];
+        showFollowersModal(users, type === 'followers' ? 'Followers' : 'Following');
+    } catch (error) {
+        console.error(`Error fetching ${type}:`, error);
+        showToast(`Failed to load ${type}. Please try again.`, 'error');
+    }
+}
+
+// Function to display the followers/following modal
+function showFollowersModal(users, title) {
+    // Remove existing modal if it exists
+    const existingModal = document.getElementById('followersModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Create modal container
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'followersModal';
+    modalContainer.className = 'fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center';
+    
+    // Create modal content
+    let userListHTML = '';
+    if (users.length === 0) {
+        userListHTML = `
+            <div class="py-8 text-center text-gray-500 dark:text-gray-400">
+                <i class="fas fa-user-friends text-4xl mb-3"></i>
+                <p>No ${title.toLowerCase()} yet</p>
+            </div>
+        `;
+    } else {
+        userListHTML = users.map(user => `
+            <a href="/user/${user.username || user.email.split('@')[0]}" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition rounded-lg">
+                <div class="relative">
+                    <img src="${user.profileImage || '/img/default-profile.png'}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                    ${user.isOnline ? `<div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"></div>` : ''}
+                </div>
+                <div class="ml-3 flex-1">
+                    <p class="font-medium text-gray-800 dark:text-white">${user.name}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">@${user.username || user.email.split('@')[0]}</p>
+                </div>
+                ${window.currentUserId !== user._id ? `
+                    <button onclick="event.preventDefault(); performFollowToggle('${user._id}')" 
+                            class="ml-auto px-3 py-1 text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-md">
+                        Follow
+                    </button>
+                ` : ''}
+            </a>
+        `).join('');
+    }
+    
+    modalContainer.innerHTML = `
+        <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4 overflow-hidden shadow-xl">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${title}</h3>
+                <button onclick="closeFollowersModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="max-h-80 overflow-y-auto p-2">
+                ${userListHTML}
+            </div>
+        </div>
+    `;
+    
+    // Add modal to the DOM
+    document.body.appendChild(modalContainer);
+    document.body.style.overflow = 'hidden';
+    
+    // Add event listener to close modal when clicking outside
+    modalContainer.addEventListener('click', function(event) {
+        if (event.target === modalContainer) {
+            closeFollowersModal();
+        }
+    });
+}
+
+// Function to close followers modal
+function closeFollowersModal() {
+    const modal = document.getElementById('followersModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+}
+
+// Existing functions...
 </script>
 
 <%- include('partials/footer') %>

@@ -14,6 +14,7 @@ const notificationModel = require('./models/notification');
 const Project = require('./models/Project');
 const StudentVerification = require('./models/studentVerification');
 const LoginVerification = require('./models/loginVerification');
+const Event = require('./models/Event');
 const { sendOTPEmail } = require('./utils/emailSender');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -26,6 +27,7 @@ const passport = require('passport');
 const http = require('http');
 const socketIo = require('socket.io');
 const { Server } = require('socket.io');
+// const LocalStrategy = require('passport-local').Strategy;
 
 // Create HTTP server and Socket.io instance
 const server = http.createServer(app);
@@ -48,6 +50,7 @@ app.use(cookieParser());
 const uploadDir = 'public/uploads/profiles';
 const postUploadDir = 'public/uploads/posts';
 const storyUploadDir = 'public/uploads/stories';
+const eventUploadDir = 'public/uploads/events';
 const defaultProfileImagePath = path.join('public/images/default-profile.png');
 
 if (!fs.existsSync(uploadDir)){
@@ -58,6 +61,9 @@ if (!fs.existsSync(postUploadDir)){
 }
 if (!fs.existsSync(storyUploadDir)){
     fs.mkdirSync(storyUploadDir, { recursive: true });
+}
+if (!fs.existsSync(eventUploadDir)){
+    fs.mkdirSync(eventUploadDir, { recursive: true });
 }
 
 if (!fs.existsSync(defaultProfileImagePath)) {
@@ -186,6 +192,31 @@ const uploadVoice = multer({
         }
     }
 }).single('voice');
+
+// Configure storage for event images
+const eventStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, eventUploadDir)
+    },
+    filename: function (req, file, cb) {
+        cb(null, 'event-' + Date.now() + path.extname(file.originalname))
+    }
+});
+
+const uploadEventImage = multer({ 
+    storage: eventStorage,
+    limits: { fileSize: 1024 * 1024 * 10 }, // 10MB limit
+    fileFilter: function (req, file, cb) {
+        const allowedTypes = /jpeg|jpg|png|gif|webp/i;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        if (extname && mimetype) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Error: Images Only!'));
+        }
+    }
+}).single('image');
 
 // Serve static files
 app.use(express.static('public'));
@@ -3658,9 +3689,14 @@ app.get("/post/:postId/comments", isLoggedIn, async (req, res) => {
 app.delete('/post/:postId/delete', isLoggedIn, async (req, res) => {
     try {
         const postId = req.params.postId;
-        const user = await userModel.findOne({ email: req.user.email });
-        const post = await postModel.findById(postId);
+        console.log('Deleting post:', postId);
         
+        const user = await userModel.findOne({ email: req.user.email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        const post = await postModel.findById(postId);
         if (!post) {
             return res.status(404).json({ error: "Post not found" });
         }
@@ -3670,24 +3706,23 @@ app.delete('/post/:postId/delete', isLoggedIn, async (req, res) => {
             return res.status(403).json({ error: "You can only delete your own posts" });
         }
         
+        console.log('User authorized to delete post');
+        
+        // Remove post from user's posts array
+        user.posts = user.posts.filter(p => p.toString() !== postId);
+        await user.save();
+        
         // Delete all comments associated with the post
         await commentModel.deleteMany({ post: postId });
         
-        // Delete post images from cloud storage
-        if (post.images && post.images.length > 0) {
-            for (const image of post.images) {
-                // If using cloudinary or similar service, delete the image
-                // Example: await cloudinary.uploader.destroy(image.public_id);
-            }
-        }
-        
         // Delete the post itself
-        await postModel.findByIdAndDelete(postId);
+        const result = await postModel.findByIdAndDelete(postId);
+        console.log('Post deleted:', result);
         
         res.json({ success: true, message: "Post deleted successfully" });
     } catch (error) {
         console.error("Error deleting post:", error);
-        res.status(500).json({ error: "Error deleting post" });
+        res.status(500).json({ error: "Error deleting post: " + error.message });
     }
 });
 
@@ -3756,6 +3791,343 @@ app.get('/projects', isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error loading projects page:', error);
         res.status(500).render('error', { message: 'Error loading projects page' });
+    }
+});
+
+// API route for followers
+app.get('/api/user/:userId/followers', isLoggedIn, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log(`Fetching followers for user: ${userId}`);
+        
+        // Find the user and populate followers
+        const user = await userModel.findById(userId)
+            .populate('followers', 'name username email profileImage isOnline');
+            
+        if (!user) {
+            console.log('User not found');
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        console.log(`Found ${user.followers?.length || 0} followers`);
+        res.json({ followers: user.followers || [] });
+    } catch (error) {
+        console.error('Error fetching followers:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// API route for following
+app.get('/api/user/:userId/following', isLoggedIn, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log(`Fetching following for user: ${userId}`);
+        
+        // Find the user and populate following
+        const user = await userModel.findById(userId)
+            .populate('following', 'name username email profileImage isOnline');
+            
+        if (!user) {
+            console.log('User not found');
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        console.log(`Found ${user.following?.length || 0} following`);
+        res.json({ following: user.following || [] });
+    } catch (error) {
+        console.error('Error fetching following:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// New post deletion endpoint
+app.delete('/api/post/:postId', isLoggedIn, async (req, res) => {
+    try {
+        console.log(`Received request to delete post: ${req.params.postId}`);
+        
+        // Check if user exists
+        const user = await userModel.findOne({ email: req.user.email });
+        if (!user) {
+            console.log('User not found');
+            return res.status(401).json({ success: false, message: 'User not found' });
+        }
+        
+        // Check if post exists
+        const post = await postModel.findById(req.params.postId);
+        if (!post) {
+            console.log('Post not found');
+            return res.status(404).json({ success: false, message: 'Post not found' });
+        }
+        
+        // Check if user owns the post
+        if (post.user.toString() !== user._id.toString()) {
+            console.log(`Unauthorized: User ${user._id} attempting to delete post by ${post.user}`);
+            return res.status(403).json({ success: false, message: 'You can only delete your own posts' });
+        }
+        
+        console.log('Authorization passed, proceeding with deletion');
+        
+        // 1. Remove post from user's posts array
+        await userModel.updateOne(
+            { _id: user._id },
+            { $pull: { posts: post._id } }
+        );
+        console.log('Removed post from user.posts array');
+        
+        // 2. Delete all comments related to this post
+        const deletedComments = await commentModel.deleteMany({ post: post._id });
+        console.log(`Deleted ${deletedComments.deletedCount} comments`);
+        
+        // 3. Delete the post
+        const deletedPost = await postModel.deleteOne({ _id: post._id });
+        console.log(`Post deletion result: ${JSON.stringify(deletedPost)}`);
+        
+        return res.status(200).json({ success: true, message: 'Post deleted successfully' });
+    } catch (error) {
+        console.error('Error in post deletion:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    }
+});
+
+// Import group routes
+const groupRoutes = require('./routes/groups');
+
+// Add group routes
+app.use('/api/groups', isLoggedIn, groupRoutes);
+
+// Add groups page route
+app.get('/groups', isLoggedIn, (req, res) => {
+    res.render('groups', { user: req.user });
+});
+
+// === EVENTS ROUTES ===
+
+// Render events page
+app.get("/events", (req, res) => {
+    res.render("events", { user: req.user });
+});
+
+// Add current user API endpoint
+app.get('/api/current-user', isLoggedIn, (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+    res.json({
+        _id: req.user._id,
+        username: req.user.username,
+        fullName: req.user.fullName,
+        email: req.user.email,
+        profileAvatar: req.user.profileAvatar
+    });
+});
+
+// Import Event model from models folder
+// const Event = require('./models/Event'); // Already imported at the top of the file
+
+// Event Routes
+app.get('/api/events', async (req, res) => {
+    try {
+        const currentDate = new Date();
+        const events = await Event.find({ endDateTime: { $gte: currentDate } })
+            .sort({ startDateTime: 1 })
+            .populate('organizer', 'username fullName email profileAvatar')
+            .populate('attendees', 'username fullName email profileAvatar');
+
+        res.json(events);
+    } catch (error) {
+        console.error('Error fetching events:', error);
+        res.status(500).json({ error: 'Error fetching events' });
+    }
+});
+
+app.get('/api/events/past', async (req, res) => {
+    try {
+        const currentDate = new Date();
+        const events = await Event.find({ endDateTime: { $lt: currentDate } })
+            .sort({ endDateTime: -1 })
+            .populate('organizer', 'username fullName email profileAvatar')
+            .populate('attendees', 'username fullName email profileAvatar');
+
+        res.json(events);
+    } catch (error) {
+        console.error('Error fetching past events:', error);
+        res.status(500).json({ error: 'Error fetching past events' });
+    }
+});
+
+app.get('/api/events/:id', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid event ID' });
+        }
+
+        const event = await Event.findById(req.params.id)
+            .populate('organizer', 'username fullName email profileAvatar')
+            .populate('attendees', 'username fullName email profileAvatar');
+
+        if (!event) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        const isAttending = req.user ? event.attendees.some(attendee => 
+            attendee._id.toString() === req.user._id.toString()
+        ) : false;
+
+        res.json({
+            ...event.toObject(),
+            isAttending,
+            attendeesCount: event.attendees.length
+        });
+    } catch (error) {
+        console.error('Error fetching event:', error);
+        res.status(500).json({ error: 'Error fetching event details' });
+    }
+});
+
+app.post('/api/events', isLoggedIn, async (req, res) => {
+    // Use a try/catch around uploadEventImage middleware to handle file upload errors
+    uploadEventImage(req, res, async function(err) {
+        if (err) {
+            console.error('File upload error:', err);
+            return res.status(400).json({ error: 'File upload error: ' + err.message });
+        }
+        
+        try {
+            console.log('Event creation request received');
+            console.log('Request body:', req.body);
+            console.log('User:', req.user);
+            console.log('File:', req.file);
+            
+            const {
+                title,
+                description,
+                category,
+                startDate,
+                startTime,
+                endDate,
+                endTime,
+                location,
+                registrationLink
+            } = req.body;
+
+            console.log('Parsed data:', {
+                title,
+                description,
+                category,
+                startDate,
+                startTime,
+                endDate,
+                endTime,
+                location,
+                registrationLink
+            });
+
+            // Validate required fields
+            if (!title || !description || !category || !startDate || !startTime || !endDate || !endTime || !location) {
+                console.log('Missing required fields');
+                return res.status(400).json({ error: 'All required fields must be filled' });
+            }
+
+            try {
+                // Combine date and time strings into Date objects
+                const startDateTime = new Date(`${startDate}T${startTime}`);
+                const endDateTime = new Date(`${endDate}T${endTime}`);
+                
+                console.log('Parsed dates:', {
+                    startDateTime: startDateTime.toISOString(),
+                    endDateTime: endDateTime.toISOString()
+                });
+
+                // Validate dates
+                if (endDateTime <= startDateTime) {
+                    console.log('End date is before or equal to start date');
+                    return res.status(400).json({ error: 'End date/time must be after start date/time' });
+                }
+                
+                // Make sure user ID is a valid ObjectId
+                if (!mongoose.Types.ObjectId.isValid(req.user._id)) {
+                    console.error('Invalid user ID:', req.user._id);
+                    return res.status(400).json({ error: 'Invalid user ID' });
+                }
+
+                const eventData = {
+                    title,
+                    description,
+                    category,
+                    startDateTime,
+                    endDateTime,
+                    location,
+                    organizer: req.user._id,
+                    organizerName: req.user.fullName || req.user.username,
+                    registrationLink: registrationLink || '',
+                    image: req.file ? `/uploads/events/${req.file.filename}` : '/images/default-event.jpg'
+                };
+                
+                console.log('Event data to save:', eventData);
+
+                const newEvent = new Event(eventData);
+                await newEvent.save();
+                
+                console.log('Event saved successfully with ID:', newEvent._id);
+
+                // Populate organizer details before sending response
+                await newEvent.populate('organizer', 'username fullName email profileAvatar');
+
+                res.status(201).json(newEvent);
+            } catch (dateError) {
+                console.error('Date parsing error:', dateError);
+                return res.status(400).json({ error: 'Invalid date format: ' + dateError.message });
+            }
+        } catch (error) {
+            console.error('Error creating event:', error);
+            res.status(500).json({ error: 'Error creating event: ' + error.message });
+        }
+    });
+});
+
+app.post('/api/events/:id/attend', isLoggedIn, async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid event ID' });
+        }
+
+        const event = await Event.findById(req.params.id);
+        if (!event) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        // Check if event has ended
+        const currentDate = new Date();
+        if (event.endDateTime < currentDate) {
+            return res.status(400).json({ error: 'Cannot attend past events' });
+        }
+
+        const userId = req.user._id;
+        const isAttending = event.attendees.includes(userId);
+
+        if (isAttending) {
+            // Remove user from attendees
+            event.attendees = event.attendees.filter(id => id.toString() !== userId.toString());
+        } else {
+            // Add user to attendees
+            event.attendees.push(userId);
+        }
+
+        await event.save();
+
+        // Populate event details before sending response
+        await event.populate('organizer', 'username fullName email profileAvatar');
+        await event.populate('attendees', 'username fullName email profileAvatar');
+
+        res.json({
+            message: isAttending ? 'Successfully unattended event' : 'Successfully attended event',
+            event: event.toObject(),
+            isAttending: !isAttending,
+            attendeesCount: event.attendees.length
+        });
+    } catch (error) {
+        console.error('Error updating event attendance:', error);
+        res.status(500).json({ error: 'Error updating event attendance' });
     }
 });
 

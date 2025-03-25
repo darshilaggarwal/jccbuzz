@@ -312,7 +312,8 @@ router.delete('/:projectId', async (req, res) => {
             return res.status(403).json({ message: 'Only project admin can delete project' });
         }
 
-        await project.remove();
+        // Use deleteOne() instead of remove()
+        await Project.deleteOne({ _id: req.params.projectId });
         res.json({ message: 'Project deleted successfully' });
     } catch (error) {
         console.error('Error deleting project:', error);

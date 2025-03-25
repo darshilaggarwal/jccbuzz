@@ -220,7 +220,7 @@
                 this.disabled = true;
                 
         fetch(`/api/notifications/${notificationId}/read`, {
-                    method: 'POST',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
                     },
@@ -296,10 +296,10 @@
             this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Marking all as read...';
             this.disabled = true;
             
-            fetch('/api/notifications/mark-all-read', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+        fetch('/api/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
                 },
                 credentials: 'include'
             })
@@ -310,7 +310,7 @@
                 return response.json();
             })
             .then(() => {
-                // Update UI
+            // Update UI
                 notifications.forEach(notification => {
                     notification.classList.remove('bg-blue-50', 'dark:bg-blue-900/10');
                     notification.setAttribute('data-read', 'true');
@@ -324,9 +324,9 @@
                 
                 // Show toast
                 showToast('All notifications marked as read');
-            })
-            .catch(error => {
-                console.error('Error marking all notifications as read:', error);
+        })
+        .catch(error => {
+            console.error('Error marking all notifications as read:', error);
                 this.innerHTML = originalText;
                 this.disabled = false;
                 showToast('Failed to mark all notifications as read', 'error');

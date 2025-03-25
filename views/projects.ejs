@@ -658,10 +658,6 @@
     }
 
     async function deleteProject(projectId) {
-        if (!confirm('Are you sure you want to delete this project?')) {
-            return;
-        }
-
         try {
             const response = await fetch(`/api/projects/${projectId}`, {
                 method: 'DELETE',
