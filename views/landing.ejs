@@ -173,6 +173,245 @@
         .btn-primary:hover:before {
             left: 100%;
         }
+
+        /* Mobile-First Responsive Design */
+        @media (max-width: 768px) {
+            /* Mobile header fixes */
+            header.fixed {
+                height: auto;
+                padding: 0.5rem 0;
+            }
+            
+            header .h-20 {
+                height: auto;
+                padding: 0.5rem 0;
+            }
+            
+            header img.h-40 {
+                height: 2.5rem;
+                margin-top: 0;
+                object-fit: contain;
+            }
+            
+            /* Mobile menu adjustments */
+            #mobile-menu {
+                margin-top: 3.5rem;
+                background: white;
+                border-radius: 0 0 1rem 1rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            
+            /* Hero Section Mobile Optimization */
+            .hero-gradient {
+                min-height: calc(100vh - 4rem);
+                padding-top: 5rem;
+                padding-bottom: 5rem;
+            }
+            
+            /* Fixed height for mobile hero section to avoid content being cut off */
+            section.md\:hidden.py-16.hero-gradient {
+                min-height: 85vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding-top: 4rem;
+            }
+            
+            /* Adjust spacing for all sections on mobile */
+            .py-16 {
+                padding-top: 4rem;
+                padding-bottom: 4rem;
+            }
+            
+            /* Fix spacing between sections */
+            #features, #how-it-works, #testimonials, #contact {
+                padding-top: 5rem;
+                scroll-margin-top: 4rem;
+            }
+            
+            /* Add padding at bottom for mobile navigation */
+            body {
+                padding-bottom: 4rem;
+            }
+            
+            /* Mobile Bottom Navigation - clean and compact */
+            .bottom-nav {
+                height: 4rem;
+                background: white;
+                padding: 0.5rem;
+            }
+            
+            .bottom-nav-item {
+                font-size: 0.7rem;
+            }
+            
+            .bottom-nav-item i {
+                font-size: 1.2rem;
+            }
+            
+            /* Feature Cards Mobile Optimization - more compact */
+            .feature-card {
+                padding: 1rem;
+            }
+            
+            /* More efficient card layout */
+            .grid-cols-1 {
+                grid-gap: 1rem;
+            }
+            
+            /* Custom class for mobile buttons */
+            .mobile-cta {
+                position: fixed;
+                bottom: 5rem;
+                left: 1rem;
+                right: 1rem;
+                background: #4f46e5;
+                color: white;
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+                font-weight: 600;
+                text-align: center;
+                box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+                z-index: 900;
+                animation: slideUp 0.5s ease-out forwards;
+            }
+            
+            /* Mobile-optimized hero layout */
+            .mobile-hero {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 1rem;
+                margin-top: 3.5rem;
+            }
+            
+            .mobile-hero h1 {
+                font-size: 2rem;
+                font-weight: 800;
+                margin-bottom: 1rem;
+                line-height: 1.2;
+            }
+            
+            .mobile-hero p {
+                font-size: 1rem;
+                margin-bottom: 1.5rem;
+                line-height: 1.5;
+            }
+            
+            /* Improved button styling for mobile */
+            .mobile-btn {
+                display: inline-block;
+                background: white;
+                color: #4f46e5;
+                padding: 0.75rem 1.5rem;
+                border-radius: 2rem;
+                font-weight: 600;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin: 0.5rem;
+                transition: all 0.3s ease;
+            }
+            
+            .mobile-btn:active {
+                transform: scale(0.98);
+            }
+            
+            .mobile-btn-primary {
+                background: #4f46e5;
+                color: white;
+            }
+            
+            /* Other styles remain the same */
+            .mobile-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                color: #4f46e5;
+                text-decoration: none;
+                font-size: 0.75rem;
+                padding: 0.5rem;
+            }
+
+            .mobile-nav-item i {
+                font-size: 1.25rem;
+                margin-bottom: 0.25rem;
+            }
+
+            /* Mobile Animations */
+            @keyframes slideUp {
+                from {
+                    transform: translateY(20px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+
+            .animate-slide-up {
+                animation: slideUp 0.5s ease-out forwards;
+            }
+
+            /* Mobile App-like Header */
+            .app-header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                padding: 1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+            }
+
+            .app-logo {
+                height: 2rem;
+                width: auto;
+            }
+
+            /* Mobile-friendly Buttons */
+            .mobile-button {
+                width: 100%;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                background: #4f46e5;
+                color: white;
+                font-weight: 600;
+                text-align: center;
+                margin: 0.5rem 0;
+                box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+            }
+
+            /* Mobile-friendly Cards */
+            .mobile-card {
+                background: white;
+                border-radius: 1rem;
+                padding: 1.5rem;
+                margin: 1rem 0;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Mobile-friendly Images */
+            .mobile-image {
+                width: 100%;
+                height: auto;
+                border-radius: 1rem;
+                margin: 1rem 0;
+            }
+        }
+
+        /* Fix section padding for better scrolling */
+        @media (max-width: 768px) {
+            .section-padding {
+                padding-top: 5rem;
+                padding-bottom: 5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -213,7 +452,7 @@
                 <div class="-mr-2 flex items-center md:hidden">
                     <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" aria-expanded="false">
                         <span class="sr-only">Open main menu</span>
-                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <svg class="block h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
@@ -325,15 +564,15 @@
     </section>
     
     <!-- Mobile Hero Alternative -->
-    <section class="md:hidden py-16 hero-gradient text-white">
+    <section class="md:hidden py-16 hero-gradient text-white mobile-hero">
         <div class="container mx-auto px-4 text-center">
             <h1 class="text-3xl font-extrabold mb-4">JCCbuzz</h1>
             <p class="mb-6">The exclusive social platform for Jagannath University students</p>
-            <div class="flex flex-col space-y-3">
-                <a href="/register" class="btn-primary px-6 py-3 rounded-full bg-white text-indigo-600 hover:bg-indigo-50 transition-all shadow-md font-medium">
+            <div class="flex flex-wrap justify-center">
+                <a href="/register" class="mobile-btn mobile-btn-primary">
                     Get Started
                 </a>
-                <a href="#how-it-works" class="btn-primary px-6 py-3 rounded-full border border-white text-white hover:bg-white hover:text-indigo-600 transition-all font-medium">
+                <a href="#how-it-works" class="mobile-btn">
                     How It Works
                 </a>
             </div>
@@ -901,6 +1140,53 @@
                 });
             });
         }
+    });
+
+    // Mobile-specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hide header on scroll down, show on scroll up
+        let lastScrollTop = 0;
+        const header = document.querySelector('header');
+        const mobileNav = document.querySelector('.mobile-nav') || document.querySelector('.bottom-nav');
+        
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (window.innerWidth <= 768) {
+                if (scrollTop > lastScrollTop && scrollTop > 50) {
+                    // Scrolling down
+                    header.style.transform = 'translateY(-100%)';
+                    if (mobileNav) mobileNav.style.transform = 'translateY(100%)';
+                } else {
+                    // Scrolling up
+                    header.style.transform = 'translateY(0)';
+                    if (mobileNav) mobileNav.style.transform = 'translateY(0)';
+                }
+                lastScrollTop = scrollTop;
+            }
+        });
+        
+        // Smooth scrolling for mobile navigation
+        const mobileLinks = document.querySelectorAll('.mobile-nav-item, .bottom-nav-item, .mobile-btn');
+        mobileLinks.forEach(link => {
+            if (link.getAttribute('href').startsWith('#')) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        // Offset for fixed header
+                        const offset = 60;
+                        const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - offset;
+                        
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            }
+        });
     });
 </script>
 

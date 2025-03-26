@@ -711,7 +711,7 @@
                         notificationBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
                         notificationBadge.classList.remove('opacity-0');
                         notificationBadge.classList.add('opacity-100');
-                    } else {
+            } else {
                         notificationBadge.classList.remove('opacity-100');
                         notificationBadge.classList.add('opacity-0');
                     }
@@ -731,7 +731,7 @@
                 
                 fetch('/api/notifications/unread?limit=5', {
                     method: 'GET',
-                    headers: {
+                headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -743,7 +743,7 @@
                     }
                     return response.json();
                 })
-                .then(data => {
+            .then(data => {
                     notificationLoading.classList.add('hidden');
                     
                     if (!data || data.length === 0) {
@@ -753,8 +753,8 @@
                     
                     // Render notifications
                     data.forEach(notification => renderNotification(notification));
-                })
-                .catch(error => {
+            })
+            .catch(error => {
                     console.error('Error fetching notifications:', error);
                     notificationLoading.classList.add('hidden');
                     notificationEmpty.classList.remove('hidden');
@@ -797,31 +797,73 @@
                 notificationElement.className = 'notification-item p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer animate-fadeIn';
                 notificationElement.setAttribute('data-id', notification._id);
                 
-                notificationElement.innerHTML = `
+                // Check if this is a project join request notification
+                const isProjectJoinRequest = notification.type === 'project_join_request';
+                
+                let contentHtml = `
                     <div class="flex items-start space-x-3">
                         <div class="flex-shrink-0">
                             <div class="w-10 h-10 rounded-full ${iconBgClass} flex items-center justify-center shadow-sm">
                                 <i class="${iconClass} text-lg"></i>
-                                        </div>
-                                    </div>
+                            </div>
+                        </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-start mb-1">
                                 <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                     ${notification.title || 'Notification'}
                                 </h4>
                                 <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">${timeAgo}</span>
-                                    </div>
+                            </div>`;
+                
+                // For project join requests, split the message to separate the user message if present
+                if (isProjectJoinRequest && notification.message && notification.message.includes("Message:")) {
+                    // Split the notification message to extract the applicant's message
+                    const parts = notification.message.split("\n\nMessage:");
+                    
+                    contentHtml += `
+                            <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-1">
+                                ${parts[0]}
+                            </p>
+                            <div class="mt-2 mb-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-md text-xs text-gray-700 dark:text-gray-300 border border-purple-100 dark:border-purple-800">
+                                <div class="font-semibold mb-1">Applicant's Message:</div>
+                                <div class="italic">${parts[1] || ""}</div>
+                            </div>`;
+                } else {
+                    contentHtml += `
                             <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-1">
                                 ${notification.message || notification.displayMessage || ''}
-                            </p>
+                            </p>`;
+                }
+                
+                // Add accept/reject buttons for project join requests
+                if (isProjectJoinRequest && notification.data && notification.data.projectId && notification.data.requestId) {
+                    contentHtml += `
+                            <div class="flex space-x-2 my-2">
+                                <button class="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors accept-request-btn" 
+                                        data-project-id="${notification.data.projectId}" 
+                                        data-request-id="${notification.data.requestId}">
+                                    Accept
+                                </button>
+                                <button class="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors reject-request-btn"
+                                        data-project-id="${notification.data.projectId}" 
+                                        data-request-id="${notification.data.requestId}">
+                                    Reject
+                                </button>
+                            </div>`;
+                }
+                
+                // Add the mark as read button
+                contentHtml += `
                             <div class="flex justify-end">
                                 <button class="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-colors mt-1 mark-read-btn">
                                     Mark as read
-                                    </button>
+                                </button>
                             </div>
-                                </div>
-                            </div>
-                        `;
+                        </div>
+                    </div>
+                `;
+                
+                notificationElement.innerHTML = contentHtml;
                 
                 // Add click event to mark as read and navigate
                 const markReadBtn = notificationElement.querySelector('.mark-read-btn');
@@ -841,10 +883,100 @@
                     });
                 }
                 
-                notificationElement.addEventListener('click', function() {
+                // Add click event for accept project request button
+                const acceptBtn = notificationElement.querySelector('.accept-request-btn');
+                if (acceptBtn) {
+                    acceptBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const projectId = this.getAttribute('data-project-id');
+                        const requestId = this.getAttribute('data-request-id');
+                        
+                        // Add loading state
+                        const originalText = this.textContent;
+                        this.disabled = true;
+                        this.innerHTML = '<span class="inline-block animate-spin mr-1">↻</span> Processing...';
+                        
+                        // Call API to accept the request
+                        handleJoinRequest(projectId, requestId, 'accepted', () => {
+                            // Success callback
+                            markNotificationAsRead(notification._id);
+                            notificationElement.classList.add('opacity-50');
+                            acceptBtn.textContent = 'Accepted';
+                            acceptBtn.disabled = true;
+                            
+                            // Disable the reject button too
+                            const rejectBtn = notificationElement.querySelector('.reject-request-btn');
+                            if (rejectBtn) {
+                                rejectBtn.disabled = true;
+                                rejectBtn.classList.add('opacity-50');
+                            }
+                            
+                            // Update badge count
+                            if (unreadCount > 0) {
+                                unreadCount--;
+                                updateNotificationBadge();
+                            }
+                        }, () => {
+                            // Error callback
+                            this.disabled = false;
+                            this.textContent = originalText;
+                        });
+                    });
+                }
+                
+                // Add click event for reject project request button
+                const rejectBtn = notificationElement.querySelector('.reject-request-btn');
+                if (rejectBtn) {
+                    rejectBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const projectId = this.getAttribute('data-project-id');
+                        const requestId = this.getAttribute('data-request-id');
+                        
+                        // Add loading state
+                        const originalText = this.textContent;
+                        this.disabled = true;
+                        this.innerHTML = '<span class="inline-block animate-spin mr-1">↻</span> Processing...';
+                        
+                        // Call API to reject the request
+                        handleJoinRequest(projectId, requestId, 'rejected', () => {
+                            // Success callback
+                            markNotificationAsRead(notification._id);
+                            notificationElement.classList.add('opacity-50');
+                            rejectBtn.textContent = 'Rejected';
+                            rejectBtn.disabled = true;
+                            
+                            // Disable the accept button too
+                            const acceptBtn = notificationElement.querySelector('.accept-request-btn');
+                            if (acceptBtn) {
+                                acceptBtn.disabled = true;
+                                acceptBtn.classList.add('opacity-50');
+                            }
+                            
+                            // Update badge count
+                            if (unreadCount > 0) {
+                                unreadCount--;
+                                updateNotificationBadge();
+                            }
+                        }, () => {
+                            // Error callback
+                            this.disabled = false;
+                            this.textContent = originalText;
+                        });
+                    });
+                }
+                
+                // Default click event for notification - navigate to relevant page
+                notificationElement.addEventListener('click', function(e) {
+                    // Don't trigger if clicking on accept/reject buttons
+                    if (e.target.classList.contains('accept-request-btn') || 
+                        e.target.classList.contains('reject-request-btn') ||
+                        e.target.classList.contains('mark-read-btn')) {
+                        return;
+                    }
+                    
                     markNotificationAsRead(notification._id);
                     
-                    // Navigate based on notification type
+                            // Navigate based on notification type
                     if (notification.type.includes('project_join')) {
                         window.location.href = '/projects';
                     } else if (notification.type.includes('follow')) {
@@ -853,95 +985,157 @@
                         // Navigate to post if available
                         if (notification.data && notification.data.postId) {
                             window.location.href = `/post/${notification.data.postId}`;
-            } else {
-                            window.location.href = '/notifications';
-                        }
-                } else {
+                            } else {
+                                window.location.href = '/notifications';
+                            }
+                    } else {
                         window.location.href = '/notifications';
-                }
+                    }
                 });
                 
                 notificationsContainer.appendChild(notificationElement);
-        }
-        
-            // Mark notification as read
-        function markNotificationAsRead(notificationId) {
-            fetch(`/api/notifications/${notificationId}/read`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            })
-            .then(() => {
-                // Update unread count
-                if (unreadCount > 0) {
-                    unreadCount--;
-                    updateNotificationBadge();
-                }
-            })
-            .catch(error => {
-                console.error('Error marking notification as read:', error);
-            });
-        }
-        
-        // Mark all notifications as read
-        function markAllNotificationsAsRead() {
-            fetch('/api/notifications/mark-all-read', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            })
-            .then(() => {
-                // Update UI - hide all notifications and update badge
-                const notificationItems = notificationsContainer.querySelectorAll('.notification-item');
-                notificationItems.forEach(item => item.remove());
+            }
+            
+            // Function to handle project join requests
+            function handleJoinRequest(projectId, requestId, status, successCallback, errorCallback) {
+                console.log(`Handling ${status} request for project ${projectId}, request ${requestId}`);
                 
-                if (notificationEmpty) {
-                    notificationEmpty.classList.remove('hidden');
-                }
-                
-                unreadCount = 0;
-                updateNotificationBadge();
-                
-                // Show toast message
-                showToast('All notifications marked as read');
-            })
-            .catch(error => {
-                console.error('Error marking all notifications as read:', error);
-            });
-        }
-        
-            // Show toast message
+                fetch(`/api/projects/${projectId}/join-request/${requestId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ status }),
+                    credentials: 'include'
+                })
+                .then(async response => {
+                    // Get the response data regardless of status
+                    const data = await response.json();
+                    
+                    // Check if response was successful
+                    if (!response.ok) {
+                        throw new Error(data.message || `Failed to ${status} join request`);
+                    }
+                    
+                    return data;
+                })
+                .then(data => {
+                    console.log(`Successfully ${status} request:`, data);
+                    
+                    // Show toast notification if available
+                    if (typeof showToast === 'function') {
+                        showToast(data.message || `Join request ${status} successfully`, 'success');
+                    }
+                    
+                    // Call success callback
+                    if (typeof successCallback === 'function') {
+                        successCallback(data);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Error ${status} join request:`, error);
+                    
+                    // Show toast notification if available
+                    if (typeof showToast === 'function') {
+                        showToast(error.message || `Failed to ${status} join request`, 'error');
+                    }
+                    
+                    // Call error callback
+                    if (typeof errorCallback === 'function') {
+                        errorCallback(error);
+                    }
+                });
+            }
+            
+            // Toast notification function
             function showToast(message, type = 'success') {
-                // Remove existing toast if present
-                const existingToast = document.getElementById('notification-toast');
-                if (existingToast) {
-                    existingToast.remove();
+                // Check if toast container exists, create if not
+                let toastContainer = document.getElementById('toast-container');
+                if (!toastContainer) {
+                    toastContainer = document.createElement('div');
+                    toastContainer.id = 'toast-container';
+                    toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col space-y-2';
+                    document.body.appendChild(toastContainer);
                 }
                 
-                // Create toast element
+                // Create toast
                 const toast = document.createElement('div');
-                toast.id = 'notification-toast';
-                toast.className = `fixed bottom-4 right-4 z-50 px-4 py-2 rounded-lg text-white transform transition-all duration-300 ${
+                toast.className = `px-6 py-3 rounded-lg text-white transform transition-all duration-300 translate-y-2 opacity-0 ${
                     type === 'success' ? 'bg-green-500' : 'bg-red-500'
                 }`;
-                toast.textContent = message;
                 
-                // Add to DOM
-                document.body.appendChild(toast);
+                // Add a nicer message format with icon
+                const icon = type === 'success' ? 
+                    '<i class="fas fa-check-circle mr-2"></i>' : 
+                    '<i class="fas fa-exclamation-circle mr-2"></i>';
                 
-                // Auto-remove after 3 seconds
+                toast.innerHTML = icon + message;
+                
+                toastContainer.appendChild(toast);
+                
+                // Trigger animation
                 setTimeout(() => {
-                    toast.classList.add('opacity-0', 'translate-y-2');
+                    toast.classList.remove('translate-y-2', 'opacity-0');
+                }, 10);
+                
+                // Remove toast after 3 seconds
+                setTimeout(() => {
+                    toast.classList.add('translate-y-2', 'opacity-0');
                     setTimeout(() => {
-                        if (toast.parentNode) {
-                            toast.remove();
-                        }
+                        toastContainer.removeChild(toast);
                     }, 300);
                 }, 3000);
+            }
+            
+            // Mark notification as read
+            function markNotificationAsRead(notificationId) {
+                fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                })
+                .then(() => {
+                    // Update unread count
+                    if (unreadCount > 0) {
+                        unreadCount--;
+                        updateNotificationBadge();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking notification as read:', error);
+                });
+            }
+            
+            // Mark all notifications as read
+            function markAllNotificationsAsRead() {
+                fetch('/api/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                })
+                .then(() => {
+                    // Update UI - hide all notifications and update badge
+                    const notificationItems = notificationsContainer.querySelectorAll('.notification-item');
+                    notificationItems.forEach(item => item.remove());
+                    
+                    if (notificationEmpty) {
+                        notificationEmpty.classList.remove('hidden');
+                    }
+                    
+                    unreadCount = 0;
+                    updateNotificationBadge();
+                    
+                    // Show toast message
+                    showToast('All notifications marked as read');
+                })
+                .catch(error => {
+                    console.error('Error marking all notifications as read:', error);
+                });
             }
             
             // Initialize
@@ -953,3 +1147,4 @@
     </script>
 </body>
 </html> 
+

@@ -145,6 +145,9 @@ router.post('/:projectId/join-request', async (req, res) => {
         // Get the user's name for the notification
         const user = await userModel.findById(userId);
         const userName = user ? user.name : 'Someone';
+        
+        // Format the request message if it exists
+        const userMessage = message ? `\n\nMessage: "${message}"` : '';
 
         try {
             // Send notification to project admin
@@ -153,9 +156,11 @@ router.post('/:projectId/join-request', async (req, res) => {
                 sender: userId,
                 type: 'project_join_request',
                 title: 'New Join Request',
-                message: `${userName} wants to join your project "${project.title}"`,
+                message: `${userName} wants to join your project "${project.title}"${userMessage}`,
                 data: {
-                    projectId: project._id
+                    projectId: project._id,
+                    requestId: project.joinRequests[project.joinRequests.length - 1]._id,
+                    message: message || 'I would like to join this project'
                 }
             });
         } catch (notifError) {
@@ -179,6 +184,8 @@ router.put('/:projectId/join-request/:requestId', async (req, res) => {
         const { projectId, requestId } = req.params;
         const { status } = req.body;
         const userId = req.user._id;
+
+        console.log('Processing join request:', { projectId, requestId, status, userId: userId.toString() });
 
         if (!['accepted', 'rejected'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status' });
@@ -206,6 +213,19 @@ router.put('/:projectId/join-request/:requestId', async (req, res) => {
 
         const joinRequest = project.joinRequests[joinRequestIndex];
         
+        console.log('Found join request:', { 
+            requestId, 
+            user: joinRequest.user.toString(),
+            currentStatus: joinRequest.status
+        });
+        
+        // Don't process if already handled
+        if (joinRequest.status !== 'pending') {
+            return res.status(400).json({ 
+                message: `This request has already been ${joinRequest.status}`
+            });
+        }
+        
         // Update the join request status
         project.joinRequests[joinRequestIndex].status = status;
         project.joinRequests[joinRequestIndex].updatedAt = new Date();
@@ -217,21 +237,28 @@ router.put('/:projectId/join-request/:requestId', async (req, res) => {
             }
         }
 
-        await project.save();
+        // Use validateModifiedOnly to prevent validation errors with startDate
+        const saveOptions = { validateModifiedOnly: true };
+        await project.save(saveOptions);
 
-        // Send notification to the requestor
-        await createNotification({
-            recipient: joinRequest.user,
-            sender: userId,
-            type: status === 'accepted' ? 'project_join_accepted' : 'project_join_rejected',
-            title: status === 'accepted' ? 'Join Request Accepted' : 'Join Request Rejected',
-            message: status === 'accepted' 
-                ? `Your request to join "${project.title}" has been accepted!` 
-                : `Your request to join "${project.title}" has been rejected.`,
-            data: {
-                projectId: project._id
-            }
-        });
+        try {
+            // Send notification to the requestor
+            await createNotification({
+                recipient: joinRequest.user,
+                sender: userId,
+                type: status === 'accepted' ? 'project_join_accepted' : 'project_join_rejected',
+                title: status === 'accepted' ? 'Join Request Accepted' : 'Join Request Rejected',
+                message: status === 'accepted' 
+                    ? `Your request to join "${project.title}" has been accepted!` 
+                    : `Your request to join "${project.title}" has been rejected.`,
+                data: {
+                    projectId: project._id
+                }
+            });
+        } catch (notificationError) {
+            console.error('Error sending notification:', notificationError);
+            // Continue even if notification creation fails
+        }
 
         res.json({ 
             message: `Join request ${status}`,
