@@ -28,10 +28,14 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { Server } = require('socket.io');
 // const LocalStrategy = require('passport-local').Strategy;
+const socketModule = require('./socket/socket');
 
 // Create HTTP server and Socket.io instance
 const server = http.createServer(app);
-const io = new Server(server);
+const io = socketModule.initSocket(server);
+
+// Make io available globally for notification real-time updates
+global.io = io;
 
 // Add this near the top of the file where other environment variables are setup
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
@@ -347,14 +351,33 @@ app.post("/post", isLoggedIn, uploadPostImages, async (req, res) => {
         try {
             // Get all followers of this user
             const followers = await userModel.find({ following: user._id });
+            const followerIds = followers.map(follower => follower._id.toString());
+            
+            // Send socket notification to online followers
+            const socketHandler = require('./socket/socket');
+            socketHandler.getIO().emit('newPostNotification', {
+                senderId: user._id,
+                followers: followerIds,
+                postId: post._id
+            });
             
             // Create notifications for each follower
-            const notificationPromises = followers.map(follower => 
-                createNotification(follower._id, user._id, 'new_post', post._id)
-            );
-            
-            // Wait for all notifications to be created
-            await Promise.all(notificationPromises);
+            for (const follower of followers) {
+                const notification = await notificationModel.create({
+                    recipient: follower._id,
+                    sender: user._id,
+                    type: 'new_post',
+                    title: 'New Post',
+                    message: `${user.name || 'Someone you follow'} shared a new post`,
+                    data: { postId: post._id }
+                });
+                
+                // If the notification was created successfully and the follower isn't online,
+                // make sure it's saved for when they log in next
+                if (notification && !socketHandler.getIO().sockets.adapter.rooms.has(`user:${follower._id}`)) {
+                    console.log(`Saved notification for offline user ${follower._id}`);
+                }
+            }
             
             console.log(`Notified ${followers.length} followers about new post`);
         } catch (notificationError) {
@@ -904,19 +927,15 @@ app.post("/post/:postId/like", isLoggedIn, async (req, res) => {
             // Create notification for post like
             if (post.user.toString() !== user._id.toString()) {
                 try {
-                    const postOwner = await userModel.findById(post.user);
-                    const sender = await userModel.findById(user._id);
-                    const senderName = sender ? sender.name : 'Someone';
+                    const {
+                        createLikeNotification
+                    } = require('./utils/notifications');
                     
-                    await createNotification({
-                        recipient: post.user,
-                        sender: user._id,
-                        type: 'like',
-                        title: 'New Like',
-                        message: `${senderName} liked your post`,
-                        data: {
-                            postId: post._id
-                        }
+                    await createLikeNotification({
+                        recipientId: post.user,
+                        senderId: user._id,
+                        senderName: user.name || 'Someone',
+                        postId: post._id
                     });
                 } catch (notifError) {
                     console.error('Error creating like notification:', notifError);
@@ -1026,26 +1045,23 @@ app.post("/post/:postId/comment", isLoggedIn, async (req, res) => {
         // Create notification for comment
         if (post.user.toString() !== user._id.toString()) {
             try {
-                const sender = await userModel.findById(user._id);
-                const senderName = sender ? sender.name : 'Someone';
+                const {
+                    createCommentNotification
+                } = require('./utils/notifications');
                 
-                await createNotification({
-                    recipient: post.user,
-                    sender: user._id,
-                    type: 'comment',
-                    title: 'New Comment',
-                    message: `${senderName} commented on your post`,
-                    data: {
-                        postId: post._id,
-                        commentId: comment._id
-                    }
+                await createCommentNotification({
+                    recipientId: post.user,
+                    senderId: user._id,
+                    senderName: user.name || 'Someone',
+                    postId: post._id,
+                    commentId: comment._id
                 });
             } catch (notifError) {
                 console.error('Error creating comment notification:', notifError);
                 // Continue even if notification fails
             }
         }
-        
+                
         // Check for mentions in the comment
         const mentionRegex = /@(\w+)/g;
         const mentions = content.match(mentionRegex);
@@ -1053,29 +1069,27 @@ app.post("/post/:postId/comment", isLoggedIn, async (req, res) => {
         if (mentions) {
             const usernames = mentions.map(mention => mention.substring(1));
             
-            // Find mentioned users and notify them
+            // Find mentioned users
             const mentionedUsers = await userModel.find({
                 username: { $in: usernames }
             });
             
+            // Create mention notifications
             for (const mentionedUser of mentionedUsers) {
                 // Don't notify yourself or the post owner (who already gets a comment notification)
                 if (mentionedUser._id.toString() !== user._id.toString() && 
                     mentionedUser._id.toString() !== post.user.toString()) {
                     try {
-                        const sender = await userModel.findById(user._id);
-                        const senderName = sender ? sender.name : 'Someone';
+                        const {
+                            createMentionNotification
+                        } = require('./utils/notifications');
                         
-                        await createNotification({
-                            recipient: mentionedUser._id,
-                            sender: user._id,
-                            type: 'mention',
-                            title: 'You were mentioned',
-                            message: `${senderName} mentioned you in a comment`,
-                            data: {
-                                postId: post._id,
-                                commentId: comment._id
-                            }
+                        await createMentionNotification({
+                            recipientId: mentionedUser._id,
+                            senderId: user._id,
+                            senderName: user.name || 'Someone',
+                            postId: post._id,
+                            commentId: comment._id
                         });
                     } catch (notifError) {
                         console.error('Error creating mention notification:', notifError);
@@ -1140,16 +1154,14 @@ app.post("/comment/:commentId/reply", isLoggedIn, async (req, res) => {
                 const sender = await userModel.findById(user._id);
                 const senderName = sender ? sender.name : 'Someone';
                 
-                await createNotification({
-                    recipient: comment.user,
-                    sender: user._id,
-                    type: 'reply',
-                    title: 'New Reply',
-                    message: `${senderName} replied to your comment`,
-                    data: {
-                        postId: post._id,
-                        commentId: comment._id
-                    }
+                const { createReplyNotification } = require('./utils/notifications');
+                
+                await createReplyNotification({
+                    recipientId: comment.user,
+                    senderId: user._id,
+                    senderName: senderName,
+                    postId: post._id,
+                    commentId: comment._id
                 });
             } catch (notifError) {
                 console.error('Error creating reply notification:', notifError);
@@ -1174,7 +1186,15 @@ app.post("/comment/:commentId/reply", isLoggedIn, async (req, res) => {
                 if (mentionedUser._id.toString() !== user._id.toString() && 
                     mentionedUser._id.toString() !== comment.user.toString()) {
                     const post = await postModel.findById(comment.post);
-                    await createNotification(mentionedUser._id, user._id, 'mention', post._id, comment._id);
+                    const { createMentionNotification } = require('./utils/notifications');
+                    
+                    await createMentionNotification({
+                        recipientId: mentionedUser._id,
+                        senderId: user._id,
+                        senderName: user.name || 'Someone',
+                        postId: post._id,
+                        commentId: comment._id
+                    });
                 }
             }
         }
@@ -1200,18 +1220,18 @@ app.post("/comment/:commentId/like", isLoggedIn, async (req, res) => {
             
             // Create notification for comment like
             if (comment.user.toString() !== user._id.toString()) {
-                // Get the post for context
-                const post = await postModel.findById(comment.post);
                 try {
-                    const sender = await userModel.findById(user._id);
-                    const senderName = sender ? sender.name : 'Someone';
+                    const post = await postModel.findById(comment.post);
+                    const {
+                        createNotification
+                    } = require('./utils/notifications');
                     
                     await createNotification({
                         recipient: comment.user,
                         sender: user._id,
                         type: 'comment_like',
                         title: 'Comment Liked',
-                        message: `${senderName} liked your comment`,
+                        message: `${user.name || 'Someone'} liked your comment`,
                         data: {
                             postId: post._id,
                             commentId: comment._id
@@ -1254,18 +1274,18 @@ app.post("/comment/:commentId/reply/:replyIndex/like", isLoggedIn, async (req, r
             
             // Create notification for reply like
             if (reply.user.toString() !== user._id.toString()) {
-                // Get the post for context
-                const post = await postModel.findById(comment.post);
                 try {
-                    const sender = await userModel.findById(user._id);
-                    const senderName = sender ? sender.name : 'Someone';
+                    const post = await postModel.findById(comment.post);
+                    const {
+                        createNotification
+                    } = require('./utils/notifications');
                     
                     await createNotification({
                         recipient: reply.user,
                         sender: user._id,
                         type: 'reply_like',
                         title: 'Reply Liked',
-                        message: `${senderName} liked your reply`,
+                        message: `${user.name || 'Someone'} liked your reply`,
                         data: {
                             postId: post._id,
                             commentId: comment._id
@@ -2819,7 +2839,12 @@ app.post('/user/:userId/follow', isLoggedIn, async (req, res) => {
                     });
                     
                     // Create notification for follow request
-                    await createNotification(userToFollow._id, currentUser._id, 'followRequest');
+                    const { createFollowRequestNotification } = require('./utils/notifications');
+                    await createFollowRequestNotification({
+                        recipientId: userToFollow._id,
+                        senderId: currentUser._id,
+                        senderName: currentUser.name || currentUser.username || 'Someone'
+                    });
                 }
                 
                 return res.json({
@@ -2838,7 +2863,12 @@ app.post('/user/:userId/follow', isLoggedIn, async (req, res) => {
                 });
                 
                 // Create notification for new follower
-                await createNotification(userToFollow._id, currentUser._id, 'follow');
+                const { createFollowNotification } = require('./utils/notifications');
+                await createFollowNotification({
+                    recipientId: userToFollow._id,
+                    senderId: currentUser._id,
+                    senderName: currentUser.name || currentUser.username || 'Someone'
+                });
                 
                 // Get updated follower count
                 const updatedUser = await userModel.findById(userToFollow._id);
@@ -2919,16 +2949,57 @@ app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
                 $pull: { followers: user._id }
             });
         } else {
-            // Follow
-            await userModel.findByIdAndUpdate(user._id, {
-                $addToSet: { following: userToFollow._id }
-            });
-            await userModel.findByIdAndUpdate(userToFollow._id, {
-                $addToSet: { followers: user._id }
-            });
-            
-            // Create notification for new follower
-            await createNotification(userToFollow._id, user._id, 'follow');
+            // Check if account is private
+            if (userToFollow.isPrivate) {
+                // Check if the request already exists
+                const alreadyRequested = userToFollow.followRequests && 
+                    userToFollow.followRequests.some(req => 
+                        req.user && req.user.toString() === user._id.toString()
+                    );
+                
+                if (!alreadyRequested) {
+                    // Add follow request
+                    await userModel.findByIdAndUpdate(userToFollow._id, {
+                        $push: { 
+                            followRequests: {
+                                user: user._id,
+                                createdAt: new Date()
+                            }
+                        }
+                    });
+                    
+                    // Create notification for follow request
+                    const { createFollowRequestNotification } = require('./utils/notifications');
+                    await createFollowRequestNotification({
+                        recipientId: userToFollow._id,
+                        senderId: user._id,
+                        senderName: user.name || user.username || 'Someone'
+                    });
+                }
+                
+                return res.json({
+                    success: true,
+                    isFollowing: false,
+                    followRequested: true,
+                    followersCount: userToFollow.followers.length
+                });
+            } else {
+                // Public account - follow directly
+                await userModel.findByIdAndUpdate(user._id, {
+                    $addToSet: { following: userToFollow._id }
+                });
+                await userModel.findByIdAndUpdate(userToFollow._id, {
+                    $addToSet: { followers: user._id }
+                });
+                
+                // Create notification for new follower
+                const { createFollowNotification } = require('./utils/notifications');
+                await createFollowNotification({
+                    recipientId: userToFollow._id,
+                    senderId: user._id,
+                    senderName: user.name || user.username || 'Someone'
+                });
+            }
         }
 
         // Get updated follower count
@@ -2942,8 +3013,8 @@ app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
             followersCount: updatedUser.followers.length
         });
     } catch (error) {
-        console.error('Error processing follow:', error);
-        res.status(500).json({ error: "Error processing follow request" });
+        console.error('Error following/unfollowing user:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
@@ -4128,6 +4199,84 @@ app.post('/api/events/:id/attend', isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error updating event attendance:', error);
         res.status(500).json({ error: 'Error updating event attendance' });
+    }
+});
+
+// Send follow request
+app.post('/follow/:username', isLoggedIn, async (req, res) => {
+    try {
+        const userToFollow = await userModel.findOne({ username: req.params.username });
+        if (!userToFollow) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        const currentUser = await userModel.findOne({ email: req.user.email });
+        
+        // Check if user is not already being followed
+        if (currentUser.following.includes(userToFollow._id)) {
+            return res.status(400).json({ message: 'You are already following this user' });
+        }
+        
+        // For private accounts, send a follow request
+        if (userToFollow.isPrivate) {
+            // Check if request already exists
+            if (userToFollow.followRequests && userToFollow.followRequests.includes(currentUser._id)) {
+                return res.status(400).json({ message: 'Follow request already sent' });
+            }
+            
+            // Add to follow requests array
+            if (!userToFollow.followRequests) {
+                userToFollow.followRequests = [];
+            }
+            userToFollow.followRequests.push(currentUser._id);
+            await userToFollow.save();
+            
+            // Send notification
+            try {
+                const {
+                    createFollowRequestNotification
+                } = require('./utils/notifications');
+                
+                await createFollowRequestNotification({
+                    recipientId: userToFollow._id,
+                    senderId: currentUser._id,
+                    senderName: currentUser.name || 'Someone'
+                });
+            } catch (notifError) {
+                console.error('Error creating follow request notification:', notifError);
+                // Continue even if notification fails
+            }
+            
+            return res.json({ message: 'Follow request sent' });
+        }
+        
+        // For public accounts, add directly to following/followers
+        currentUser.following.push(userToFollow._id);
+        await currentUser.save();
+        
+        userToFollow.followers.push(currentUser._id);
+        await userToFollow.save();
+        
+        // Send notification
+        try {
+            const {
+                createFollowNotification
+            } = require('./utils/notifications');
+            
+            await createFollowNotification({
+                recipientId: userToFollow._id,
+                senderId: currentUser._id,
+                senderName: currentUser.name || 'Someone'
+            });
+        } catch (notifError) {
+            console.error('Error creating follow notification:', notifError);
+            // Continue even if notification fails
+        }
+        
+        res.json({ message: 'Following user' });
+    } catch (error) {
+        console.error('Error following user:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 

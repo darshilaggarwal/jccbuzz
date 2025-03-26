@@ -1,26 +1,50 @@
 const User = require('../models/User');
 const Group = require('../models/Group');
 const { createNotification } = require('../utils/notifications');
+const socketIO = require('socket.io');
+const notificationModel = require('../models/notification');
 
 let io;
 
 const userSockets = new Map();
 
 function initSocket(server) {
-    io = require('socket.io')(server);
+    io = socketIO(server, {
+        cors: {
+            origin: '*',
+            methods: ['GET', 'POST']
+        }
+    });
 
     io.on('connection', async (socket) => {
         try {
-            const userId = socket.handshake.auth.userId;
+            const userIdData = socket.handshake.auth.userId;
+            // Extract the actual ID, whether it comes as string or object
+            const userId = typeof userIdData === 'object' && userIdData.userId ? userIdData.userId : userIdData;
+            
             if (userId) {
                 userSockets.set(userId, socket.id);
-                await User.findByIdAndUpdate(userId, { isOnline: true });
-                socket.broadcast.emit('userOnline', { userId });
+                try {
+                    await User.findByIdAndUpdate(userId, { isOnline: true });
+                    socket.broadcast.emit('userOnline', { userId });
+                    
+                    // Automatically join user's own notification room
+                    socket.join(`user:${userId}`);
+                    console.log(`User ${userId} joined notification room: user:${userId}`);
+                } catch (error) {
+                    console.error('Error updating user online status:', error);
+                }
             }
 
             // Join private chat room
             socket.on('joinChat', (chatId) => {
                 socket.join(`chat_${chatId}`);
+            });
+
+            // Join user's notification room
+            socket.on('joinRoom', (room) => {
+                socket.join(room);
+                console.log(`User ${userId} joined room: ${room}`);
             });
 
             // Leave private chat room
@@ -146,17 +170,62 @@ function initSocket(server) {
                 });
             });
 
+            // Handle real-time notifications
+            socket.on('notification', async (notification) => {
+                try {
+                    // Send to specific recipient
+                    if (notification.recipient && userSockets.has(notification.recipient)) {
+                        io.to(userSockets.get(notification.recipient)).emit('notification', notification);
+                    }
+                } catch (error) {
+                    console.error('Error handling notification socket event:', error);
+                }
+            });
+
+            // Handle new post notifications
+            socket.on('newPostNotification', async (data) => {
+                try {
+                    const { senderId, followers, postId } = data;
+                    
+                    // Get sender information for better notifications
+                    const sender = await User.findById(senderId).select('name username profileImage');
+                    
+                    // Emit to all online followers
+                    for (const followerId of followers) {
+                        if (userSockets.has(followerId)) {
+                            io.to(userSockets.get(followerId)).emit('new_notification', {
+                                type: 'new_post',
+                                sender,
+                                title: 'New Post',
+                                message: `${sender?.name || 'Someone you follow'} shared a new post`,
+                                data: { postId },
+                                createdAt: new Date()
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error handling new post notification:', error);
+                }
+            });
+
             socket.on('disconnect', async () => {
                 if (userId) {
                     userSockets.delete(userId);
-                    await User.findByIdAndUpdate(userId, { isOnline: false });
-                    socket.broadcast.emit('userOffline', { userId });
+                    try {
+                        await User.findByIdAndUpdate(userId, { isOnline: false });
+                        socket.broadcast.emit('userOffline', { userId });
+                    } catch (error) {
+                        console.error('Error updating user offline status:', error);
+                    }
                 }
             });
         } catch (error) {
             console.error('Socket connection error:', error);
         }
     });
+
+    // Store the io instance globally
+    global.io = io;
 
     return io;
 }
@@ -168,7 +237,52 @@ function getIO() {
     return io;
 }
 
+// Function to send a notification to a specific user
+const sendNotification = async (recipientId, notification) => {
+    try {
+        if (io && recipientId) {
+            const recipientSocket = userSockets.get(recipientId.toString());
+            
+            // If recipient is online (has an active socket), send to their socket
+            if (recipientSocket) {
+                io.to(recipientSocket).emit('new_notification', notification);
+            }
+            
+            // Also emit to user room for when they reconnect
+            io.to(`user:${recipientId.toString()}`).emit('new_notification', notification);
+        }
+    } catch (error) {
+        console.error('Error sending notification via socket:', error);
+    }
+};
+
+// Helper function to send all types of notifications
+const sendRealTimeNotification = async (notificationData) => {
+    try {
+        // Format the notification for real-time display
+        const { recipient, type, title, message, data } = notificationData;
+        
+        // Store in database
+        const newNotification = await notificationModel.create(notificationData);
+        
+        // Populate sender info for real-time display
+        if (newNotification.sender) {
+            await newNotification.populate('sender', 'name username profileImage');
+        }
+        
+        // Send to recipient via socket
+        sendNotification(recipient, newNotification);
+        
+        return newNotification;
+    } catch (error) {
+        console.error('Error sending real-time notification:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     initSocket,
-    getIO
+    getIO,
+    sendNotification,
+    sendRealTimeNotification
 }; 

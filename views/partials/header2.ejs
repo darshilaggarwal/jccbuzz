@@ -12,6 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="/placeholder/JccBUZZ logo.svg">
     <link rel="shortcut icon" href="/placeholder/JccBUZZ logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/placeholder/JccBUZZ logo.svg">
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -769,18 +770,27 @@
                 let iconBgClass = '';
                 
                 // Determine icon and background based on notification type
-                if (notification.type.includes('project_join')) {
+                if (notification.type.includes('project_')) {
                     iconClass = 'fas fa-project-diagram';
                     iconBgClass = 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400';
-                } else if (notification.type.includes('follow')) {
+                } else if (notification.type === 'follow' || notification.type === 'follow_request' || notification.type === 'follow_accepted') {
                     iconClass = 'fas fa-user-plus';
                     iconBgClass = 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
-                } else if (notification.type === 'like') {
+                } else if (notification.type === 'like' || notification.type === 'comment_like' || notification.type === 'reply_like') {
                     iconClass = 'fas fa-heart';
                     iconBgClass = 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
-                } else if (notification.type.includes('comment') || notification.type === 'reply') {
+                } else if (notification.type === 'comment') {
                     iconClass = 'fas fa-comment';
                     iconBgClass = 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400';
+                } else if (notification.type === 'reply') {
+                    iconClass = 'fas fa-reply';
+                    iconBgClass = 'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400';
+                } else if (notification.type === 'mention') {
+                    iconClass = 'fas fa-at';
+                    iconBgClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
+                } else if (notification.type === 'new_post') {
+                    iconClass = 'fas fa-image';
+                    iconBgClass = 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400';
                 } else {
                     iconClass = 'fas fa-bell';
                     iconBgClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
@@ -800,12 +810,26 @@
                 // Check if this is a project join request notification
                 const isProjectJoinRequest = notification.type === 'project_join_request';
                 
+                // Display sender profile image when available
+                const senderImage = notification.sender && notification.sender.profileImage 
+                    ? notification.sender.profileImage 
+                    : '/placeholder/image.png';
+                    
+                // In social notifications, use sender profile image
+                const useProfileImage = !notification.type.includes('project_');
+                
                 let contentHtml = `
                     <div class="flex items-start space-x-3">
                         <div class="flex-shrink-0">
-                            <div class="w-10 h-10 rounded-full ${iconBgClass} flex items-center justify-center shadow-sm">
-                                <i class="${iconClass} text-lg"></i>
-                            </div>
+                            ${useProfileImage ? `
+                                <img src="${senderImage}" alt="Profile" 
+                                     class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                                     onerror="this.src='/placeholder/image.png'">
+                            ` : `
+                                <div class="w-10 h-10 rounded-full ${iconBgClass} flex items-center justify-center shadow-sm">
+                                    <i class="${iconClass} text-lg"></i>
+                                </div>
+                            `}
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-start mb-1">
@@ -976,18 +1000,25 @@
                     
                     markNotificationAsRead(notification._id);
                     
-                            // Navigate based on notification type
-                    if (notification.type.includes('project_join')) {
+                    // Navigate based on notification type
+                    if (notification.type.includes('like')) {
+                        // For post likes, comment likes, reply likes
+                        if (notification.data && notification.data.postId) {
+                            window.location.href = `/post/${notification.data.postId}`;
+                        } else {
+                            window.location.href = '/notifications';
+                        }
+                    } else if (notification.type.includes('comment') || notification.type === 'reply' || notification.type === 'mention') {
+                        // For comments, replies, mentions
+                        if (notification.data && notification.data.postId) {
+                            window.location.href = `/post/${notification.data.postId}`;
+                        } else {
+                            window.location.href = '/notifications';
+                        }
+                    } else if (notification.type.includes('project_')) {
                         window.location.href = '/projects';
                     } else if (notification.type.includes('follow')) {
                         window.location.href = '/follow-requests';
-                    } else if (notification.type.includes('like') || notification.type.includes('comment')) {
-                        // Navigate to post if available
-                        if (notification.data && notification.data.postId) {
-                            window.location.href = `/post/${notification.data.postId}`;
-                            } else {
-                                window.location.href = '/notifications';
-                            }
                     } else {
                         window.location.href = '/notifications';
                     }
@@ -1143,6 +1174,77 @@
             
             // Poll for notifications more frequently (every 10 seconds)
             setInterval(fetchUnreadCount, 10000);
+
+            // Initialize socket for real-time notifications
+            const socket = io();
+            
+            // Send authentication when connected
+            socket.on('connect', function() {
+                console.log('Socket connected');
+                
+                /* eslint-disable */
+                <% if (locals.user && locals.user._id) { %>
+                // Authenticate with user ID
+                socket.auth = { userId: '<%= locals.user._id %>' };
+                socket.emit('authenticate', { userId: '<%= locals.user._id %>' });
+                // Join user-specific room for notifications
+                socket.emit('joinRoom', 'user:<%= locals.user._id %>');
+                <% } %>
+                /* eslint-enable */
+            });
+            
+            // Listen for real-time notifications
+            socket.on('new_notification', function(notification) {
+                console.log('New notification received:', notification);
+                
+                // Update unread count
+                unreadCount++;
+                updateNotificationBadge();
+                
+                // Show toast notification with customized message based on type
+                let toastMessage = notification.message || 'New notification';
+                let toastType = 'info';
+                
+                // Customize toast by notification type
+                if (notification.type === 'like' || notification.type === 'comment_like' || notification.type === 'reply_like') {
+                    toastType = 'like';
+                    toastMessage = notification.message || 'Someone liked your content';
+                } else if (notification.type === 'comment' || notification.type === 'reply') {
+                    toastType = 'comment';
+                    toastMessage = notification.message || 'Someone commented on your content';
+                } else if (notification.type === 'follow' || notification.type === 'follow_request') {
+                    toastType = 'follow';
+                    toastMessage = notification.message || 'New follower activity';
+                } else if (notification.type === 'new_post') {
+                    toastType = 'post';
+                    toastMessage = notification.message || 'New post from someone you follow';
+                }
+                
+                showToast(toastMessage, toastType);
+                
+                // If notification panel is open, add the new notification at the top
+                if (isNotificationPanelOpen && notificationsContainer) {
+                    // Remove empty state if present
+                    if (notificationEmpty && !notificationEmpty.classList.contains('hidden')) {
+                        notificationEmpty.classList.add('hidden');
+                    }
+                    
+                    // Render the new notification at the top
+                    renderNotification(notification);
+                    
+                    // Move it to the top of the container
+                    const newNotificationElement = notificationsContainer.lastChild;
+                    if (newNotificationElement) {
+                        notificationsContainer.insertBefore(newNotificationElement, notificationsContainer.firstChild);
+                        
+                        // Add highlight animation
+                        newNotificationElement.classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+                        setTimeout(() => {
+                            newNotificationElement.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                        }, 3000);
+                    }
+                }
+            });
         });
     </script>
 </body>
