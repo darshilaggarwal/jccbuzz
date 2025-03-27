@@ -31,8 +31,11 @@ function closeCreatePostModal() {
     document.getElementById('addMoreImagesBtn').classList.add('hidden');
     
     // Reset character counters
-    document.getElementById('titleCharCount').textContent = '0/50';
     document.getElementById('captionCharCount').textContent = '0/2200';
+    
+    // Reset hidden title field
+    const hiddenTitleField = document.getElementById('hiddenTitleField');
+    if (hiddenTitleField) hiddenTitleField.value = '';
 }
 </script>
 
@@ -133,15 +136,16 @@ function closeCreatePostModal() {
                     </div>
                     
                     <!-- Add Story Button -->
-                    <button onclick="document.getElementById('storyUpload').click()" 
-                            class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 transition">
-                        <i class="fas fa-plus"></i>
+                    <button onclick="document.getElementById('storyUpload').click()"
+                    class="add-story-button absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md">
+                        <i class="fas fa-plus text-xs"></i>
                     </button>
-                    <input type="file" 
-                           id="storyUpload" 
-                           class="hidden" 
-                           accept="image/*,video/*" 
-                           onchange="handleStoryUpload(event)">
+                    
+                    <input type="file"
+                    class="hidden"
+                    id="storyUpload"
+                    accept="image/*,video/*"
+                    onchange="handleStoryUpload(event)">
                 </div>
             </div>
             
@@ -268,44 +272,39 @@ function closeCreatePostModal() {
 
 <!-- Create Post Modal -->
 <div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full mx-4 shadow-xl overflow-hidden transform transition-all">
+    <div class="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full md:w-4/5 lg:w-3/4 mx-4 shadow-xl overflow-hidden transform transition-all">
         <!-- Header -->
         <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
             <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <i class="fas fa-arrow-left"></i>
             </button>
-            <h2 class="text-sm font-semibold text-gray-800 dark:text-white">New Post</h2>
+            <h2 class="text-base font-semibold text-gray-800 dark:text-white">New Post</h2>
             <button type="submit" form="createPostForm" id="submitPostBtn" class="text-blue-500 font-semibold hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-sm">
                 Share
             </button>
         </div>
 
-        <form id="createPostForm" class="flex flex-col h-full">
-            <!-- Image Upload and Preview Section -->
-            <div class="flex-grow max-h-[60vh]">
+        <form id="createPostForm" class="flex flex-col md:flex-row h-full max-h-[80vh]">
+            <!-- Image Upload and Preview Section - Takes 60% width on larger screens -->
+            <div class="flex-grow md:w-3/5 h-[50vh] md:h-[70vh] md:max-h-[80vh]">
                 <!-- Image Preview Container -->
                 <div id="imagePreviewContainer" class="hidden h-full">
-                    <div class="aspect-square bg-gray-50 dark:bg-gray-800 relative flex items-center justify-center overflow-hidden">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 h-full w-full">
+                    <div class="bg-gray-50 dark:bg-gray-800 relative h-full w-full overflow-hidden">
+                        <!-- Instagram-like grid layout -->
+                        <div class="grid grid-cols-1 gap-1 h-full w-full" id="previewGrid">
                             <!-- Image previews will be added here -->
                         </div>
                         
                         <!-- Add more images button - shows when at least one image is selected -->
-                        <button type="button" class="absolute bottom-3 right-3 bg-black bg-opacity-70 text-white rounded-full p-2 hidden hover:bg-opacity-80 transition-all" id="addMoreImagesBtn">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
+                        <button type="button" class="absolute bottom-3 right-3 bg-black bg-opacity-70 text-white rounded-full p-3 hidden hover:bg-opacity-80 transition-all" id="addMoreImagesBtn">
+                            <i class="fas fa-plus"></i>
                         </button>
                     </div>
                 </div>
                 
                 <!-- Image Upload Placeholder - shows when no images are selected -->
-                <div id="imageUploadPlaceholder" class="aspect-square flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 border-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                <div id="imageUploadPlaceholder" class="h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 border-0">
+                    <i class="fas fa-images text-4xl text-gray-400 dark:text-gray-600 mb-3"></i>
                     <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">Drag photos here</p>
                     <label class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition cursor-pointer text-sm font-medium">
                         Select from computer
@@ -314,28 +313,35 @@ function closeCreatePostModal() {
                 </div>
             </div>
 
-            <!-- Post Details Section -->
-            <div class="border-t border-gray-200 dark:border-gray-800 p-4 space-y-3">
-                <!-- Title Input with character count -->
-                <div class="relative">
-                    <input type="text" 
-                           name="title" 
-                           placeholder="Write a title..." 
-                           maxlength="50"
-                           class="w-full px-3 py-2 bg-transparent border-0 border-b border-gray-200 dark:border-gray-700 focus:ring-0 focus:border-gray-300 dark:text-white text-sm"
-                           required>
-                    <div class="absolute right-2 bottom-2 text-xs text-gray-400 dark:text-gray-600" id="titleCharCount">0/50</div>
+            <!-- Post Details Section - Takes 40% width on larger screens -->
+            <div class="border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 p-4 md:p-6 md:w-2/5">
+                <!-- User Info -->
+                <div class="flex items-center mb-4">
+                    <img src="<%= user.profileImage %>" alt="<%= user.name %>" class="w-8 h-8 rounded-full object-cover">
+                    <div class="ml-2">
+                        <p class="font-semibold text-sm text-gray-800 dark:text-white"><%= user.username %></p>
+                    </div>
                 </div>
-
+                
+                <!-- Hidden title field to satisfy server requirements -->
+                <input type="hidden" name="title" id="hiddenTitleField">
+                
                 <!-- Caption Input with character count -->
                 <div class="relative">
                     <textarea name="content" 
                               placeholder="Write a caption..."
                               maxlength="2200"
-                              class="w-full px-3 py-2 bg-transparent border-0 border-b border-gray-200 dark:border-gray-700 focus:ring-0 focus:border-gray-300 dark:text-white resize-none text-sm"
-                              rows="3"
+                              class="w-full px-3 py-2 bg-transparent border-0 focus:ring-0 focus:border-gray-300 dark:text-white resize-none text-sm"
+                              rows="5"
                               required></textarea>
                     <div class="absolute right-2 bottom-2 text-xs text-gray-400 dark:text-gray-600" id="captionCharCount">0/2200</div>
+                </div>
+                
+                <!-- Emoji Picker Button -->
+                <div class="flex justify-end mt-2">
+                    <button type="button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="far fa-smile text-xl"></i>
+                    </button>
                 </div>
             </div>
         </form>
@@ -396,15 +402,26 @@ function closeCreatePostModal() {
                 <!-- Preview container -->
                 <div id="storyPreviewContainer" class="w-full h-full"></div>
             </div>
-            <div class="mt-4 flex justify-end space-x-2">
-                <button onclick="closeStoryPreview()" 
-                class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
-                    Cancel
-                </button>
-                <button onclick="uploadStory()" 
-                class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700">
-                    Share Story
-                </button>
+            <div class="mt-4 flex justify-between space-x-2">
+                <!-- Delete Story button (only visible when editing existing story) -->
+                <div id="storyDeleteButtonContainer" class="hidden">
+                    <button onclick="deleteStory()" 
+                    class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                        Delete Story
+                    </button>
+                </div>
+                
+                <div class="flex space-x-2 ml-auto">
+                    <button onclick="closeStoryPreview()" 
+                    class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
+                        Cancel
+                    </button>
+                    <button onclick="uploadStory()" 
+                    class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700">
+                        Share Story
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -593,16 +610,22 @@ async function handlePostSubmit(e) {
     
     // Add the caption content
     const contentField = form.querySelector('textarea[name="content"]');
-    const titleField = form.querySelector('input[name="title"]');
+    const titleField = document.getElementById('hiddenTitleField');
     
     if (contentField) {
         formData.append('content', contentField.value);
         console.log('Added content to form data:', contentField.value.substring(0, 30) + '...');
     }
     
-    if (titleField) {
+    // Add the title from hidden field
+    if (titleField && titleField.value) {
         formData.append('title', titleField.value);
         console.log('Added title to form data:', titleField.value);
+    } else if (contentField && contentField.value) {
+        // If no title but we have content, use first line of content as title
+        const titleText = contentField.value.trim().split('\n')[0].substring(0, 50);
+        formData.append('title', titleText);
+        console.log('Added auto-generated title to form data:', titleText);
     }
     
     // Append image files to form data
@@ -648,14 +671,25 @@ async function handlePostSubmit(e) {
             }, 1500);
         } else {
             console.error('Error response:', response.status);
-            let errorData;
+            let errorMsg = 'Could not create post';
+            
             try {
-                errorData = await response.json();
+                const errorData = await response.json();
                 console.error('Error data:', errorData);
+                errorMsg = errorData.message || errorData.error || errorMsg;
             } catch (e) {
                 console.error('Could not parse error response as JSON:', e);
+                // Try to read as text instead
+                try {
+                    const errorText = await response.text();
+                    console.error('Error text:', errorText);
+                    errorMsg = errorText || errorMsg;
+                } catch (textError) {
+                    console.error('Could not read error response as text:', textError);
+                }
             }
-            showToast('Error: ' + (errorData?.message || 'Could not create post'));
+            
+            showToast('Error: ' + errorMsg);
         }
     } catch (error) {
         console.error('Network error creating post:', error);
@@ -681,7 +715,7 @@ function handleImageSelect(event) {
     if (!files || files.length === 0) return;
     
     const previewContainer = document.getElementById('imagePreviewContainer');
-    const previewGrid = previewContainer.querySelector('div');
+    const previewGrid = document.getElementById('previewGrid');
     const uploadPlaceholder = document.getElementById('imageUploadPlaceholder');
     const addMoreBtn = document.getElementById('addMoreImagesBtn');
     
@@ -697,13 +731,39 @@ function handleImageSelect(event) {
         addMoreBtn.classList.remove('hidden');
     }
     
+    // Adjust grid columns based on number of files
+    if (files.length === 1) {
+        previewGrid.className = 'grid grid-cols-1 h-full w-full';
+    } else if (files.length === 2) {
+        previewGrid.className = 'grid grid-cols-2 h-full w-full gap-1';
+    } else if (files.length === 3) {
+        previewGrid.className = 'grid grid-cols-2 h-full w-full gap-1';
+    } else if (files.length === 4) {
+        previewGrid.className = 'grid grid-cols-2 h-full w-full gap-1';
+    } else {
+        previewGrid.className = 'grid grid-cols-3 h-full w-full gap-1';
+    }
+    
     // Create preview for each file
     Array.from(files).forEach((file, index) => {
         const reader = new FileReader();
         
         reader.onload = function(e) {
             const previewItem = document.createElement('div');
-            previewItem.className = 'relative aspect-square';
+            
+            // Create Instagram-like styling based on position
+            if (files.length === 1) {
+                previewItem.className = 'relative w-full h-full';
+            } else if (files.length === 2) {
+                previewItem.className = 'relative aspect-square';
+            } else if (files.length === 3 && index === 0) {
+                previewItem.className = 'relative aspect-square col-span-2 row-span-2';
+                previewGrid.className = 'grid grid-cols-2 grid-rows-2 h-full w-full gap-1';
+            } else if (files.length === 4) {
+                previewItem.className = 'relative aspect-square';
+            } else {
+                previewItem.className = 'relative aspect-square';
+            }
             
             const img = document.createElement('img');
             img.src = e.target.result;
@@ -722,18 +782,21 @@ function handleImageSelect(event) {
 
 // Add event listeners for character counts
 document.addEventListener('DOMContentLoaded', function() {
-    const titleInput = document.querySelector('input[name="title"]');
     const captionInput = document.querySelector('textarea[name="content"]');
-    const titleCharCount = document.getElementById('titleCharCount');
     const captionCharCount = document.getElementById('captionCharCount');
-    
-    titleInput.addEventListener('input', function() {
-        titleCharCount.textContent = `${this.value.length}/50`;
-        updateSubmitButtonState();
-    });
+    const hiddenTitleField = document.getElementById('hiddenTitleField');
     
     captionInput.addEventListener('input', function() {
         captionCharCount.textContent = `${this.value.length}/2200`;
+        
+        // Auto-populate the hidden title field with the first 50 chars of caption
+        if (this.value.trim()) {
+            const titleText = this.value.trim().split('\n')[0].substring(0, 50);
+            hiddenTitleField.value = titleText;
+        } else {
+            hiddenTitleField.value = '';
+        }
+        
         updateSubmitButtonState();
     });
     
@@ -745,17 +808,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to update submit button state
 function updateSubmitButtonState() {
-    const titleInput = document.querySelector('input[name="title"]');
     const captionInput = document.querySelector('textarea[name="content"]');
     const imageInput = document.getElementById('imageInput');
     const submitBtn = document.getElementById('submitPostBtn');
     
-    const hasTitle = titleInput.value.trim().length > 0;
     const hasCaption = captionInput.value.trim().length > 0;
     const hasImages = imageInput.files && imageInput.files.length > 0;
     
-    submitBtn.disabled = !(hasTitle && hasCaption && hasImages);
-    submitBtn.classList.toggle('opacity-50', !(hasTitle && hasCaption && hasImages));
+    // Populate hidden title field if not already done
+    if (hasCaption) {
+        const hiddenTitleField = document.getElementById('hiddenTitleField');
+        if (!hiddenTitleField.value) {
+            const titleText = captionInput.value.trim().split('\n')[0].substring(0, 50);
+            hiddenTitleField.value = titleText;
+        }
+    }
+    
+    submitBtn.disabled = !(hasCaption && hasImages);
+    submitBtn.classList.toggle('opacity-50', !(hasCaption && hasImages));
 }
 
 // Handle story upload
@@ -779,6 +849,12 @@ function handleStoryUpload(event) {
         reader.onload = function(e) {
             previewContainer.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
             document.getElementById('storyPreviewModal').classList.remove('hidden');
+            
+            // Check if user has an active story and show delete button
+            const hasActiveStory = document.querySelector('.bg-gradient-to-tr.from-yellow-400.to-fuchsia-600');
+            if (hasActiveStory) {
+                document.getElementById('storyDeleteButtonContainer').classList.remove('hidden');
+            }
         };
         reader.readAsDataURL(file);
     } else if (file.type.startsWith('video/')) {
@@ -788,6 +864,12 @@ function handleStoryUpload(event) {
                 <video src="${e.target.result}" class="w-full h-full object-cover" autoplay muted loop></video>
             `;
             document.getElementById('storyPreviewModal').classList.remove('hidden');
+            
+            // Check if user has an active story and show delete button
+            const hasActiveStory = document.querySelector('.bg-gradient-to-tr.from-yellow-400.to-fuchsia-600');
+            if (hasActiveStory) {
+                document.getElementById('storyDeleteButtonContainer').classList.remove('hidden');
+            }
         };
         reader.readAsDataURL(file);
     }
@@ -833,7 +915,45 @@ async function uploadStory() {
 function closeStoryPreview() {
     document.getElementById('storyPreviewModal').classList.add('hidden');
     document.getElementById('storyUpload').value = '';
+    document.getElementById('storyDeleteButtonContainer').classList.add('hidden');
     storyFile = null;
+}
+
+// Delete story
+async function deleteStory() {
+    // Get the current active story ID
+    const storyRing = document.querySelector('.story-ring');
+    if (!storyRing) {
+        showToast('No active story to delete');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to delete your story?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/story/delete', {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Story deleted successfully');
+            closeStoryPreview();
+            
+            // Refresh the page to update UI
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast(data.error || 'Failed to delete story');
+        }
+    } catch (error) {
+        console.error('Error deleting story:', error);
+        showToast('An error occurred while deleting the story');
+    }
 }
 
 // Delete confirmation functionality

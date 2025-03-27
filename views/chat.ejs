@@ -40,8 +40,13 @@
                             </div>
                             <!-- Very small story photo below the text -->
                             <% if (message.mediaUrl) { %>
-                                <div class="w-12 h-12 mb-2 rounded-sm overflow-hidden bg-black">
+                                <div class="w-12 h-12 mb-2 rounded-sm overflow-hidden bg-black relative">
                                     <img src="<%= message.mediaUrl %>" alt="Story" class="w-full h-full object-cover">
+                                    <% if (!message.sender._id.toString() === user._id.toString() && message.replyContext && message.replyContext.storyOwner && message.replyContext.storyOwner.toString() === user._id.toString()) { %>
+                                        <button onclick="deleteStory('<%= message.storyId %>')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    <% } %>
                                 </div>
                             <% } %>
                         <% } %>
@@ -278,8 +283,13 @@ function createMessageHTML(message) {
                 
                 <!-- Small story photo below the text -->
                 ${message.mediaUrl ? `
-                    <div class="w-12 h-12 mb-2 rounded-sm overflow-hidden bg-black">
+                    <div class="w-12 h-12 mb-2 rounded-sm overflow-hidden bg-black relative">
                         <img src="${message.mediaUrl}" alt="Story" class="w-full h-full object-cover">
+                        ${!isSender && message.replyContext && message.replyContext.storyOwner === userId ? `
+                            <button onclick="deleteStory('${message.storyId}')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        ` : ''}
                     </div>
                 ` : ''}
                 
@@ -1445,6 +1455,52 @@ function showToast(message) {
         }, 300);
     }, 3000);
 }
+
+// Function to delete a story
+async function deleteStory(storyId) {
+    if (!storyId) return;
+    
+    if (!confirm('Are you sure you want to delete this story?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/story/${storyId}/delete`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Find all messages related to this story and fade them out
+            const storyMessages = document.querySelectorAll(`[data-story-id="${storyId}"]`);
+            storyMessages.forEach(msgEl => {
+                const messageContainer = msgEl.closest('.flex');
+                if (messageContainer) {
+                    messageContainer.style.opacity = '0.5';
+                    messageContainer.style.transition = 'opacity 0.3s ease';
+                }
+            });
+            
+            showToast('Story deleted successfully');
+        } else {
+            const errorData = await response.json();
+            showToast(errorData.error || 'Failed to delete story');
+        }
+    } catch (error) {
+        console.error('Error deleting story:', error);
+        showToast('An error occurred while deleting the story');
+    }
+}
+
+// Add data-story-id attribute to story reply messages
+document.querySelectorAll('[data-message-id]').forEach(messageEl => {
+    const deleteBtn = messageEl.querySelector('button[onclick^="deleteStory"]');
+    if (deleteBtn) {
+        const storyId = deleteBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+        if (storyId) {
+            messageEl.setAttribute('data-story-id', storyId);
+        }
+    }
+});
 </script>
 
 <%- include('partials/footer') %> 

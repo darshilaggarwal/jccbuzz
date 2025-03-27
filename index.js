@@ -1802,6 +1802,76 @@ app.post("/story/:storyId/reply", isLoggedIn, async (req, res) => {
     }
 });
 
+// Story delete route
+app.delete("/story/:storyId/delete", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        const story = await storyModel.findById(req.params.storyId);
+
+        if (!story) {
+            return res.status(404).json({ error: "Story not found" });
+        }
+
+        // Check if user owns the story
+        if (story.user.toString() !== user._id.toString()) {
+            return res.status(403).json({ error: "You can only delete your own stories" });
+        }
+
+        // Delete the story
+        await storyModel.findByIdAndDelete(req.params.storyId);
+
+        // Optional: Find and update any chat messages that reference this story
+        // This keeps the messages but marks them as associated with a deleted story
+        await chatModel.updateMany(
+            { "messages.storyId": req.params.storyId },
+            { 
+                $set: { 
+                    "messages.$[elem].storyDeleted": true 
+                } 
+            },
+            { 
+                arrayFilters: [{ "elem.storyId": req.params.storyId }] 
+            }
+        );
+
+        res.status(200).json({ message: "Story deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting story:", error);
+        res.status(500).json({ error: "Error deleting story" });
+    }
+});
+
+// Story delete route
+app.delete("/story/delete", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        // Find the user's active stories
+        const stories = await storyModel.find({ 
+            user: user._id,
+            createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Stories from last 24 hours
+        });
+        
+        if (stories.length === 0) {
+            return res.status(404).json({ error: "No active stories found" });
+        }
+        
+        // Delete all active stories for this user
+        await storyModel.deleteMany({ 
+            user: user._id,
+            createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+        });
+        
+        // Update user hasActiveStory status
+        await userModel.findByIdAndUpdate(user._id, { hasActiveStory: false });
+        
+        res.status(200).json({ message: "Story deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting story:", error);
+        res.status(500).json({ error: "Error deleting story" });
+    }
+});
+
 // Add this after all your middleware setup
 const connectedUsers = new Map(); // Store online users
 
