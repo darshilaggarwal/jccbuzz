@@ -213,7 +213,7 @@ function initSocket(server) {
                     userSockets.delete(userId);
                     try {
                         await User.findByIdAndUpdate(userId, { isOnline: false });
-                        socket.broadcast.emit('userOffline', { userId });
+                        socket.broadcast.emit('userOffline', userId);
                     } catch (error) {
                         console.error('Error updating user offline status:', error);
                     }

@@ -337,6 +337,7 @@ function appendMessage(message, isSender) {
 }
 
 // Authenticate with Socket.IO
+socket.auth = { userId: userId };
 socket.emit('authenticate', userId);
 
 // Listen for online/offline status

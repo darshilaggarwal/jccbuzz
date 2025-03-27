@@ -1186,7 +1186,7 @@
                 <% if (locals.user && locals.user._id) { %>
                 // Authenticate with user ID
                 socket.auth = { userId: '<%= locals.user._id %>' };
-                socket.emit('authenticate', { userId: '<%= locals.user._id %>' });
+                socket.emit('authenticate', '<%= locals.user._id %>');
                 // Join user-specific room for notifications
                 socket.emit('joinRoom', 'user:<%= locals.user._id %>');
                 <% } %>

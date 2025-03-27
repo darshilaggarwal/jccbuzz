@@ -1366,9 +1366,32 @@ function updatePostHeadersWithStoryRings(userIdsWithStories) {
 
 // Helper function to check if user has viewed all stories
 function checkIfViewedAllStories(userId) {
-    // This would ideally be implemented with proper story viewing data
-    // For now we'll default to showing the red ring (unviewed)
-    return false;
+    // Check if there are stories for this user
+    if (!currentStories || currentStories.length === 0) {
+        return false;
+    }
+    
+    // Find stories for this user
+    const userStoriesData = Object.values(currentStories).find(item => item.user && item.user._id === userId);
+    
+    if (!userStoriesData || !userStoriesData.stories || userStoriesData.stories.length === 0) {
+        return false;
+    }
+    
+    // Make sure we have a valid current user ID
+    if (!window.currentUserId) {
+        console.error('Current user ID not found');
+        return false;
+    }
+    
+    // Check if all stories have been viewed by the current user
+    return userStoriesData.stories.every(story => 
+        story.viewers && Array.isArray(story.viewers) && 
+        story.viewers.some(viewer => 
+            viewer === window.currentUserId || 
+            (typeof viewer === 'object' && viewer.user && viewer.user.toString() === window.currentUserId.toString())
+        )
+    );
 }
 
 // Open story viewer by user ID
@@ -1543,32 +1566,114 @@ function markStoryAsViewed(storyId) {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-        .then(data => {
-        console.log('Story marked as viewed:', data);
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to mark story as viewed');
+        }
+        return response.json();
     })
-    .catch(error => console.error('Error marking story as viewed:', error));
+    .then(data => {
+        console.log('Story marked as viewed:', data);
+        
+        // Add the current user to the viewers list locally to update UI without reload
+        if (currentStories && currentStories[currentUserIndex] && 
+            currentStories[currentUserIndex].stories && 
+            currentStories[currentUserIndex].stories[currentStoryIndex]) {
+            
+            const story = currentStories[currentUserIndex].stories[currentStoryIndex];
+            if (!story.viewers) {
+                story.viewers = [];
+            }
+            
+            // Add current user to viewers if not already there
+            if (!story.viewers.includes(window.currentUserId)) {
+                story.viewers.push(window.currentUserId);
+            }
+            
+            // Check if all stories for this user are viewed
+            // We can use the server response if available, otherwise check locally
+            const userId = currentStories[currentUserIndex].user._id;
+            const allStoriesViewed = data.allStoriesViewed || checkIfViewedAllStories(userId);
+            
+            if (allStoriesViewed) {
+                console.log(`All stories viewed for user ${userId}`);
+                
+                // Update story rings in post headers
+                document.querySelectorAll(`.post-header-avatar[data-user-id="${userId}"]`).forEach(avatar => {
+                    avatar.classList.remove('story-active');
+                    avatar.classList.add('story-viewed');
+                });
+                
+                // Update story rings in post containers
+                document.querySelectorAll(`.post-container[data-user-id="${userId}"] .story-ring`).forEach(ring => {
+                    ring.classList.remove('story-ring');
+                    ring.classList.add('story-ring-viewed');
+                });
+                
+                // Update story bubbles in stories list
+                document.querySelectorAll(`#storiesList [onclick*="${userId}"] .story-ring`).forEach(bubble => {
+                    bubble.classList.remove('story-ring');
+                    bubble.classList.add('story-ring-viewed');
+                });
+                
+                // Also update any avatar with data-stories-id
+                document.querySelectorAll(`[data-stories-id="${userId}"]`).forEach(element => {
+                    if (element.classList.contains('story-active')) {
+                        element.classList.remove('story-active');
+                        element.classList.add('story-viewed');
+                    }
+                });
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error marking story as viewed:', error);
+        // Continue with story playback even if marking as viewed fails
+        if (storyTimer === null) {
+            // If timer was cleared, restart it
+            const duration = story.media.type === 'image' ? 5000 : 10000;
+            storyTimer = setTimeout(() => {
+                nextStory();
+            }, duration);
+        }
+    });
 }
 
 // Show next story
 function nextStory() {
+    // Clear any existing timer
+    if (storyTimer) {
+        clearTimeout(storyTimer);
+        storyTimer = null;
+    }
+    
+    if (!currentStories || currentUserIndex >= currentStories.length) {
+        closeStoryModal();
+        return;
+    }
+    
     const userStories = currentStories[currentUserIndex];
+    if (!userStories || !userStories.stories) {
+        closeStoryModal();
+        return;
+    }
     
     // Move to next story in current user's stories
     currentStoryIndex++;
     
-    // If we've reached the end of this user's stories, move to next user
+    // If we've reached the end of current user's stories, move to next user
     if (currentStoryIndex >= userStories.stories.length) {
         currentUserIndex++;
         currentStoryIndex = 0;
         
-        // If we've reached the end of all stories, close modal
+        // If we've reached the end of all users, close modal
         if (currentUserIndex >= currentStories.length) {
             closeStoryModal();
-                return;
+            return;
         }
     }
     
+    // Display the next story
     displayCurrentStory();
 }
 
@@ -1616,50 +1721,59 @@ function replyToStory(event) {
     event.preventDefault();
     
     const replyInput = document.getElementById('storyReplyInput');
-    const message = replyInput.value.trim();
+    const replyText = replyInput.value.trim();
     
-    if (!message) return;
+    if (!replyText) {
+        showToast('Please enter a reply');
+        return;
+    }
     
-    const userStories = currentStories[currentUserIndex];
-    const story = userStories.stories[currentStoryIndex];
-    
-    // Show loading state in button
-    const submitBtn = event.target.querySelector('button');
-    const originalBtnHTML = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    // Disable input and show loading state
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
     submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    replyInput.disabled = true;
     
-    fetch(`/story/${story._id}/reply`, {
+    // Get current story ID
+    const storyId = currentStories[currentUserIndex].stories[currentStoryIndex]._id;
+    
+    fetch(`/story/${storyId}/reply`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message: replyText })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to send reply');
+        }
+        return response.json();
+    })
     .then(data => {
-        if (data.message) {
-            showToast('Reply sent');
-            replyInput.value = '';
-            
-            // Redirect to the chat with the story owner
-            if (data.chatId) {
-                // Close story modal
-                closeStoryModal();
-                
-                // Wait for toast to be visible before redirecting
-                setTimeout(() => {
-                    window.location.href = `/chat/${data.chatId}`;
-                }, 1000);
-            }
+        console.log('Reply sent:', data);
+        showToast('Reply sent successfully');
+        
+        // Clear input and reset form
+        replyInput.value = '';
+        
+        // If data includes chatId, store it for later navigation
+        if (data.chatId) {
+            localStorage.setItem('storyReplyChatId', data.chatId);
         }
     })
     .catch(error => {
         console.error('Error sending reply:', error);
-            console.error('Error loading more posts:', error);
-            isLoading = false;
-            loadingSpinner.classList.add('hidden');
-        });
+        showToast('Failed to send reply. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable input and reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+        replyInput.disabled = false;
+        replyInput.focus();
+    });
 }
 
 // Create Post Modal Functions
@@ -2327,6 +2441,134 @@ function deletePost() {
         closePostOptionsModal();
     }
 }
+
+// Handle story upload
+function handleStoryUpload(event) {
+    const file = event.target.files[0];
+    
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        showToast('Please select an image or video file');
+        return;
+    }
+
+    storyFile = file;
+    
+    // Show preview
+    const previewContainer = document.getElementById('storyPreviewContainer');
+
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewContainer.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+            document.getElementById('storyPreviewModal').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else if (file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewContainer.innerHTML = `
+                <video src="${e.target.result}" class="w-full h-full object-cover" autoplay muted loop></video>
+            `;
+            document.getElementById('storyPreviewModal').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Upload story
+async function uploadStory() {
+    if (!storyFile) {
+        showToast('Please select a file first');
+        return;
+    }
+
+    // Disable the upload button and show uploading state
+    const uploadBtn = document.querySelector('button[onclick="uploadStory()"]');
+    const originalText = uploadBtn.textContent;
+    uploadBtn.textContent = 'Uploading...';
+    uploadBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('story', storyFile);
+
+    try {
+        const response = await fetch('/story', {
+            method: 'POST',
+            body: formData
+        });
+
+        // Parse the response as JSON
+        const data = await response.json();
+
+        // Check if response was successful based on HTTP status
+        if (response.ok) {
+            closeStoryPreview();
+            showToast('Story uploaded successfully!');
+            
+            // Update UI to show active story status immediately
+            const yourStoryBtn = document.querySelector('.story-ring');
+            if (yourStoryBtn) {
+                yourStoryBtn.classList.add('story-ring');
+                yourStoryBtn.classList.remove('story-ring-viewed');
+            }
+            
+            // Update story rings for the current user in the feed
+            updateAllStoryRings();
+            
+            // Reload the page after a short delay to reflect the new story
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            const errorMsg = data.error || 'Error uploading story';
+            const details = data.details ? `: ${data.details}` : '';
+            showToast(`${errorMsg}${details}`);
+            
+            // Reset button state
+            uploadBtn.textContent = originalText;
+            uploadBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error. Please try again.');
+        
+        // Reset button state
+        uploadBtn.textContent = originalText;
+        uploadBtn.disabled = false;
+    }
+}
+
+// Close story preview
+function closeStoryPreview() {
+    document.getElementById('storyPreviewModal').classList.add('hidden');
+    document.getElementById('storyInput').value = '';
+    storyFile = null;
+}
 </script>
+
+<!-- Story Preview Modal -->
+<div id="storyPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center backdrop-blur-sm">
+    <div class="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 class="font-semibold text-gray-800 dark:text-white">Preview Story</h2>
+            <button onclick="closeStoryPreview()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="storyPreviewContainer" class="w-full aspect-square bg-gray-100 dark:bg-gray-800">
+            <!-- Preview will be shown here -->
+        </div>
+        <div class="p-4 flex justify-between">
+            <button onclick="closeStoryPreview()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg">
+                Cancel
+            </button>
+            <button onclick="uploadStory()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+                Share to Story
+            </button>
+        </div>
+    </div>
+</div>
 
 <%- include('partials/footer') %>
