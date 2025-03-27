@@ -1,5 +1,65 @@
 <%- include('partials/header2') %>
 
+<style>
+/* Custom styling for the page */
+body {
+    background-color: #fafafa;
+}
+
+.dark body {
+    background-color: #121212;
+}
+
+/* Extra small screen breakpoint */
+@media (max-width: 475px) {
+    .xs\:grid-cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Clamp lines for text content */
+.line-clamp-6 {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Post menu backdrop */
+.post-menu-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+/* Profile card shadow and hover effect */
+.profile-card {
+    transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Add smooth transitions */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+/* Reduce line clamp on small screens */
+@media (max-width: 640px) {
+    .line-clamp-6 {
+        -webkit-line-clamp: 4;
+    }
+}
+
+/* Story ring */
+.bg-gradient-to-tr.from-yellow-400.to-fuchsia-600 {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+</style>
+
 <script>
 // Set currentUserId globally right away
 window.currentUserId = '<%= user._id %>';
@@ -7,96 +67,97 @@ console.log('Current user ID set at page load:', window.currentUserId);
 </script>
 
 <div class="max-w-4xl mx-auto mt-8 px-4">
-    <!-- Profile Header -->
-    <div class="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 pb-6">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col sm:flex-row items-center sm:items-start pt-6 sm:space-x-6">
-                <!-- Profile Image -->
-                <div class="relative mb-4 sm:mb-0">
-                    <div class="<%= profileUser.hasActiveStory ? 'story-ring rounded-full p-[2px]' : '' %>" id="profileImageContainer">
-                        <div class="bg-white dark:bg-black p-[1px] rounded-full">
+    <!-- Profile Header - Instagram-like -->
+    <div class="bg-white dark:bg-black rounded-lg shadow-md p-3 sm:p-4 mb-4 profile-card">
+        <div class="flex flex-col md:flex-row md:items-start gap-3 md:gap-5">
+            <!-- Profile Image -->
+            <div class="flex justify-center md:justify-start md:shrink-0">
+                <div class="relative">
+                    <!-- Story Ring (if user has active story) -->
+                    <div class="<%= profileUser.hasActiveStory ? 'bg-gradient-to-tr from-yellow-400 to-fuchsia-600' : '' %> rounded-full p-[2px]" id="profileImageContainer">
+                        <div class="bg-white dark:bg-black rounded-full p-[2px]">
                             <img src="<%= profileUser.profileImage %>" 
                                  alt="<%= profileUser.name %>" 
-                                 class="w-24 h-24 sm:w-36 sm:h-36 rounded-full object-cover cursor-pointer" 
+                                 class="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-800 cursor-pointer"
                                  id="profileImage">
                         </div>
                     </div>
                 </div>
-                
-                <!-- Profile Info -->
-                <div class="flex-1 text-center sm:text-left">
-                    <div class="flex flex-col sm:flex-row sm:items-center mb-2">
-                        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white"><%= profileUser.name %></h1>
+            </div>
+            
+            <!-- Profile Info -->
+            <div class="flex-grow">
+                <!-- Username and Create Button -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white"><%= profileUser.name %></h1>
+                        <p class="text-gray-500 dark:text-gray-400">@<%= profileUser.username %></p>
                         
                         <% if (profileUser.isPrivate) { %>
-                            <span class="ml-2 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full font-medium">Private</span>
+                            <span class="inline-block mt-1 px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full font-medium">Private</span>
                         <% } %>
                         
                         <% if (profileUser.isVerified) { %>
-                            <span class="ml-2 text-blue-500"><i class="fas fa-badge-check"></i></span>
+                            <span class="ml-1 text-blue-500"><i class="fas fa-badge-check"></i></span>
                         <% } %>
                     </div>
                     
-                    <p class="text-gray-500 dark:text-gray-400 mb-4">@<%= profileUser.username %></p>
-                    
-                    <!-- Stats & Follow Button Row -->
-                    <div class="flex flex-col sm:flex-row items-center">
-                        <div class="flex space-x-6 mb-4 sm:mb-0">
-                            <div>
-                                <span class="text-gray-900 dark:text-white font-semibold"><%= profileUser.posts ? profileUser.posts.length : 0 %></span>
-                                <span class="text-gray-500 dark:text-gray-400 text-sm"> posts</span>
-                            </div>
-                            <button class="focus:outline-none" onclick="showFollowers('<%= profileUser._id %>')">
-                                <span class="text-gray-900 dark:text-white font-semibold" id="followersCount"><%= typeof profileUser.followers === 'number' ? profileUser.followers : (profileUser.followers ? profileUser.followers.length : 0) %></span>
-                                <span class="text-gray-500 dark:text-gray-400 text-sm"> followers</span>
-                            </button>
-                            <button class="focus:outline-none" onclick="showFollowing('<%= profileUser._id %>')">
-                                <span class="text-gray-900 dark:text-white font-semibold"><%= typeof profileUser.following === 'number' ? profileUser.following : (profileUser.following ? profileUser.following.length : 0) %></span>
-                                <span class="text-gray-500 dark:text-gray-400 text-sm"> following</span>
-                            </button>
-                        </div>
-                        
+                    <div>
                         <% if (!isOwnProfile) { %>
-                            <div class="ml-0 sm:ml-auto">
-                                <button id="followButton" 
-                                        onclick="performFollowToggle('<%= profileUser._id %>')"
-                                        class="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-blue-500 hover:bg-blue-600 text-white">
-                                    Follow
-                                </button>
-                                
-                                <a href="/chat/<%= profileUser._id %>" 
-                                   class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-md ml-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 inline-block">
-                                    Message
-                                </a>
-                            </div>
+                            <button id="followButton" 
+                                    onclick="performFollowToggle('<%= profileUser._id %>')"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition-all text-sm">
+                                Follow
+                            </button>
+                            
+                            <a href="/chat/<%= profileUser._id %>" 
+                              class="w-full mt-2 sm:mt-0 sm:w-auto inline-flex items-center justify-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-md ml-0 sm:ml-2 text-sm">
+                                <i class="fas fa-comment mr-2"></i> Message
+                            </a>
                         <% } else { %>
-                            <div class="ml-0 sm:ml-auto">
-                                <a href="/edit-profile" 
-                                   class="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                                    Edit Profile
-                                </a>
-                            </div>
+                            <a href="/edit-profile" 
+                              class="w-full sm:w-auto inline-flex items-center justify-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-md text-sm">
+                                <i class="fas fa-edit mr-2"></i> Edit Profile
+                            </a>
                         <% } %>
                     </div>
-                    
-                    <!-- Bio -->
-                    <% if (profileUser.bio) { %>
-                        <div class="mt-4 text-gray-700 dark:text-gray-300">
-                            <%= profileUser.bio %>
-                        </div>
-                    <% } %>
-                    
-                    <!-- Website -->
-                    <% if (profileUser.website) { %>
-                        <div class="mt-1">
-                            <a href="<%= profileUser.website %>" 
-                               target="_blank" 
-                               class="text-blue-500 hover:underline">
-                                <%= profileUser.website.replace(/(^\w+:|^)\/\//, '') %>
-                            </a>
-                        </div>
-                    <% } %>
                 </div>
+                
+                <!-- Stats Row - Compact -->
+                <div class="grid grid-cols-3 gap-1 max-w-xs mb-3">
+                    <div class="text-center px-1 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <span class="block text-xl font-bold text-gray-900 dark:text-white"><%= profileUser.posts ? profileUser.posts.length : 0 %></span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">posts</span>
+                    </div>
+                    <div class="text-center px-1 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <button class="w-full h-full focus:outline-none" onclick="showFollowers('<%= profileUser._id %>')">
+                            <span class="block text-xl font-bold text-gray-900 dark:text-white" id="followersCount"><%= typeof profileUser.followers === 'number' ? profileUser.followers : (profileUser.followers ? profileUser.followers.length : 0) %></span>
+                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">followers</span>
+                        </button>
+                    </div>
+                    <div class="text-center px-1 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <button class="w-full h-full focus:outline-none" onclick="showFollowing('<%= profileUser._id %>')">
+                            <span class="block text-xl font-bold text-gray-900 dark:text-white"><%= typeof profileUser.following === 'number' ? profileUser.following : (profileUser.following ? profileUser.following.length : 0) %></span>
+                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">following</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Bio and Website -->
+                <% if (profileUser.bio) { %>
+                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-2"><%= profileUser.bio %></p>
+                <% } %>
+                
+                <% if (profileUser.website) { %>
+                    <div class="mb-2">
+                        <a href="<%= profileUser.website %>" 
+                           target="_blank" 
+                           class="text-blue-500 hover:underline text-sm flex items-center">
+                            <i class="fas fa-link mr-1"></i>
+                            <%= profileUser.website.replace(/(^\w+:|^)\/\//, '') %>
+                        </a>
+                    </div>
+                <% } %>
             </div>
         </div>
     </div>
@@ -354,64 +415,6 @@ console.log('Current user ID set at page load:', window.currentUserId);
         </div>
     </div>
 </div>
-
-<!-- Style tweaks for the profile page -->
-<style>
-.line-clamp-6 {
-    display: -webkit-box;
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.post-menu-backdrop {
-    background: rgba(0, 0, 0, 0.5);
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-}
-
-@media (max-width: 640px) {
-    .line-clamp-6 {
-        -webkit-line-clamp: 4;
-    }
-}
-
-.story-ring {
-    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-}
-
-.story-ring-viewed {
-    background: #ccc;
-}
-
-/* Remove pulse animation */
-@keyframes pulse-ring {
-    0% {
-        transform: scale(0.98);
-        opacity: 0.8;
-    }
-    50% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(0.98);
-        opacity: 0.8;
-    }
-}
-
-/* No longer used */
-.pulse-ring {
-    /* animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite; */
-}
-
-.story-progress-bar {
-    height: 3px;
-    border-radius: 3px;
-    transition: width 0.1s linear;
-}
-</style>
 
 <!-- Add Swiper JS for image carousel -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />

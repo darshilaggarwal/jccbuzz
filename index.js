@@ -3968,9 +3968,11 @@ app.use('/api/projects', function(req, res, next) {
 
 // Import notification routes
 const notificationRoutes = require('./routes/api/notifications');
+const usersRoutes = require('./routes/api/users');
 
 // Apply notification routes with isLoggedIn middleware
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/users', isLoggedIn, usersRoutes);
 
 // Projects page route
 app.get('/projects', isLoggedIn, async (req, res) => {
