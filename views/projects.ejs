@@ -6,18 +6,209 @@
 </script>
 
 <div class="container mx-auto px-4 py-8">
-    <!-- Header Section -->
-    <div class="mb-12">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-3">Projects Hub</h1>
-                <p class="text-lg text-gray-600 dark:text-gray-400">Discover and join exciting projects or create your own</p>
+    <!-- Header/Hero Section -->
+    <div class="relative mb-16 rounded-2xl overflow-hidden">
+        <!-- Background with gradient overlay -->
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-purple-600/90 z-10"></div>
+        <div class="absolute inset-0 bg-pattern opacity-10 z-0"></div>
+        
+        <!-- Hero content -->
+        <div class="relative z-20 px-4 py-10 md:px-6 md:py-16 max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-center gap-8">
+                <div class="flex-1">
+                    <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">Projects Hub</h1>
+                    <p class="text-lg md:text-xl text-blue-100 mb-6 max-w-2xl">
+                        Discover innovative projects, collaborate with talented developers, and transform your ideas into reality. Join ongoing initiatives or bring your own vision to life.
+                    </p>
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <div class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                            <i class="fas fa-users text-white mr-3"></i>
+                            <span class="text-white">Connect with peers</span>
+                        </div>
+                        <div class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                            <i class="fas fa-code-branch text-white mr-3"></i>
+                            <span class="text-white">Build your portfolio</span>
+                        </div>
+                        <div class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                            <i class="fas fa-lightbulb text-white mr-3"></i>
+                            <span class="text-white">Share your ideas</span>
+                        </div>
+                    </div>
+                    <button onclick="showCreateProjectModal()" class="bg-white hover:bg-gray-100 text-blue-600 px-6 py-3 rounded-lg flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 font-medium">
+                        <i class="fas fa-plus mr-2"></i> Create New Project
+                    </button>
+                </div>
+                <div class="hidden md:block mr-6">
+                    <div class="relative">
+                        <div class="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-blue-400/30 backdrop-blur-sm animate-pulse"></div>
+                        <div class="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-purple-400/30 backdrop-blur-sm animate-pulse delay-300"></div>
+                        <div class="relative z-10 bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-white/20 backdrop-blur-sm rounded-lg p-3 shadow-sm">
+                                    <i class="fas fa-code text-3xl text-white mb-2"></i>
+                                    <p class="text-white text-sm">Develop Skills</p>
+                                </div>
+                                <div class="bg-white/20 backdrop-blur-sm rounded-lg p-3 shadow-sm">
+                                    <i class="fas fa-rocket text-3xl text-white mb-2"></i>
+                                    <p class="text-white text-sm">Launch Projects</p>
+                                </div>
+                                <div class="bg-white/20 backdrop-blur-sm rounded-lg p-3 shadow-sm">
+                                    <i class="fas fa-handshake text-3xl text-white mb-2"></i>
+                                    <p class="text-white text-sm">Collaborate</p>
+                                </div>
+                                <div class="bg-white/20 backdrop-blur-sm rounded-lg p-3 shadow-sm">
+                                    <i class="fas fa-star text-3xl text-white mb-2"></i>
+                                    <p class="text-white text-sm">Gain Experience</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button onclick="showCreateProjectModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                <i class="fas fa-plus mr-2"></i> Create New Project
-            </button>
         </div>
     </div>
+
+    <style>
+        /* Additional fixes for hero section and mobile view */
+        .projects-title {
+            color: white !important;
+        }
+        
+        @media (max-width: 768px) {
+            .relative.mb-16.rounded-2xl {
+                border-radius: 1rem;
+                margin-bottom: 2.5rem;
+            }
+            
+            .bg-white\/20 {
+                padding: 0.5rem 1rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            /* Mobile-optimized feature cards */
+            .flex.flex-wrap.gap-3 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            /* Improve hero section spacing */
+            .relative.z-20.px-4.py-10 {
+                padding: 2rem 1rem;
+            }
+            
+            /* Better button display on mobile */
+            button.bg-white {
+                width: 100%;
+                justify-content: center;
+                padding: 0.75rem 1rem;
+                margin-top: 0.5rem;
+            }
+            
+            .hidden.md\\:block.mr-6 {
+                display: none;
+            }
+        }
+        
+        /* Fix for the button text */
+        button.bg-white {
+            color: #3b82f6;
+        }
+        
+        button.bg-white:hover {
+            color: #2563eb;
+        }
+        
+        /* Modal inputs */
+        #createProjectModal input,
+        #createProjectModal select,
+        #createProjectModal textarea,
+        #join-request-modal textarea {
+            background-color: white !important;
+            color: #334155 !important;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            #createProjectModal input,
+            #createProjectModal select,
+            #createProjectModal textarea,
+            #join-request-modal textarea {
+                background-color: #1e1e1e !important;
+                color: #f1f5f9 !important;
+            }
+        }
+        
+        /* Gradient tab buttons */
+        .tab-button {
+            position: relative;
+            overflow: hidden;
+            outline: none !important;
+        }
+        
+        .tab-button:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        .tab-button:hover::before,
+        .tab-button.active::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            z-index: 1;
+        }
+        
+        /* Enhanced gradient button */
+        .gradient-btn {
+            background-image: linear-gradient(to right, #3b82f6, #8b5cf6) !important;
+            transition: all 0.3s ease;
+            background-size: 200% auto;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1);
+        }
+        
+        .gradient-btn:hover {
+            background-position: right center;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.2);
+            transform: none; /* Remove position change on hover */
+        }
+        
+        /* Create project modal */
+        #createProjectModal .flex.justify-between.items-center {
+            background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+            margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+            padding: 1.5rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        
+        #createProjectModal .flex.justify-between.items-center h2 {
+            color: white !important;
+        }
+        
+        #createProjectModal .flex.justify-between.items-center button {
+            color: white !important;
+        }
+        
+        /* Mobile fixes for modals */
+        @media (max-width: 640px) {
+            #createProjectModal .p-4,
+            #participantsModal .p-4,
+            #join-request-modal .p-4 {
+                padding: 1rem !important;
+            }
+            
+            #createProjectModal .flex.justify-between.items-center,
+            #participantsModal .flex.justify-between.items-center,
+            #join-request-modal .flex.justify-between.items-center {
+                margin: -1rem -1rem 1rem -1rem;
+                padding: 1rem;
+            }
+        }
+    </style>
 
     <!-- Project Tabs -->
     <div class="mb-8">
@@ -239,7 +430,38 @@
 </div>
 
 <style>
-    /* Custom scrollbar for modals */
+    /* Add animation classes */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .animate-slideInRight {
+        animation: slideInRight 0.3s ease-out forwards;
+    }
+    
+    /* Custom scrollbar for modals and project description */
     .custom-scrollbar::-webkit-scrollbar {
         width: 8px;
     }
@@ -250,53 +472,257 @@
     }
     
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #d1d5db;
+        background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
         border-radius: 10px;
     }
     
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #9ca3af;
+        background: linear-gradient(to bottom, #2563eb, #7c3aed);
     }
     
     @media (prefers-color-scheme: dark) {
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #374151;
         }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #4b5563;
+    }
+
+    /* Project card styling with hover effects */
+    .project-card {
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        border: 1px solid transparent;
+        overflow: hidden;
+    }
+
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Gradient elements */
+    .gradient-border-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to right, #3b82f6, #8b5cf6);
+        z-index: 1;
+    }
+
+    .gradient-bg {
+        background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+    }
+
+    .gradient-text {
+        background: linear-gradient(to right, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Button styling */
+    .gradient-btn {
+        background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+        transition: all 0.3s ease;
+        background-size: 200% auto;
+    }
+
+    .gradient-btn:hover {
+        background-position: right center;
+        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.2);
+        transform: none; /* Remove position change on hover */
+    }
+
+    /* Modal enhancements */
+    .modal-gradient-header {
+        background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+        color: white;
+    }
+
+    /* Loading animation for project cards */
+    @keyframes shimmer {
+        0% {
+            background-position: -1000px 0;
+        }
+        100% {
+            background-position: 1000px 0;
+        }
+    }
+
+    .shimmer {
+        animation: shimmer 2s infinite linear;
+        background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+        background-size: 1000px 100%;
+    }
+
+    /* Progress bar styling */
+    .progress-bar-bg {
+        background-color: #f3f4f6;
+        border-radius: 9999px;
+        height: 0.5rem;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 9999px;
+        background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+        transition: width 0.5s ease;
+    }
+
+    /* Custom toast notification */
+    .custom-toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        z-index: 50;
+        opacity: 0;
+        transform: translateY(1rem);
+        transition: all 0.3s ease;
+    }
+
+    .custom-toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Add to existing styles */
+    .bg-pattern {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    
+    /* Fix for the create project modal form */
+    #createProjectModal .modal-gradient-header + form input,
+    #createProjectModal .modal-gradient-header + form select,
+    #createProjectModal .modal-gradient-header + form textarea {
+        background-color: white;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+    }
+    
+    #createProjectModal .modal-gradient-header + form input:focus,
+    #createProjectModal .modal-gradient-header + form select:focus,
+    #createProjectModal .modal-gradient-header + form textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    
+    #createProjectModal .modal-gradient-header + form label {
+        color: #334155;
+    }
+    
+    /* Dark mode styles */
+    @media (prefers-color-scheme: dark) {
+        #createProjectModal .modal-gradient-header + form input,
+        #createProjectModal .modal-gradient-header + form select,
+        #createProjectModal .modal-gradient-header + form textarea {
+            background-color: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #334155;
         }
         
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
+        #createProjectModal .modal-gradient-header + form label {
+            color: #f1f5f9;
+        }
+    }
+    
+    /* Add padding for forms on mobile */
+    @media (max-width: 640px) {
+        #createProjectModal .p-4 {
+            padding: 1.5rem;
+        }
+        
+        #createProjectModal .space-y-4 {
+            margin-top: 1rem;
+        }
+        
+        #createProjectModal input,
+        #createProjectModal select,
+        #createProjectModal textarea {
+            margin-bottom: 0.5rem;
         }
     }
 </style>
 
 <script>
-    // Tab switching functionality with animation
+    // Tab switching functionality with animation and proper active classes
     function switchTab(tab) {
         const ongoingTab = document.querySelector('.tab-button:first-child');
         const upcomingTab = document.querySelector('.tab-button:last-child');
         const ongoingProjects = document.getElementById('ongoing-projects');
         const upcomingProjects = document.getElementById('upcoming-projects');
         
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+            btn.classList.remove('border-blue-500');
+            btn.classList.add('border-transparent');
+        });
+        
         if (tab === 'ongoing') {
-            ongoingTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-            ongoingTab.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-            upcomingTab.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-            upcomingTab.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            ongoingTab.classList.add('active');
+            ongoingTab.classList.add('text-blue-600', 'dark:text-blue-400');
+            ongoingTab.classList.remove('text-gray-500', 'dark:text-gray-400');
             ongoingProjects.classList.remove('hidden');
             upcomingProjects.classList.add('hidden');
         } else {
-            upcomingTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-            upcomingTab.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-            ongoingTab.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-            ongoingTab.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            upcomingTab.classList.add('active');
+            upcomingTab.classList.add('text-blue-600', 'dark:text-blue-400');
+            upcomingTab.classList.remove('text-gray-500', 'dark:text-gray-400');
             upcomingProjects.classList.remove('hidden');
             ongoingProjects.classList.add('hidden');
         }
     }
+
+    // Apply styling when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set the Projects Hub title to white
+        const projectsTitle = document.querySelector('.container h1');
+        if (projectsTitle) {
+            projectsTitle.classList.add('projects-title');
+            projectsTitle.classList.remove('gradient-text');
+        }
+        
+        // Ensure the Create New Project button has proper text color
+        const createButton = document.querySelector('button.bg-white');
+        if (createButton) {
+            createButton.style.color = '#3b82f6';
+        }
+        
+        // Add active class to the default tab (Ongoing Projects)
+        const defaultTab = document.querySelector('.tab-button:first-child');
+        if (defaultTab) {
+            defaultTab.classList.add('active');
+        }
+        
+        // Add gradient-btn class to the participants modal close button
+        const participantsCloseBtn = document.querySelector('#participantsModal .p-4.border-t button');
+        if (participantsCloseBtn) {
+            participantsCloseBtn.className = 'w-full px-4 py-2 text-sm font-medium text-white gradient-btn rounded-lg hover:shadow-lg transition-all duration-300';
+        }
+        
+        // Add gradient-btn class to the join request modal submit button
+        const joinRequestBtn = document.querySelector('#join-request-modal button[onclick="submitJoinRequest()"]');
+        if (joinRequestBtn) {
+            joinRequestBtn.className = 'flex-1 px-4 py-3 text-sm font-medium text-white gradient-btn rounded-lg hover:shadow-lg transition-all duration-300';
+        }
+        
+        // Apply to create project modal button
+        const createProjectSubmitBtn = document.querySelector('#createProjectForm button[type="submit"]');
+        if (createProjectSubmitBtn) {
+            createProjectSubmitBtn.className = 'px-4 py-2 gradient-btn text-white rounded-lg hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-300';
+        }
+        
+        // Load projects
+        loadProjects();
+    });
 
     // Project creation modal functionality with animations
     function showCreateProjectModal() {
@@ -527,68 +953,81 @@
 
         const dateLabel = project.type === 'ongoing' ? 'Posted on' : 'Expected to start on';
         
+        // Calculate progress for ongoing projects (ratio of participants to max)
+        const progressPercentage = Math.min(100, Math.round((project.participants.length / project.maxParticipants) * 100));
+        
         return `
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl h-full flex flex-col border border-gray-100 dark:border-gray-700">
+            <div class="project-card bg-white dark:bg-gray-800 rounded-xl shadow-lg h-full flex flex-col border border-gray-100 dark:border-gray-700">
+                <div class="gradient-border-top"></div>
                 <div class="p-6 flex flex-col flex-grow">
                     <!-- Header Section -->
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center space-x-3">
-                            <img src="${project.admin.profileImage || '/placeholder/placeholder.webp'}" 
-                                 alt="${project.admin.name}" 
-                                 class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-                                 onerror="this.src='/placeholder/placeholder.webp'">
+                            <div class="relative">
+                                <div class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-200 dark:ring-gray-700">
+                                    <img src="${project.admin.profileImage || '/placeholder/placeholder.webp'}" 
+                                         alt="${project.admin.name}" 
+                                         class="w-full h-full object-cover"
+                                         onerror="this.src='/placeholder/placeholder.webp'">
+                                </div>
+                                ${isAdmin ? `<div class="absolute -bottom-1 -right-1 gradient-bg text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-crown text-[10px]"></i>
+                                </div>` : ''}
+                            </div>
                             <div>
                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white">${project.title}</h3>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">by ${project.admin.name}</p>
                             </div>
                         </div>
-                        <span class="px-3 py-1 text-sm font-medium rounded-full ${
+                        <span class="px-3 py-1 text-sm font-medium rounded-full shadow-sm ${
                             project.type === 'ongoing' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                ? 'gradient-bg text-white' 
+                                : 'gradient-bg text-white'
                         }">
                             ${project.type.charAt(0).toUpperCase() + project.type.slice(1)}
                         </span>
                     </div>
                     
                     <!-- Description Section -->
-                    <div class="description-container h-24 overflow-y-auto mb-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                    <div class="description-container h-24 overflow-y-auto mb-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 hover:shadow-sm transition-shadow">
                         <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">${project.description}</p>
                     </div>
                     
                     <!-- Tech Stack Section -->
                     <div class="mb-4">
-                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tech Stack</h4>
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                            <i class="fas fa-laptop-code mr-2 text-blue-500"></i>
+                            Tech Stack
+                        </h4>
                         <div class="flex flex-wrap gap-2">
                             ${project.techStack.map(tech => `
-                                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 transition-all duration-200">
                                     ${tech}
                                 </span>
                             `).join('')}
                         </div>
                     </div>
                     
+                    <!-- Progress Bar -->
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                            <span>Team</span>
+                            <span>${project.participants.length}/${project.maxParticipants} members</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: ${progressPercentage}%"></div>
+                        </div>
+                    </div>
+                    
                     <!-- Project Details Section -->
                     <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4 border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <div class="flex items-center space-x-4">
-                            <div class="flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                ${dateLabel}: ${formattedDate}
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                ${project.participants.length}/${project.maxParticipants}
-                            </div>
+                        <div class="flex items-center">
+                            <i class="far fa-calendar-alt mr-1 text-blue-500"></i>
+                            <span>${dateLabel}: ${formattedDate}</span>
                         </div>
                         ${project.githubLink ? `
-                            <a href="${project.githubLink}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                                </svg>
+                            <a href="${project.githubLink}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                                <i class="fab fa-github mr-1"></i>
                                 GitHub
                             </a>
                         ` : ''}
@@ -597,39 +1036,37 @@
                     <!-- Action Buttons Section -->
                     <div class="flex justify-between items-center mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
                         <button onclick="showParticipants('${project._id}')" 
-                                class="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
+                                class="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center transition-colors">
+                            <i class="fas fa-users mr-1"></i>
                             View Participants
                         </button>
                         ${isAdmin ? `
                             <div class="flex gap-3">
                                 <button onclick="editProject('${project._id}')" 
                                         class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
-                                    Edit
+                                    <i class="fas fa-edit mr-1"></i> Edit
                                 </button>
                                 <button onclick="showDeleteConfirmation('${project._id}')" 
                                         class="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg transition-colors">
-                                    Delete
+                                    <i class="fas fa-trash-alt mr-1"></i> Delete
                                 </button>
                             </div>
                         ` : isParticipant ? `
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                Participating
+                            <span class="px-4 py-2 text-sm font-medium rounded-lg gradient-bg text-white shadow-sm">
+                                <i class="fas fa-check mr-1"></i> Participating
                             </span>
                         ` : hasPendingRequest ? `
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                Request Pending
+                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-yellow-400 text-white shadow-sm">
+                                <i class="fas fa-clock mr-1"></i> Request Pending
                             </span>
                         ` : project.participants.length >= project.maxParticipants ? `
                             <span class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                                Project Full
+                                <i class="fas fa-users-slash mr-1"></i> Project Full
                             </span>
                         ` : `
                             <button onclick="sendJoinRequest('${project._id}')" 
-                                    class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
-                                Join Project
+                                    class="px-4 py-2 text-sm font-medium text-white gradient-btn rounded-lg transition-colors shadow-sm hover:shadow-md">
+                                <i class="fas fa-sign-in-alt mr-1"></i> Join Project
                             </button>
                         `}
                     </div>
@@ -1008,22 +1445,32 @@
 
     // Toast notification function
     function showToast(message, type = 'success') {
+        // Remove existing toasts
+        const existingToasts = document.querySelectorAll('.custom-toast');
+        existingToasts.forEach(toast => {
+            document.body.removeChild(toast);
+        });
+        
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white transform transition-all duration-300 translate-y-full ${
-            type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        }`;
-        toast.textContent = message;
+        toast.className = 'custom-toast flex items-center';
+        
+        // Add icon based on type
+        const icon = type === 'success' 
+            ? '<i class="fas fa-check-circle mr-2"></i>' 
+            : '<i class="fas fa-exclamation-circle mr-2"></i>';
+        
+        toast.innerHTML = `${icon}${message}`;
         
         document.body.appendChild(toast);
         
         // Trigger animation
         setTimeout(() => {
-            toast.classList.remove('translate-y-full');
+            toast.classList.add('show');
         }, 10);
         
         // Remove toast after 3 seconds
         setTimeout(() => {
-            toast.classList.add('translate-y-full');
+            toast.classList.remove('show');
             setTimeout(() => {
                 document.body.removeChild(toast);
             }, 300);
@@ -1325,6 +1772,55 @@
             showToast(error.message || 'Failed to send join request. Please try again.', 'error');
         });
     }
+
+    // Add custom enhancements when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        // Original code from before
+        loadProjects();
+        
+        // Remove gradient-text class from the title and ensure it's white
+        const header = document.querySelector('.container h1');
+        if (header) {
+            header.classList.remove('gradient-text');
+            header.classList.add('projects-title');
+        }
+        
+        // ... rest of the existing DOMContentLoaded code ...
+        
+        // Enhanced create project modal
+        enhanceModal('createProjectModal', (modal) => {
+            const header = modal.querySelector('.flex.justify-between.items-center').parentNode;
+            header.classList.add('modal-gradient-header', 'rounded-t-lg', 'p-6');
+            
+            const title = modal.querySelector('h2');
+            title.classList.add('text-white', 'flex', 'items-center');
+            title.innerHTML = '<i class="fas fa-plus-circle mr-3"></i>' + title.textContent;
+            
+            const createButton = modal.querySelector('button[type="submit"]');
+            createButton.classList.add('gradient-btn');
+            createButton.classList.add('text-white');
+            
+            // Update form container padding for mobile
+            const formContainer = modal.querySelector('.p-4.sm\\:p-6');
+            if (formContainer) {
+                formContainer.classList.add('px-5', 'sm:px-6');
+            }
+            
+            // Make form labels more visible
+            const labels = modal.querySelectorAll('label');
+            labels.forEach(label => {
+                label.classList.add('text-gray-700', 'dark:text-gray-300');
+            });
+            
+            // Style form inputs for better visibility
+            const inputs = modal.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.classList.add('shadow-sm');
+                input.classList.remove('dark:bg-gray-700');
+                input.classList.add('dark:bg-gray-800');
+            });
+        });
+    });
 </script>
 
 <%- include('partials/footer') %> 
