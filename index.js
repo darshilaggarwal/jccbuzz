@@ -4102,7 +4102,7 @@ app.get('/groups', isLoggedIn, (req, res) => {
 // === EVENTS ROUTES ===
 
 // Render events page
-app.get("/events", (req, res) => {
+app.get("/events", isLoggedIn, (req, res) => {
     res.render("events", { user: req.user });
 });
 
