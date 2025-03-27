@@ -327,45 +327,54 @@
                 <div class="w-1/2 h-full" onclick="showNextStory()"></div>
             </div>
             
+            <!-- Close button -->
             <button onclick="closeStoryModal()" class="absolute top-4 right-4 text-white text-2xl z-20">
                 <i class="fas fa-times"></i>
             </button>
             
+            <!-- Story container -->
             <div class="h-full flex items-center justify-center bg-black">
                 <div id="storyImage" class="w-full h-full relative">
-                    <!-- Media will be inserted here -->
+                    <!-- Story content will be loaded here -->
                 </div>
             </div>
-
-            <!-- Story Progress Bars -->
-            <div class="absolute top-0 left-0 right-0 flex space-x-1 p-2 z-20">
-                <div id="storyProgressBars" class="flex-1 flex space-x-1">
-                    <!-- Progress bars will be added here dynamically -->
-                </div>
-            </div>
-
-            <!-- Story User Info -->
-            <div class="absolute top-4 left-4 flex items-center z-20">
-                <div class="story-ring p-[2px] rounded-full">
-                    <div class="bg-black p-[1px] rounded-full">
-                        <img id="storyUserImage" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+            
+            <!-- Story UI -->
+            <div class="absolute top-0 left-0 right-0 z-20 p-4">
+                <!-- Story Progress Bars -->
+                <div class="w-full flex mb-4">
+                    <div id="storyProgressBars" class="flex-1 flex space-x-1">
+                        <!-- Progress bars will be added dynamically -->
                     </div>
                 </div>
-                <div class="ml-2 text-white">
-                    <p id="storyUsername" class="font-semibold text-sm"></p>
-                    <p id="storyTime" class="text-xs opacity-75"></p>
+                
+                <!-- Story User Info -->
+                <div class="flex items-center">
+                    <div class="story-ring p-[2px] rounded-full">
+                        <div class="bg-black p-[1px] rounded-full">
+                            <img id="storyUserImage" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                        </div>
+                    </div>
+                    <div class="ml-2 text-white">
+                        <p id="storyUsername" class="font-semibold text-sm"></p>
+                        <p id="storyTime" class="text-xs opacity-75"></p>
+                    </div>
                 </div>
             </div>
-
+            
             <!-- Story Reply Section -->
             <div class="absolute bottom-4 left-4 right-4 z-20">
                 <form onsubmit="replyToStory(event)" class="flex items-center gap-2">
-                    <input type="text" 
-                           id="storyReplyInput"
-                           placeholder="Reply to story..." 
-                           class="flex-1 px-4 py-3 rounded-full bg-white/10 text-white placeholder-white/70 backdrop-blur-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
-                    <button type="submit" 
-                            class="p-3 rounded-full bg-white/10 text-white backdrop-blur-sm border border-white/20 hover:bg-white/20 flex items-center justify-center">
+                    <input 
+                        id="storyReplyInput"
+                        placeholder="Reply to story..."
+                        class="flex-1 bg-white/20 backdrop-blur-sm text-white border-0 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <button 
+                        id="storyReplyButton"
+                        type="submit" 
+                        class="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+                    >
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -607,10 +616,27 @@
 
 .story-ring {
     background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    border-radius: 50%;
+    padding: 2px;
 }
 
 .story-ring-viewed {
-    background: #ccc;
+    background: #8e8e8e;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+@keyframes storyProgressAnimation {
+    from {
+        width: 0%;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+.story-progress-bar {
+    animation: storyProgressAnimation 5s linear forwards;
 }
 
 @keyframes pulse-ring {
@@ -703,6 +729,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize story-related variables
+    window.currentUserId = '<%= user._id %>';
+    window.currentUsername = '<%= user.username %>';
+    window.viewedStories = [];
+    
+    // Initialize story rings on page load
+    fetchAndUpdateStories();
+    
+    // Set up regular refresh of stories (every 2 minutes)
+    setInterval(fetchAndUpdateStories, 120000);
+    
     // Initialize Swiper carousels for post images
     const swipers = document.querySelectorAll('.swiper-container');
     swipers.forEach((container, index) => {
@@ -1366,32 +1403,9 @@ function updatePostHeadersWithStoryRings(userIdsWithStories) {
 
 // Helper function to check if user has viewed all stories
 function checkIfViewedAllStories(userId) {
-    // Check if there are stories for this user
-    if (!currentStories || currentStories.length === 0) {
-        return false;
-    }
-    
-    // Find stories for this user
-    const userStoriesData = Object.values(currentStories).find(item => item.user && item.user._id === userId);
-    
-    if (!userStoriesData || !userStoriesData.stories || userStoriesData.stories.length === 0) {
-        return false;
-    }
-    
-    // Make sure we have a valid current user ID
-    if (!window.currentUserId) {
-        console.error('Current user ID not found');
-        return false;
-    }
-    
-    // Check if all stories have been viewed by the current user
-    return userStoriesData.stories.every(story => 
-        story.viewers && Array.isArray(story.viewers) && 
-        story.viewers.some(viewer => 
-            viewer === window.currentUserId || 
-            (typeof viewer === 'object' && viewer.user && viewer.user.toString() === window.currentUserId.toString())
-        )
-    );
+    // This would ideally be implemented with proper story viewing data
+    // For now we'll default to showing the red ring (unviewed)
+    return false;
 }
 
 // Open story viewer by user ID
@@ -1482,41 +1496,30 @@ function displayCurrentStory() {
     const progressBarsContainer = document.getElementById('storyProgressBars');
     progressBarsContainer.innerHTML = '';
     
-    userStories.stories.forEach((_, index) => {
+    userStories.stories.forEach((s, index) => {
         const progressBar = document.createElement('div');
         progressBar.className = 'flex-1 h-1 bg-gray-600 rounded-full overflow-hidden';
         
-        // If this story has already been viewed
+        // Check if this story has already been viewed
         const isViewed = index < currentStoryIndex || 
-                         (index === currentStoryIndex && story.viewers && 
-                          story.viewers.includes(window.currentUserId));
+                         (index === currentStoryIndex && s.viewers && 
+                          s.viewers.includes(window.currentUserId));
         
-        // If this is the current story or a previous story, fill the progress bar
-        const fillWidth = index < currentStoryIndex ? '100%' : 
-                          index === currentStoryIndex ? '0%' : '0%';
+        // For completed stories, fill 100%
+        if (index < currentStoryIndex) {
+            progressBar.innerHTML = `<div class="h-full bg-white" style="width: 100%;"></div>`;
+        } 
+        // For current story, animate from 0 to 100%
+        else if (index === currentStoryIndex) {
+            progressBar.innerHTML = `<div class="h-full bg-white story-progress-bar" style="width: 0%"></div>`;
+        } 
+        // For future stories, show empty
+        else {
+            progressBar.innerHTML = `<div class="h-full bg-white" style="width: 0%"></div>`;
+        }
         
-        progressBar.innerHTML = `
-            <div class="story-progress-bar h-full bg-white w-${fillWidth}" 
-                 style="width: ${fillWidth}; transition-duration: ${story.media.type === 'image' ? '5s' : '10s'}"></div>
-        `;
         progressBarsContainer.appendChild(progressBar);
     });
-    
-    // Start progress for current story
-    const currentProgressBar = progressBarsContainer.children[currentStoryIndex];
-    if (currentProgressBar) {
-        const progressBar = currentProgressBar.querySelector('.story-progress-bar');
-        // Set to 0 first to trigger animation
-        progressBar.style.width = '0%';
-        
-        // Force reflow to ensure transition is applied
-        void progressBar.offsetWidth;
-        
-        // Then animate to 100%
-        setTimeout(() => {
-            progressBar.style.width = '100%';
-        }, 50);
-    }
     
     // Update story image container
     const storyImageContainer = document.getElementById('storyImage');
@@ -1556,6 +1559,12 @@ function displayCurrentStory() {
     storyTimer = setTimeout(() => {
         nextStory();
     }, duration);
+    
+    // Reset reply input
+    const replyInput = document.getElementById('storyReplyInput');
+    if (replyInput) {
+        replyInput.value = '';
+    }
 }
 
 // Mark story as viewed
@@ -1567,113 +1576,65 @@ function markStoryAsViewed(storyId) {
         }
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to mark story as viewed');
+        if (response.ok) {
+            // Add this story ID to locally viewed stories for immediate UI update
+            if (!window.viewedStories) window.viewedStories = [];
+            if (!window.viewedStories.includes(storyId)) {
+                window.viewedStories.push(storyId);
+            }
+            
+            // Update story ring on this post if present
+            const storyRings = document.querySelectorAll('.story-ring');
+            storyRings.forEach(ring => {
+                const postContainer = ring.closest('.post-container');
+                if (postContainer) {
+                    const userId = postContainer.getAttribute('data-user-id');
+                    const userStories = currentStories.find(s => s.user._id === userId);
+                    
+                    if (userStories) {
+                        // Check if all stories from this user are viewed
+                        const allViewed = userStories.stories.every(story => 
+                            window.viewedStories.includes(story._id) || 
+                            (story.viewers && story.viewers.includes(window.currentUserId))
+                        );
+                        
+                        if (allViewed) {
+                            ring.classList.remove('story-ring');
+                            ring.classList.add('story-ring-viewed');
+                        }
+                    }
+                }
+            });
+            
+            return response.json();
         }
-        return response.json();
+        throw new Error('Failed to mark story as viewed');
     })
     .then(data => {
         console.log('Story marked as viewed:', data);
-        
-        // Add the current user to the viewers list locally to update UI without reload
-        if (currentStories && currentStories[currentUserIndex] && 
-            currentStories[currentUserIndex].stories && 
-            currentStories[currentUserIndex].stories[currentStoryIndex]) {
-            
-            const story = currentStories[currentUserIndex].stories[currentStoryIndex];
-            if (!story.viewers) {
-                story.viewers = [];
-            }
-            
-            // Add current user to viewers if not already there
-            if (!story.viewers.includes(window.currentUserId)) {
-                story.viewers.push(window.currentUserId);
-            }
-            
-            // Check if all stories for this user are viewed
-            // We can use the server response if available, otherwise check locally
-            const userId = currentStories[currentUserIndex].user._id;
-            const allStoriesViewed = data.allStoriesViewed || checkIfViewedAllStories(userId);
-            
-            if (allStoriesViewed) {
-                console.log(`All stories viewed for user ${userId}`);
-                
-                // Update story rings in post headers
-                document.querySelectorAll(`.post-header-avatar[data-user-id="${userId}"]`).forEach(avatar => {
-                    avatar.classList.remove('story-active');
-                    avatar.classList.add('story-viewed');
-                });
-                
-                // Update story rings in post containers
-                document.querySelectorAll(`.post-container[data-user-id="${userId}"] .story-ring`).forEach(ring => {
-                    ring.classList.remove('story-ring');
-                    ring.classList.add('story-ring-viewed');
-                });
-                
-                // Update story bubbles in stories list
-                document.querySelectorAll(`#storiesList [onclick*="${userId}"] .story-ring`).forEach(bubble => {
-                    bubble.classList.remove('story-ring');
-                    bubble.classList.add('story-ring-viewed');
-                });
-                
-                // Also update any avatar with data-stories-id
-                document.querySelectorAll(`[data-stories-id="${userId}"]`).forEach(element => {
-                    if (element.classList.contains('story-active')) {
-                        element.classList.remove('story-active');
-                        element.classList.add('story-viewed');
-                    }
-                });
-            }
-        }
     })
-    .catch(error => {
-        console.error('Error marking story as viewed:', error);
-        // Continue with story playback even if marking as viewed fails
-        if (storyTimer === null) {
-            // If timer was cleared, restart it
-            const duration = story.media.type === 'image' ? 5000 : 10000;
-            storyTimer = setTimeout(() => {
-                nextStory();
-            }, duration);
-        }
-    });
+    .catch(error => console.error('Error marking story as viewed:', error));
 }
 
 // Show next story
 function nextStory() {
-    // Clear any existing timer
-    if (storyTimer) {
-        clearTimeout(storyTimer);
-        storyTimer = null;
-    }
-    
-    if (!currentStories || currentUserIndex >= currentStories.length) {
-        closeStoryModal();
-        return;
-    }
-    
     const userStories = currentStories[currentUserIndex];
-    if (!userStories || !userStories.stories) {
-        closeStoryModal();
-        return;
-    }
     
     // Move to next story in current user's stories
     currentStoryIndex++;
     
-    // If we've reached the end of current user's stories, move to next user
+    // If we've reached the end of this user's stories, move to next user
     if (currentStoryIndex >= userStories.stories.length) {
         currentUserIndex++;
         currentStoryIndex = 0;
         
-        // If we've reached the end of all users, close modal
+        // If we've reached the end of all stories, close modal
         if (currentUserIndex >= currentStories.length) {
             closeStoryModal();
-            return;
+                return;
         }
     }
     
-    // Display the next story
     displayCurrentStory();
 }
 
@@ -1714,6 +1675,12 @@ function showPreviousStory() {
 function closeStoryModal() {
     if (storyTimer) clearTimeout(storyTimer);
     document.getElementById('storyModal').classList.add('hidden');
+    document.body.style.overflow = ''; // Re-enable scrolling
+    
+    // Reset story state
+    currentStories = [];
+    currentUserIndex = 0;
+    currentStoryIndex = 0;
 }
 
 // Reply to story
@@ -1721,29 +1688,44 @@ function replyToStory(event) {
     event.preventDefault();
     
     const replyInput = document.getElementById('storyReplyInput');
-    const replyText = replyInput.value.trim();
+    const message = replyInput.value.trim();
     
-    if (!replyText) {
-        showToast('Please enter a reply');
+    if (!message) {
+        showToast('Please enter a message');
         return;
     }
     
-    // Disable input and show loading state
-    const submitBtn = event.target.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    replyInput.disabled = true;
+    // Get current story
+    if (!currentStories || currentUserIndex < 0 || currentStoryIndex < 0) {
+        showToast('Cannot reply to story');
+        return;
+    }
     
-    // Get current story ID
-    const storyId = currentStories[currentUserIndex].stories[currentStoryIndex]._id;
+    const userStories = currentStories[currentUserIndex];
+    if (!userStories || !userStories.stories) {
+        showToast('Cannot reply to story');
+        return;
+    }
     
-    fetch(`/story/${storyId}/reply`, {
+    const story = userStories.stories[currentStoryIndex];
+    if (!story) {
+        showToast('Cannot reply to story');
+        return;
+    }
+    
+    // Show loading state
+    const replyButton = document.getElementById('storyReplyButton');
+    const originalText = replyButton.innerHTML;
+    replyButton.disabled = true;
+    replyButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    // Send reply
+    fetch(`/story/${story._id}/reply`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message: replyText })
+        body: JSON.stringify({ message })
     })
     .then(response => {
         if (!response.ok) {
@@ -1752,27 +1734,17 @@ function replyToStory(event) {
         return response.json();
     })
     .then(data => {
-        console.log('Reply sent:', data);
-        showToast('Reply sent successfully');
-        
-        // Clear input and reset form
         replyInput.value = '';
-        
-        // If data includes chatId, store it for later navigation
-        if (data.chatId) {
-            localStorage.setItem('storyReplyChatId', data.chatId);
-        }
+        showToast('Reply sent successfully!');
     })
     .catch(error => {
-        console.error('Error sending reply:', error);
+        console.error('Error replying to story:', error);
         showToast('Failed to send reply. Please try again.');
     })
     .finally(() => {
-        // Re-enable input and reset button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-        replyInput.disabled = false;
-        replyInput.focus();
+        // Reset button state
+        replyButton.disabled = false;
+        replyButton.innerHTML = originalText;
     });
 }
 
@@ -2484,11 +2456,11 @@ async function uploadStory() {
         return;
     }
 
-    // Disable the upload button and show uploading state
-    const uploadBtn = document.querySelector('button[onclick="uploadStory()"]');
-    const originalText = uploadBtn.textContent;
-    uploadBtn.textContent = 'Uploading...';
-    uploadBtn.disabled = true;
+    // Show loading state
+    const uploadButton = document.querySelector('#storyPreviewModal button:last-child');
+    const originalText = uploadButton.textContent;
+    uploadButton.disabled = true;
+    uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
 
     const formData = new FormData();
     formData.append('story', storyFile);
@@ -2499,45 +2471,88 @@ async function uploadStory() {
             body: formData
         });
 
-        // Parse the response as JSON
         const data = await response.json();
 
-        // Check if response was successful based on HTTP status
+        // Close the preview regardless of success/failure
+        closeStoryPreview();
+
         if (response.ok) {
-            closeStoryPreview();
             showToast('Story uploaded successfully!');
             
-            // Update UI to show active story status immediately
-            const yourStoryBtn = document.querySelector('.story-ring');
-            if (yourStoryBtn) {
-                yourStoryBtn.classList.add('story-ring');
-                yourStoryBtn.classList.remove('story-ring-viewed');
-            }
-            
-            // Update story rings for the current user in the feed
-            updateAllStoryRings();
-            
-            // Reload the page after a short delay to reflect the new story
+            // Refresh story rings without reloading page
             setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+                fetchAndUpdateStories();
+            }, 1000);
         } else {
             const errorMsg = data.error || 'Error uploading story';
             const details = data.details ? `: ${data.details}` : '';
             showToast(`${errorMsg}${details}`);
-            
-            // Reset button state
-            uploadBtn.textContent = originalText;
-            uploadBtn.disabled = false;
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Network error. Please try again.');
-        
+        showToast('Error uploading story. Please try again.');
+        closeStoryPreview();
+    } finally {
         // Reset button state
-        uploadBtn.textContent = originalText;
-        uploadBtn.disabled = false;
+        uploadButton.disabled = false;
+        uploadButton.textContent = originalText;
     }
+}
+
+// Fetch stories and update UI without page reload
+function fetchAndUpdateStories() {
+    fetch('/stories')
+        .then(response => response.json())
+        .then(data => {
+            const stories = data.stories || [];
+            
+            if (stories.length === 0) return;
+            
+            // Group stories by user
+            const storiesByUser = {};
+            stories.forEach(story => {
+                if (!storiesByUser[story.user._id]) {
+                    storiesByUser[story.user._id] = {
+                        user: story.user,
+                        stories: []
+                    };
+                }
+                storiesByUser[story.user._id].stories.push(story);
+            });
+            
+            // Create story bubbles in the header
+            const storiesList = document.getElementById('storiesList');
+            if (storiesList) {
+                storiesList.innerHTML = '';
+                
+                Object.values(storiesByUser).forEach(userStories => {
+                    const hasUnviewedStory = userStories.stories.some(story =>
+                        !story.viewers || !story.viewers.includes(window.currentUserId));
+                    
+                    const storyItem = document.createElement('div');
+                    storyItem.className = 'flex-shrink-0 text-center';
+                    storyItem.innerHTML = `
+                        <div class="cursor-pointer" onclick="openStory('${userStories.user._id}')">
+                            <div class="${hasUnviewedStory ? 'story-ring' : 'story-ring-viewed'} rounded-full p-[2px]">
+                                <div class="w-16 h-16 rounded-full bg-white dark:bg-black p-[1px]">
+                                    <img src="${userStories.user.profileImage}" 
+                                        alt="${userStories.user.username}" 
+                                        class="w-full h-full rounded-full object-cover">
+                                </div>
+                            </div>
+                            <p class="text-xs mt-1 text-gray-600 dark:text-gray-400 font-medium">
+                                ${userStories.user.username === window.currentUsername ? 'Your story' : userStories.user.username}
+                            </p>
+                        </div>
+                    `;
+                    storiesList.appendChild(storyItem);
+                });
+            }
+            
+            // Update profile images in posts that have stories
+            updatePostHeadersWithStoryRings(Object.keys(storiesByUser));
+        })
+        .catch(error => console.error('Error fetching stories:', error));
 }
 
 // Close story preview

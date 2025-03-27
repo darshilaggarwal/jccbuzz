@@ -33,7 +33,20 @@
             <% chat.messages.forEach(message => { %>
                 <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %> group mb-6">
                     <div class="relative max-w-[70%] <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3" data-message-id="<%= message._id %>">
-                        <% if (message.mediaType !== 'none' && message.mediaUrl) { %>
+                        <% if (message.isStoryReply) { %>
+                            <!-- Story reply text for server-side rendering -->
+                            <div class="story-reply mb-1 text-sm font-semibold <%= message.sender._id.toString() === user._id.toString() ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300' %>">
+                                <%= message.sender._id.toString() === user._id.toString() ? 'Replied to their story' : 'Replied to your story' %>
+                            </div>
+                            <!-- Very small story photo below the text -->
+                            <% if (message.mediaUrl) { %>
+                                <div class="w-12 h-12 mb-2 rounded-sm overflow-hidden bg-black">
+                                    <img src="<%= message.mediaUrl %>" alt="Story" class="w-full h-full object-cover">
+                                </div>
+                            <% } %>
+                        <% } %>
+                        
+                        <% if (!message.isStoryReply && message.mediaType !== 'none' && message.mediaUrl) { %>
                             <% if (message.mediaType === 'image') { %>
                                 <img src="<%= message.mediaUrl %>" alt="Shared image" class="max-w-full rounded-lg mb-2">
                             <% } else if (message.mediaType === 'video') { %>
@@ -254,6 +267,58 @@ function scrollToBottom() {
 function createMessageHTML(message) {
     const isSender = message.sender._id === userId;
     
+    // Special handling for story replies
+    if (message.isStoryReply) {
+        return `
+            <div class="relative max-w-[70%] ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3" data-message-id="${message._id}">
+                <!-- Story reply text first -->
+                <div class="story-reply mb-1 text-sm font-semibold ${isSender ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'}">
+                    ${isSender ? 'Replied to their story' : 'Replied to your story'}
+                </div>
+                
+                <!-- Small story photo below the text -->
+                ${message.mediaUrl ? `
+                    <div class="w-12 h-12 mb-2 rounded-sm overflow-hidden bg-black">
+                        <img src="${message.mediaUrl}" alt="Story" class="w-full h-full object-cover">
+                    </div>
+                ` : ''}
+                
+                <!-- Message content -->
+                ${message.content ? `
+                    <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
+                        <span class="message-content">${message.content}</span>
+                        ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
+                    </div>
+                ` : ''}
+                
+                <!-- Options and reactions, same as normal messages -->
+                ${isSender ? 
+                    `<button onclick="showMyMessageOptions('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-ellipsis-h text-xs text-white"></i>
+                    </button>` 
+                    : 
+                    `<button onclick="showReactionPickerForMessage('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-smile text-xs text-white"></i>
+                    </button>`
+                }
+                
+                <!-- Show Reaction if it exists -->
+                ${message.reaction ? `
+                    <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
+                        <span class="reaction">${message.reaction}</span>
+                    </div>
+                ` : ''}
+                
+                <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
+                    ${new Date(message.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Regular messages (unchanged)
     return `
         <div class="relative max-w-[70%] ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3" data-message-id="${message._id}">
             ${message.mediaType !== 'none' && message.mediaUrl ? `

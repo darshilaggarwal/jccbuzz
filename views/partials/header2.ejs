@@ -744,7 +744,7 @@
                     }
                     return response.json();
                 })
-            .then(data => {
+                .then(data => {
                     notificationLoading.classList.add('hidden');
                     
                     if (!data || data.length === 0) {
@@ -828,9 +828,9 @@
                             ` : `
                                 <div class="w-10 h-10 rounded-full ${iconBgClass} flex items-center justify-center shadow-sm">
                                     <i class="${iconClass} text-lg"></i>
-                                </div>
+                                        </div>
                             `}
-                        </div>
+                                    </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-start mb-1">
                                 <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -881,11 +881,11 @@
                             <div class="flex justify-end">
                                 <button class="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-colors mt-1 mark-read-btn">
                                     Mark as read
-                                </button>
+                                    </button>
                             </div>
-                        </div>
-                    </div>
-                `;
+                                </div>
+                            </div>
+                        `;
                 
                 notificationElement.innerHTML = contentHtml;
                 
@@ -1005,14 +1005,14 @@
                         // For post likes, comment likes, reply likes
                         if (notification.data && notification.data.postId) {
                             window.location.href = `/post/${notification.data.postId}`;
-                        } else {
+            } else {
                             window.location.href = '/notifications';
                         }
                     } else if (notification.type.includes('comment') || notification.type === 'reply' || notification.type === 'mention') {
                         // For comments, replies, mentions
                         if (notification.data && notification.data.postId) {
                             window.location.href = `/post/${notification.data.postId}`;
-                        } else {
+                } else {
                             window.location.href = '/notifications';
                         }
                     } else if (notification.type.includes('project_')) {
@@ -1033,7 +1033,7 @@
                 
                 fetch(`/api/projects/${projectId}/join-request/${requestId}`, {
                     method: 'PUT',
-                    headers: {
+                headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1051,7 +1051,7 @@
                     
                     return data;
                 })
-                .then(data => {
+            .then(data => {
                     console.log(`Successfully ${status} request:`, data);
                     
                     // Show toast notification if available
@@ -1134,18 +1134,18 @@
                         unreadCount--;
                         updateNotificationBadge();
                     }
-                })
-                .catch(error => {
-                    console.error('Error marking notification as read:', error);
-                });
-            }
-            
-            // Mark all notifications as read
-            function markAllNotificationsAsRead() {
-                fetch('/api/notifications/mark-all-read', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+            });
+        }
+        
+        // Mark all notifications as read
+        function markAllNotificationsAsRead() {
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
                     },
                     credentials: 'include'
                 })
@@ -1163,12 +1163,12 @@
                     
                     // Show toast message
                     showToast('All notifications marked as read');
-                })
-                .catch(error => {
-                    console.error('Error marking all notifications as read:', error);
-                });
-            }
-            
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+            });
+        }
+        
             // Initialize
             fetchUnreadCount();
             
