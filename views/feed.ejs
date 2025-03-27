@@ -141,14 +141,14 @@
         </div>
     <% } else { %>
         <!-- Posts Feed -->
-        <div class="space-y-4">
+        <div class="max-w-md mx-auto space-y-4">
             <% posts.forEach(post => { 
                 // Additional safety check to filter out posts with null users at template level
                 if (!post || !post.user) {
                     return; // Skip this post entirely
                 }
             %>
-                <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 sm:rounded-lg overflow-hidden transform transition-all post-container" data-post-id="<%= post._id %>" data-user-id="<%= post.user._id %>">
+                <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden transform transition-all post-container" data-post-id="<%= post._id %>" data-user-id="<%= post.user._id %>">
                     <!-- Post Header -->
                     <div class="p-3 flex items-center justify-between">
                         <a href="/user/<%= post.user.username %>" class="flex items-center group">
@@ -174,13 +174,13 @@
                     <!-- Images -->
                     <% if (post.images && post.images.length > 0) { %>
                         <div class="relative post-image" ondblclick="handleDoubleTap('<%= post._id %>')">
-                            <div class="swiper-container">
+                            <div class="swiper-container aspect-square">
                                 <div class="swiper-wrapper">
                                     <% post.images.forEach(image => { %>
                                         <div class="swiper-slide">
                                             <img src="<%= image.url %>" 
                                                  alt="Post image"
-                                                 class="w-full object-cover aspect-square sm:aspect-auto sm:max-h-[600px]">
+                                                 class="w-full h-full object-cover">
                                         </div>
                                     <% }) %>
                                 </div>
@@ -250,7 +250,9 @@
 
                         <!-- Post Metadata -->
                         <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                            <%= new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                            <span class="post-time" data-timestamp="<%= post.createdAt %>">
+                                <%= post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '' %>
+                            </span>
                             <% if (post.comments && post.comments.length > 0) { %>
                                 • <button onclick="showComments('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:underline">
                                     View all <%= post.comments.length %> comments
@@ -500,6 +502,7 @@
 <!-- Add Cropper.js for image cropping -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="/js/feed-utils.js"></script>
 
 <style>
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -741,6 +744,25 @@
     height: 3px;
     border-radius: 3px;
     transition: width 0.1s linear;
+}
+
+/* Post size control */
+.post-container {
+    max-width: 470px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.swiper-container.aspect-square {
+    max-height: 450px;
+    width: 100%;
+}
+
+/* Ensure feed is centered on desktop but full-width on mobile */
+@media (min-width: 768px) {
+    .max-w-md {
+        max-width: 470px;
+    }
 }
 </style>
 
