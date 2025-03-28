@@ -412,6 +412,12 @@
                 padding-bottom: 5rem;
             }
         }
+
+        /* Shimmer animation for 3D elements */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
     </style>
 </head>
 <body>
@@ -443,7 +449,7 @@
                     <a href="#contact" class="nav-link text-lg font-semibold text-gray-800 transition-colors duration-300">
                         Contact Us
                     </a>
-                    <a href="/register" class="btn-primary inline-flex items-center px-5 py-3 border border-transparent text-lg font-semibold rounded-full text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all duration-300 shadow-md">
+                    <a href="/register" class="btn-primary px-4 py-2 border border-transparent text-base font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 shadow-sm">
                         Sign Up
                     </a>
                 </nav>
@@ -502,40 +508,254 @@
                 <!-- Left Column - Text Content -->
                 <div class="col-span-6 text-center lg:text-left animate-fade-in" style="animation-delay: 0.1s">
                     <h1 class="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
-                        <span class="block">Your University</span>
-                        <span class="block text-indigo-200">In Your Pocket</span>
+                        <span class="block bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">Your Campus World</span>
+                        <span class="block mt-1 bg-clip-text text-transparent bg-gradient-to-r from-indigo-200 via-purple-300 to-pink-300">Everywhere With You</span>
                     </h1>
-                    <p class="mt-3 text-base text-indigo-100 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
-                        Connect with fellow students, share moments, send messages, and stay updated with campus events - all in one place. 
-                        The exclusive social platform designed for Jagannath University students.
+                    <p class="mt-5 text-base text-indigo-100 sm:mt-7 sm:text-xl lg:text-lg xl:text-xl leading-relaxed">
+                        <span class="font-semibold text-white">Connect · Share · Discover</span> — The digital pulse of Jagannath 
+                        University. Events, friends, clubs, and memories—all in one vibrant social universe.
                     </p>
                     <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
-                        <a href="/register" class="btn-primary px-8 py-3 rounded-full text-indigo-600 bg-white hover:bg-indigo-50 transition-all shadow-md font-medium text-base inline-flex items-center justify-center transform hover:scale-105 duration-300">
-                            Get Started
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                        <a href="/register" class="relative group px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-purple-700 text-white font-medium text-base inline-flex items-center justify-center shadow-lg shadow-indigo-500/30 transform hover:scale-105 transition-all duration-300 overflow-hidden">
+                            <!-- Shimmering overlay -->
+                            <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -translate-x-full group-hover:animate-[shimmer_1s_forwards]"></span>
+                            
+                            <span class="relative flex items-center">
+                                Get Started
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
                         </a>
-                        <a href="#how-it-works" class="btn-primary px-8 py-3 rounded-full border border-white text-white hover:bg-white hover:text-indigo-600 transition-all font-medium text-base inline-flex items-center justify-center">
+                        <a href="#how-it-works" class="relative px-8 py-3 rounded-full border-2 border-white/80 text-white backdrop-blur-sm hover:bg-white/10 transition-all font-medium text-base inline-flex items-center justify-center transform hover:scale-105 duration-300">
                             How It Works
                         </a>
                     </div>
                 </div>
                 
-                <!-- Right Column - App Image -->
+                <!-- Right Column - App Image with 3D Smartphone Model -->
                 <div class="col-span-6 mt-12 lg:mt-0 relative animate-fade-in" style="animation-delay: 0.3s">
+                    <!-- Decorative floating elements -->
+                    <div class="absolute -top-16 -right-8 h-28 w-28 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full opacity-80 animate-float blur-sm" style="animation-delay: 0.5s"></div>
+                    <div class="absolute -bottom-10 -left-12 h-40 w-40 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full opacity-80 animate-float blur-sm" style="animation-delay: 1s"></div>
+                    <div class="absolute top-1/4 right-1/3 h-20 w-20 bg-gradient-to-br from-pink-300 to-pink-500 rounded-full opacity-70 animate-float blur-sm" style="animation-delay: 1.5s"></div>
+                    <div class="absolute bottom-1/3 right-1/4 h-16 w-16 bg-gradient-to-br from-blue-300 to-blue-500 rounded-full opacity-70 animate-float blur-sm" style="animation-delay: 0.7s"></div>
+                    <div class="absolute top-1/3 -left-4 h-14 w-14 bg-gradient-to-br from-green-300 to-green-500 rounded-full opacity-70 animate-float blur-sm" style="animation-delay: 1.2s"></div>
+                    
+                    <!-- Enhanced decorative elements with more vibrant colors and playful animations -->
+                    <!-- Primary floating orbs with more saturation -->
+                    <div class="absolute -top-16 -right-10 h-28 w-28 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-full opacity-90 animate-float blur-sm" style="animation-delay: 0.5s; filter: saturate(1.5)"></div>
+                    <div class="absolute -bottom-12 -left-14 h-44 w-44 bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-full opacity-90 animate-float blur-sm" style="animation-delay: 1s; filter: saturate(1.4)"></div>
+                    <div class="absolute top-1/4 right-1/3 h-20 w-20 bg-gradient-to-br from-pink-300 to-rose-500 rounded-full opacity-80 animate-float blur-sm" style="animation-delay: 1.5s; filter: saturate(1.3)"></div>
+                    <div class="absolute bottom-1/3 right-1/4 h-16 w-16 bg-gradient-to-br from-cyan-300 to-blue-500 rounded-full opacity-80 animate-float blur-sm" style="animation-delay: 0.7s; filter: saturate(1.5)"></div>
+                    <div class="absolute top-1/3 -left-4 h-14 w-14 bg-gradient-to-br from-emerald-300 to-green-500 rounded-full opacity-80 animate-float blur-sm" style="animation-delay: 1.2s; filter: saturate(1.4)"></div>
+                    
+                    <!-- Additional decorative elements -->
+                    <!-- Shimmering stars -->
+                    <div class="absolute top-1/6 left-1/4 w-4 h-4 bg-white rounded-full opacity-60 animate-ping" style="animation-duration: 2s; animation-delay: 0.3s;"></div>
+                    <div class="absolute bottom-1/6 right-1/5 w-3 h-3 bg-white rounded-full opacity-50 animate-ping" style="animation-duration: 3s; animation-delay: 1.5s;"></div>
+                    
+                    <!-- Small particle dots -->
+                    <div class="absolute top-1/3 right-1/3 w-2 h-2 bg-yellow-300 rounded-full opacity-80 animate-pulse"></div>
+                    <div class="absolute bottom-1/2 left-1/4 w-3 h-3 bg-purple-300 rounded-full opacity-70 animate-pulse" style="animation-delay: 0.8s"></div>
+                    <div class="absolute top-2/3 right-1/6 w-2 h-2 bg-pink-300 rounded-full opacity-90 animate-pulse" style="animation-delay: 1.3s"></div>
+                    
+                    <!-- Decorative rings -->
+                    <div class="absolute bottom-1/3 left-1/3 w-16 h-16 rounded-full border-2 border-white opacity-20 animate-ping" style="animation-duration: 4s;"></div>
+                    <div class="absolute top-1/4 right-1/5 w-10 h-10 rounded-full border-2 border-indigo-300 opacity-30 animate-ping" style="animation-duration: 5s; animation-delay: 0.7s;"></div>
+                    
                     <div class="relative mx-auto w-full max-w-md">
-                        <!-- App Screenshot with Phone Frame -->
-                        <div class="relative z-10 overflow-hidden rounded-xl shadow-2xl transform rotate-1 hover:rotate-3 transition-all duration-500 animate-float">
-                            <img class="w-full" src="/placeholder/JccBUZZ logo.svg" alt="JCCbuzz Application Screenshot">
-                        </div>
-                        
-                        <!-- Decorative Elements -->
-                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full">
-                            <div class="absolute -top-4 -right-4 h-20 w-20 bg-yellow-400 rounded-full opacity-70 animate-float" style="animation-delay: 0.5s"></div>
-                            <div class="absolute -bottom-6 -left-6 h-32 w-32 bg-purple-500 rounded-full opacity-70 animate-float" style="animation-delay: 1s"></div>
-                            <div class="absolute top-1/4 right-1/3 h-16 w-16 bg-pink-400 rounded-full opacity-60 animate-float" style="animation-delay: 1.5s"></div>
-                            <div class="absolute bottom-1/4 right-1/4 h-12 w-12 bg-blue-400 rounded-full opacity-60 animate-float" style="animation-delay: 0.7s"></div>
+                        <!-- 3D Phone Model with App Display -->
+                        <div class="relative z-10 overflow-hidden rounded-2xl shadow-[0_20px_60px_-10px_rgba(86,59,255,0.6)] transform rotate-1 hover:rotate-0 transition-all duration-500 hover:scale-105 animate-float">
+                            <!-- Animated Ring Around Phone -->
+                            <div class="absolute -inset-3 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-[50px] opacity-70 blur-lg animate-pulse"></div>
+                            
+                            <!-- 3D Smartphone Container with proper aspect ratio -->
+                            <div class="relative w-full pb-[180%] overflow-hidden rounded-2xl">
+                                <!-- Phone Frame with 3D perspective -->
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <!-- Phone Body with Shadow and Highlights - Improved with gradient -->
+                                    <div class="w-[88%] h-[97%] bg-gradient-to-br from-gray-800 via-gray-900 to-black rounded-[40px] relative overflow-hidden transform hover:scale-[1.01] transition-transform duration-300" 
+                                         style="box-shadow: 0 40px 70px -20px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2), inset 0 -5px 15px rgba(0,0,0,0.4);">
+                                        
+                                        <!-- Shimmer effect -->
+                                        <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-5 transform -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                                        
+                                        <!-- Phone Screen with Reflection - Enhanced with better gradient -->
+                                        <div class="absolute inset-[5px] rounded-[36px] bg-gradient-to-tr from-indigo-50 via-white to-blue-50 overflow-hidden"
+                                             style="box-shadow: inset 0 0 5px rgba(0,0,0,0.15);">
+                                            
+                                            <!-- Subtle Screen Reflection Overlay - Enhanced -->
+                                            <div class="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-20 z-20 pointer-events-none"></div>
+                                            
+                                            <!-- App Interface -->
+                                            <div class="absolute inset-0 bg-gradient-to-b from-indigo-50 to-white">
+                                                <!-- App Status Bar -->
+                                                <div class="h-[5%] bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 flex items-center justify-between px-4">
+                                                    <div class="text-white text-xs font-medium">9:41</div>
+                                                    <div class="flex items-center space-x-2">
+                                                        <div class="w-4 h-3 bg-white opacity-80 rounded-sm"></div>
+                                                        <div class="w-3 h-3 bg-white opacity-80 rounded-full"></div>
+                                                        <div class="w-5 h-3 bg-white opacity-80 rounded-sm"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- App Header - More vibrant with sparkle effects -->
+                                                <div class="h-[8%] bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 flex items-center px-4 shadow-md relative overflow-hidden">
+                                                    <!-- Sparkle effects -->
+                                                    <div class="absolute top-1 left-10 w-1 h-1 bg-white rounded-full opacity-80 animate-ping" style="animation-duration: 1.5s"></div>
+                                                    <div class="absolute bottom-2 right-12 w-1 h-1 bg-white rounded-full opacity-70 animate-ping" style="animation-duration: 2s"></div>
+                                                    
+                                                    <div class="text-white font-bold text-base flex items-center">
+                                                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-white">Jcc</span>
+                                                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-yellow-200">BUZZ</span>
+                                                        <span class="ml-1 text-yellow-200">✨</span>
+                                                    </div>
+                                                    <div class="ml-auto flex space-x-3">
+                                                        <div class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                <path d="M3 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                <path d="M17 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <div class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- App Content - Feed - More colorful and vibrant -->
+                                                <div class="h-[87%] overflow-hidden py-2 bg-gradient-to-b from-indigo-50/50 to-white">
+                                                    <!-- Stories - Enhanced with more vibrant gradients -->
+                                                    <div class="px-2 pb-3">
+                                                        <div class="flex space-x-3 overflow-x-hidden px-1">
+                                                            <div class="w-14 flex-shrink-0">
+                                                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 p-[2px] animate-pulse" style="animation-duration: 3s">
+                                                                    <div class="w-full h-full rounded-full bg-white border-2 border-white flex items-center justify-center">
+                                                                        <span class="text-indigo-600 text-xs font-bold">You</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-xs text-center mt-1 text-gray-700 truncate font-medium">Your Story</div>
+                                                            </div>
+                                                            <div class="w-14 flex-shrink-0">
+                                                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 p-[2px]">
+                                                                    <div class="w-full h-full rounded-full bg-orange-100 border-2 border-white flex items-center justify-center">
+                                                                        <span class="text-orange-600 text-lg">🎭</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-xs text-center mt-1 text-gray-700 truncate font-medium">Events</div>
+                                                            </div>
+                                                            <div class="w-14 flex-shrink-0">
+                                                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 p-[2px]">
+                                                                    <div class="w-full h-full rounded-full bg-blue-100 border-2 border-white flex items-center justify-center">
+                                                                        <span class="text-blue-600 text-lg">🏫</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-xs text-center mt-1 text-gray-700 truncate font-medium">Campus</div>
+                                                            </div>
+                                                            <div class="w-14 flex-shrink-0">
+                                                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 p-[2px]">
+                                                                    <div class="w-full h-full rounded-full bg-green-100 border-2 border-white flex items-center justify-center">
+                                                                        <span class="text-green-600 text-lg">👥</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-xs text-center mt-1 text-gray-700 truncate font-medium">Clubs</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Post 1 - Enhanced with more vibrant gradients and animations -->
+                                                    <div class="border-t border-gray-200 pt-3 pb-4">
+                                                        <div class="flex items-center px-3 pb-2">
+                                                            <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">JU</div>
+                                                            <div class="ml-2">
+                                                                <div class="font-semibold text-sm">University News</div>
+                                                                <div class="text-xs text-gray-500">5m ago</div>
+                                                            </div>
+                                                            <div class="ml-auto">
+                                                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <div class="h-44 bg-gradient-to-br from-indigo-500 to-purple-600 mx-3 rounded-xl flex items-center justify-center overflow-hidden relative shadow-md">
+                                                            <!-- Animated party confetti -->
+                                                            <div class="absolute top-2 left-4 text-xl animate-bounce" style="animation-duration: 1s">🎉</div>
+                                                            <div class="absolute bottom-4 right-5 text-xl animate-bounce" style="animation-duration: 1.5s; animation-delay: 0.5s">🎊</div>
+                                                            
+                                                            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-90"></div>
+                                                            <span class="relative z-10 text-white font-bold text-2xl text-center px-4">Spring Campus Festival<br/><span class="text-base font-normal mt-2 inline-block">This Weekend!</span></span>
+                                                        </div>
+                                                        <div class="flex px-3 pt-3 items-center">
+                                                            <div class="flex space-x-4">
+                                                                <button class="flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
+                                                                    <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
+                                                                    </svg>
+                                                                </button>
+                                                                <button class="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+                                                                    <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd"></path>
+                                                                    </svg>
+                                                                </button>
+                                                                <button class="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+                                                                    <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                            <div class="ml-auto text-xs font-medium text-indigo-600">128 likes</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Post 2 (Partial) - Enhanced to match the first post style -->
+                                                    <div class="border-t border-gray-200 pt-3">
+                                                        <div class="flex items-center px-3 pb-2">
+                                                            <div class="w-9 h-9 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">SC</div>
+                                                            <div class="ml-2">
+                                                                <div class="font-semibold text-sm">Student Club</div>
+                                                                <div class="text-xs text-gray-500">15m ago</div>
+                                                            </div>
+                                                            <div class="ml-auto">
+                                                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <div class="h-20 mx-3 rounded-xl overflow-hidden relative shadow-md">
+                                                            <div class="absolute inset-0 bg-gradient-to-r from-rose-400 via-fuchsia-500 to-pink-500"></div>
+                                                            <div class="relative z-10 p-3">
+                                                                <div class="text-white font-medium">Join us for Game Night this Friday! Bring your friends and have fun 🎮</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Phone Notch -->
+                                        <div class="absolute top-[5px] left-1/2 transform -translate-x-1/2 w-[35%] h-6 bg-black rounded-b-2xl z-10 flex justify-center overflow-hidden">
+                                            <div class="w-10 h-3 bg-gray-800 rounded-full mt-1 relative">
+                                                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-600 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Phone Side Button Highlights -->
+                                        <!-- Volume Buttons -->
+                                        <div class="absolute top-[20%] left-0 w-2 h-10 bg-gradient-to-r from-gray-600 to-gray-800 rounded-r-lg transform -translate-x-1/2 shadow-lg"></div>
+                                        <div class="absolute top-[35%] left-0 w-2 h-10 bg-gradient-to-r from-gray-600 to-gray-800 rounded-r-lg transform -translate-x-1/2 shadow-lg"></div>
+                                        
+                                        <!-- Power Button -->
+                                        <div class="absolute top-[28%] right-0 w-2 h-12 bg-gradient-to-l from-gray-600 to-gray-800 rounded-l-lg transform translate-x-1/2 shadow-lg"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 3D Effect Perspective Shadow -->
+                                <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[70%] h-[2%] bg-black opacity-30 blur-md rounded-full"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
