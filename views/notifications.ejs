@@ -1,107 +1,115 @@
 <%- include('partials/header2') %>
 
-<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-            <i class="fas fa-bell text-blue-500 mr-3"></i>
-            Notifications
-        </h1>
-        <button id="mark-all-read" class="px-4 py-2 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200 flex items-center text-sm font-medium">
-            <i class="fas fa-check-double mr-2"></i> Mark all as read
-        </button>
-    </div>
-    
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <!-- Notification Filters -->
-        <div class="border-b border-gray-100 dark:border-gray-700 p-4">
-            <div class="flex flex-wrap gap-2">
-                <button data-filter="all" class="notification-filter px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
-                    All
-                </button>
-                <button data-filter="unread" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                    Unread
-                </button>
-                <button data-filter="project" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                    Projects
-                </button>
-                <button data-filter="social" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                    Social
-                </button>
-            </div>
+<div class="min-h-screen bg-white dark:bg-gray-900">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center">
+                <i class="fas fa-bell text-blue-500 mr-3"></i>
+                Notifications
+            </h1>
+            <button id="mark-all-read" class="px-4 py-2 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 text-transparent bg-clip-text hover:from-blue-600/20 hover:via-indigo-600/20 hover:to-purple-600/20 rounded-lg transition-colors duration-200 flex items-center text-sm font-medium">
+                <span class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                    <i class="fas fa-check-double mr-2"></i> Mark all as read
+                </span>
+            </button>
         </div>
         
-        <!-- Notifications List -->
-        <div id="notifications-container" class="divide-y divide-gray-100 dark:divide-gray-700 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            <% if (notifications.length === 0) { %>
-                <div class="p-10 text-center">
-                    <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-bell text-blue-500 text-xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No notifications yet</h3>
-                    <p class="text-gray-500 dark:text-gray-400">When you get notifications, they'll appear here.</p>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden relative">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+            <!-- Notification Filters -->
+            <div class="border-b border-gray-100 dark:border-gray-700 p-4">
+                <div class="flex flex-wrap gap-2">
+                    <button data-filter="all" class="notification-filter px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 transition-all shadow-sm">
+                        All
+                    </button>
+                    <button data-filter="unread" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        Unread
+                    </button>
+                    <button data-filter="project" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        Projects
+                    </button>
+                    <button data-filter="social" class="notification-filter px-4 py-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        Social
+                    </button>
                 </div>
-            <% } else { %>
-                <% notifications.forEach(notification => { 
-                    let notificationClass = notification.read ? '' : 'bg-blue-50 dark:bg-blue-900/10';
-                    let iconClass = '';
-                    let iconBgClass = '';
-                    
-                    // Determine icon and background based on notification type
-                    if (notification.type.includes('project_join')) {
-                        iconClass = 'fas fa-project-diagram';
-                        iconBgClass = 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400';
-                    } else if (notification.type.includes('follow')) {
-                        iconClass = 'fas fa-user-plus';
-                        iconBgClass = 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
-                    } else if (notification.type === 'like') {
-                        iconClass = 'fas fa-heart';
-                        iconBgClass = 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
-                    } else if (notification.type.includes('comment') || notification.type === 'reply') {
-                        iconClass = 'fas fa-comment';
-                        iconBgClass = 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400';
-                    } else {
-                        iconClass = 'fas fa-bell';
-                        iconBgClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
-                    }
-                    
-                    let timeAgo = new Date(notification.createdAt).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    // Determine data-type for filtering
-                    let dataType = notification.type.includes('project_join') ? 'project' : 'social';
-                %>
-                    <div class="notification-item p-4 <%= notificationClass %>" data-id="<%= notification._id %>" data-type="<%= dataType %>" data-read="<%= notification.read ? 'true' : 'false' %>">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0 mr-4">
-                                <div class="w-10 h-10 rounded-full <%= iconBgClass %> flex items-center justify-center shadow-sm">
-                                    <i class="<%= iconClass %> text-lg"></i>
+            </div>
+            
+            <!-- Notifications List -->
+            <div id="notifications-container" class="divide-y divide-gray-100 dark:divide-gray-700 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <% if (notifications.length === 0) { %>
+                    <div class="p-10 text-center relative overflow-hidden">
+                        <div class="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur-3xl opacity-10"></div>
+                        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full blur-3xl opacity-10"></div>
+                        
+                        <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-bell text-xl float-animation"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">No notifications yet</h3>
+                        <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">When you get notifications, they'll appear here.</p>
+                    </div>
+                <% } else { %>
+                    <% notifications.forEach(notification => { 
+                        let notificationClass = notification.read ? '' : 'bg-blue-50 dark:bg-blue-900/10';
+                        let iconClass = '';
+                        let gradientClass = '';
+                        
+                        // Determine icon and gradient based on notification type
+                        if (notification.type.includes('project_join')) {
+                            iconClass = 'fas fa-project-diagram';
+                            gradientClass = 'from-purple-500 via-indigo-500 to-purple-600';
+                        } else if (notification.type.includes('follow')) {
+                            iconClass = 'fas fa-user-plus';
+                            gradientClass = 'from-green-500 via-green-400 to-teal-500';
+                        } else if (notification.type === 'like') {
+                            iconClass = 'fas fa-heart';
+                            gradientClass = 'from-red-500 via-pink-500 to-rose-500';
+                        } else if (notification.type.includes('comment') || notification.type === 'reply') {
+                            iconClass = 'fas fa-comment';
+                            gradientClass = 'from-yellow-500 via-amber-500 to-orange-500';
+                        } else {
+                            iconClass = 'fas fa-bell';
+                            gradientClass = 'from-blue-500 via-indigo-500 to-purple-500';
+                        }
+                        
+                        let timeAgo = new Date(notification.createdAt).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        // Determine data-type for filtering
+                        let dataType = notification.type.includes('project_join') ? 'project' : 'social';
+                    %>
+                        <div class="notification-item p-4 <%= notificationClass %> hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group" data-id="<%= notification._id %>" data-type="<%= dataType %>" data-read="<%= notification.read ? 'true' : 'false' %>">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mr-4">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r <%= gradientClass %> flex items-center justify-center shadow-sm text-white">
+                                        <i class="<%= iconClass %> text-lg"></i>
                                     </div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between mb-1">
-                                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                                        <%= notification.title %>
-                                    </h3>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2"><%= timeAgo %></span>
                                 </div>
-                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                    <%= notification.message || notification.displayMessage %>
-                                </p>
-                                <% if (!notification.read) { %>
-                                    <button class="mark-read-btn text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
-                                        Mark as read
-                                    </button>
-                                <% } %>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text transition-colors" style="<%= 'background-image: linear-gradient(to right, var(--tw-gradient-stops));' %>" data-gradient="<%= gradientClass %>">
+                                            <%= notification.title %>
+                                        </h3>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2"><%= timeAgo %></span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                        <%= notification.message || notification.displayMessage %>
+                                    </p>
+                                    <% if (!notification.read) { %>
+                                        <button class="mark-read-btn text-xs text-transparent bg-gradient-to-r <%= gradientClass %> bg-clip-text hover:opacity-80 transition-colors">
+                                            Mark as read
+                                        </button>
+                                    <% } %>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                <% }) %>
-            <% } %>
+                    <% }) %>
+                <% } %>
+            </div>
         </div>
     </div>
 </div>
@@ -171,6 +179,56 @@
     .bg-blue-50 {
         animation: pulse 2s infinite;
     }
+
+    /* Float animation for empty state */
+    @keyframes float {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+
+    .float-animation {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Gradient animations */
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .bg-gradient-to-r {
+        background-size: 200% 200%;
+        animation: gradient-shift 15s ease infinite;
+    }
+
+    /* Responsive design adjustments */
+    @media (max-width: 640px) {
+        .notification-item {
+            padding: 1rem 0.75rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+        }
+
+        #mark-all-read {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .notification-filter {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+        }
+    }
 </style>
 
 <script>
@@ -183,11 +241,11 @@
             button.addEventListener('click', function() {
                 // Update active filter button
                 filterButtons.forEach(btn => {
-                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.remove('bg-gradient-to-r', 'from-blue-500', 'via-indigo-500', 'to-purple-600', 'text-white');
                     btn.classList.add('bg-gray-100', 'text-gray-600', 'dark:bg-gray-700', 'dark:text-gray-300');
                 });
                 this.classList.remove('bg-gray-100', 'text-gray-600', 'dark:bg-gray-700', 'dark:text-gray-300');
-                this.classList.add('bg-blue-500', 'text-white');
+                this.classList.add('bg-gradient-to-r', 'from-blue-500', 'via-indigo-500', 'to-purple-600', 'text-white');
                 
                 const filter = this.getAttribute('data-filter');
                 
@@ -392,6 +450,23 @@
                 }, 300);
             }, 3000);
         }
+
+        // Apply gradients to notification titles on hover
+        const notificationItems = document.querySelectorAll('.notification-item');
+        notificationItems.forEach(item => {
+            const titleElement = item.querySelector('h3[data-gradient]');
+            if (titleElement) {
+                const gradientClass = titleElement.getAttribute('data-gradient');
+                
+                item.addEventListener('mouseenter', () => {
+                    titleElement.classList.add(gradientClass);
+                });
+                
+                item.addEventListener('mouseleave', () => {
+                    titleElement.classList.remove(gradientClass);
+                });
+            }
+        });
     });
 </script>
 

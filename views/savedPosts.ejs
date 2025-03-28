@@ -1,135 +1,151 @@
 <%- include('partials/header2') %>
 
-<div class="max-w-4xl mx-auto mt-8 px-4">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Saved Posts</h1>
-        <a href="/feed" class="text-blue-500 hover:text-blue-600 flex items-center">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Feed
-        </a>
-    </div>
-
-    <% if (savedPosts.length === 0) { %>
-        <div class="bg-white dark:bg-black rounded-lg shadow-md p-8 text-center">
-            <div class="text-gray-500 dark:text-gray-400 mb-4">
-                <i class="fas fa-bookmark text-5xl float-animation"></i>
-            </div>
-            <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">No saved posts yet</h3>
-            <p class="text-gray-600 dark:text-gray-400">
-                When you save posts, they'll appear here. Only you can see what you've saved.
-            </p>
-            <a href="/feed" class="mt-6 inline-block px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                Browse Feed
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black pb-12">
+    <div class="max-w-4xl mx-auto pt-8 px-4">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center">
+                <i class="fas fa-bookmark text-blue-500 mr-3"></i>
+                Saved Posts
+            </h1>
+            <a href="/feed" class="text-gray-600 dark:text-gray-300 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text flex items-center transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Feed
             </a>
         </div>
-    <% } else { %>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <% savedPosts.forEach(post => { %>
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden post-container h-[450px] flex flex-col border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-xl">
-                    <div class="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
-                        <% if (post.user) { %>
-                            <a href="/user/<%= post.user.username %>" class="flex items-center group">
-                                <img src="<%= post.user.profileImage || '/images/placeholder.webp' %>" 
-                                     alt="<%= post.user.name %>" 
-                                     onerror="this.src='/images/placeholder.webp'"
-                                     class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600">
-                                <div class="ml-3">
-                                    <span class="font-medium text-gray-800 dark:text-white group-hover:text-blue-500"><%= post.user.name %></span>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">@<%= post.user.username %></p>
-                                </div>
-                            </a>
-                        <% } else { %>
-                            <div class="flex items-center">
-                                <img src="/images/placeholder.webp" 
-                                     alt="User" 
-                                     class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600">
-                                <div class="ml-3">
-                                    <span class="font-medium text-gray-800 dark:text-white">User unavailable</span>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">@unknown</p>
-                                </div>
-                            </div>
-                        <% } %>
-                        <button onclick="toggleSavePost('<%= post._id %>')" class="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                            <i class="fas fa-bookmark"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- Post Content - Fixed size with scroll for text-only posts -->
-                    <div class="flex-1 flex flex-col overflow-hidden">
-                        <!-- Post Image - Fixed height -->
-                        <% if (post.images && post.images.length > 0) { %>
-                            <div class="relative h-52 post-image" ondblclick="handleDoubleTap('<%= post._id %>')">
-                                <div class="swiper-container h-full">
-                                    <div class="swiper-wrapper h-full">
-                                        <% post.images.forEach(image => { %>
-                                            <div class="swiper-slide h-full">
-                                                <img src="<%= image.url %>" 
-                                                     alt="Post image"
-                                                     class="w-full h-full object-cover">
-                                            </div>
-                                        <% }) %>
-                                    </div>
-                                    <% if (post.images.length > 1) { %>
-                                        <div class="swiper-pagination"></div>
-                                        <div class="swiper-button-next"></div>
-                                        <div class="swiper-button-prev"></div>
-                                        <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
-                                            <span class="current-slide">1</span>/<%= post.images.length %>
-                                        </div>
-                                    <% } %>
-                                </div>
-                                <div class="heart-animation hidden">
-                                    <i class="fas fa-heart"></i>
-                                </div>
-                            </div>
-                        <% } else { %>
-                            <!-- Placeholder for text-only posts to maintain consistent card height -->
-                            <div class="h-10"></div>
-                        <% } %>
+
+        <% if (savedPosts.length === 0) { %>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-10 text-center border border-gray-100 dark:border-gray-700 overflow-hidden relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur-3xl opacity-10"></div>
+                <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full blur-3xl opacity-10"></div>
+                
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white shadow-lg">
+                    <i class="fas fa-bookmark text-3xl float-animation"></i>
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800 dark:text-white mb-3">No saved posts yet</h3>
+                <p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-8">
+                    When you save posts, they'll appear here. Only you can see what you've saved.
+                </p>
+                <a href="/feed" class="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
+                    <i class="fas fa-compass mr-2"></i> Browse Feed
+                </a>
+            </div>
+        <% } else { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <% savedPosts.forEach(post => { %>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden post-container flex flex-col border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:transform hover:scale-[1.02] relative group">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         
-                        <!-- Post Text Content -->
-                        <div class="p-4 flex-1 flex flex-col overflow-hidden">
-                            <h4 class="font-medium text-gray-800 dark:text-white text-lg mb-2 line-clamp-1"><%= post.title %></h4>
-                            <div class="flex-1 overflow-y-auto mb-3 custom-scrollbar">
-                                <p class="text-gray-600 dark:text-gray-300 text-sm"><%= post.content %></p>
-                            </div>
-                            
-                            <a href="/post/<%= post._id %>" class="text-sm text-blue-500 hover:text-blue-600 font-medium">
-                                View full post
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Post Actions -->
-                    <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/20">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <button onclick="toggleLike('<%= post._id %>')" 
-                                        id="like-btn-<%= post._id %>"
-                                        class="like-btn flex items-center <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500">
-                                    <i class="fas fa-heart"></i>
-                                    <span class="like-count text-sm ml-1.5"><%= post.likes.length %></span>
-                                </button>
-                                <a href="/post/<%= post._id %>" class="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                                    <i class="fas fa-comment"></i>
-                                    <span class="text-sm ml-1.5"><%= post.comments.length %></span>
+                        <div class="p-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
+                            <% if (post.user) { %>
+                                <a href="/user/<%= post.user.username %>" class="flex items-center group">
+                                    <div class="rounded-full p-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
+                                        <img src="<%= post.user.profileImage || '/images/placeholder.webp' %>" 
+                                             alt="<%= post.user.name %>" 
+                                             onerror="this.src='/images/placeholder.webp'"
+                                             class="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800">
+                                    </div>
+                                    <div class="ml-3">
+                                        <span class="font-medium text-gray-800 dark:text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-colors"><%= post.user.name %></span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">@<%= post.user.username %></p>
+                                    </div>
                                 </a>
-                            </div>
-                            <button onclick="sharePost('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                <i class="fas fa-share"></i>
+                            <% } else { %>
+                                <div class="flex items-center">
+                                    <div class="rounded-full p-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
+                                        <img src="/images/placeholder.webp" 
+                                             alt="User" 
+                                             class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800">
+                                    </div>
+                                    <div class="ml-3">
+                                        <span class="font-medium text-gray-800 dark:text-white">User unavailable</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">@unknown</p>
+                                    </div>
+                                </div>
+                            <% } %>
+                            <button onclick="toggleSavePost('<%= post._id %>')" class="text-blue-500 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text p-2 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                                <i class="fas fa-bookmark"></i>
                             </button>
                         </div>
+                        
+                        <!-- Post Content -->
+                        <div class="flex-1 flex flex-col overflow-hidden">
+                            <!-- Post Image -->
+                            <% if (post.images && post.images.length > 0) { %>
+                                <div class="relative h-44 post-image" ondblclick="handleDoubleTap('<%= post._id %>')">
+                                    <div class="swiper-container h-full">
+                                        <div class="swiper-wrapper h-full">
+                                            <% post.images.forEach(image => { %>
+                                                <div class="swiper-slide h-full">
+                                                    <img src="<%= image.url %>" 
+                                                         alt="Post image"
+                                                         class="w-full h-full object-cover">
+                                                </div>
+                                            <% }) %>
+                                        </div>
+                                        <% if (post.images.length > 1) { %>
+                                            <div class="swiper-pagination"></div>
+                                            <div class="swiper-button-next"></div>
+                                            <div class="swiper-button-prev"></div>
+                                            <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
+                                                <span class="current-slide">1</span>/<%= post.images.length %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                    <div class="heart-animation hidden">
+                                        <i class="fas fa-heart"></i>
+                                    </div>
+                                </div>
+                            <% } else { %>
+                                <!-- Placeholder for text-only posts -->
+                                <div class="h-4"></div>
+                            <% } %>
+                            
+                            <!-- Post Text Content -->
+                            <div class="p-3 flex-1 flex flex-col overflow-hidden">
+                                <h4 class="font-medium text-gray-800 dark:text-white text-base mb-1 line-clamp-1"><%= post.title %></h4>
+                                <div class="flex-1 overflow-y-auto mb-2 custom-scrollbar">
+                                    <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-3"><%= post.content %></p>
+                                </div>
+                                
+                                <a href="/post/<%= post._id %>" class="text-xs text-transparent bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text font-medium">
+                                    View full post
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Post Actions -->
+                        <div class="p-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/20">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <button onclick="toggleLike('<%= post._id %>')" 
+                                            id="like-btn-<%= post._id %>"
+                                            class="like-btn flex items-center <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500">
+                                        <i class="fas fa-heart"></i>
+                                        <span class="like-count text-sm ml-1.5"><%= post.likes.length %></span>
+                                    </button>
+                                    <a href="/post/<%= post._id %>" class="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                                        <i class="fas fa-comment"></i>
+                                        <span class="text-sm ml-1.5"><%= post.comments.length %></span>
+                                    </a>
+                                </div>
+                                <button onclick="sharePost('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            <% }) %>
-        </div>
-    <% } %>
+                <% }) %>
+            </div>
+        <% } %>
+    </div>
 </div>
 
 <!-- Share Modal (Same as in feed.ejs) -->
 <div id="shareModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4 overflow-hidden modal-content">
+    <div class="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full mx-4 overflow-hidden modal-content relative">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
         <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h3 class="font-semibold text-lg text-gray-800 dark:text-white">Share Post</h3>
+            <h3 class="font-semibold text-lg text-transparent bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text">Share Post</h3>
             <button onclick="closeShareModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
                 <i class="fas fa-times"></i>
             </button>
@@ -138,18 +154,18 @@
             <div class="mb-4">
                 <label for="shareRecipient" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Share with:</label>
                 <input type="text" id="shareRecipient" placeholder="Type username..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                <div id="userResults" class="mt-2 max-h-40 overflow-y-auto hidden"></div>
+                <div id="userResults" class="mt-2 max-h-40 overflow-y-auto hidden custom-scrollbar"></div>
             </div>
             <div class="mb-4">
                 <label for="shareMessage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message (optional):</label>
-                <textarea id="shareMessage" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-white"></textarea>
+                <textarea id="shareMessage" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-white custom-scrollbar"></textarea>
             </div>
             <div id="shareError" class="text-red-500 text-sm mb-4 hidden"></div>
             <div class="flex justify-end">
                 <button onclick="closeShareModal()" class="mr-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
                     Cancel
                 </button>
-                <button id="confirmShareButton" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                <button id="confirmShareButton" class="px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all shadow-sm hover:shadow-md">
                     Share
                 </button>
             </div>
@@ -249,6 +265,37 @@
 .float-animation {
     animation: float 3s ease-in-out infinite;
 }
+
+/* Responsive design adjustments */
+@media (max-width: 640px) {
+    .post-container {
+        /* Remove min-height to allow content to define the size */
+        min-height: auto;
+    }
+
+    .post-image {
+        height: 10rem; /* 160px - slightly smaller on mobile */
+    }
+}
+
+/* Gradient animations */
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animated-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 15s ease infinite;
+}
+
+/* Toast notification with gradient */
+#toast {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899);
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+}
 </style>
 
 <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
@@ -314,7 +361,7 @@
         });
 
         // Add animation class to empty state icon
-        const emptyIcon = document.querySelector('.fas.fa-bookmark.text-5xl');
+        const emptyIcon = document.querySelector('.fas.fa-bookmark.text-3xl');
         if (emptyIcon) {
             emptyIcon.classList.add('float-animation');
         }
@@ -522,7 +569,7 @@
         // Create new toast
         toast = document.createElement('div');
         toast.id = 'toast';
-        toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300';
+        toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300 animated-gradient';
         toast.textContent = message;
         document.body.appendChild(toast);
         

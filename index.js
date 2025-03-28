@@ -4124,7 +4124,7 @@ app.get('/api/current-user', isLoggedIn, (req, res) => {
 // const Event = require('./models/Event'); // Already imported at the top of the file
 
 // Event Routes
-app.get('/api/events', async (req, res) => {
+app.get('/api/events',isLoggedIn,  async (req, res) => {
     try {
         const currentDate = new Date();
         const events = await Event.find({ endDateTime: { $gte: currentDate } })
@@ -4139,7 +4139,7 @@ app.get('/api/events', async (req, res) => {
     }
 });
 
-app.get('/api/events/past', async (req, res) => {
+app.get('/api/events/past',isLoggedIn,  async (req, res) => {
     try {
         const currentDate = new Date();
         const events = await Event.find({ endDateTime: { $lt: currentDate } })
@@ -4154,7 +4154,7 @@ app.get('/api/events/past', async (req, res) => {
     }
 });
 
-app.get('/api/events/:id', async (req, res) => {
+app.get('/api/events/:id',isLoggedIn,  async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ error: 'Invalid event ID' });

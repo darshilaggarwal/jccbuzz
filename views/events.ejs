@@ -1,951 +1,783 @@
 <%- include('partials/header2') %>
 
-<style>
-    /* Events page specific styles */
-    .event-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border-radius: 1rem;
-        overflow: hidden;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-    
-    .event-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-    
-    .category-badge {
-        transition: all 0.2s ease;
-    }
-    
-    .category-badge:hover {
-        transform: scale(1.05);
-    }
-    
-    .skeleton-loader {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-        border-radius: 1rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-    
-    @keyframes loading {
-        0% {
-            background-position: 200% 0;
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0095f6',
+                        secondary: '#262626',
+                        accent: '#FFD700',
+                        'dark-hover': '#1a1a1a'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
         }
-        100% {
-            background-position: -200% 0;
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        .event-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-    }
-    
-    /* Glass effect for inputs and cards */
-    .glass-effect {
-        backdrop-filter: blur(10px);
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    .dark .glass-effect {
-        background: rgba(17, 24, 39, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Animated background */
-    .animated-gradient-bg {
-        background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #4f46e5, #06b6d4);
-        background-size: 400% 400%;
-        animation: gradient-shift 15s ease infinite;
-    }
-    
-    @keyframes gradient-shift {
-        0% {
-            background-position: 0% 50%;
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
-        50% {
-            background-position: 100% 50%;
+        
+        .category-badge {
+            transition: all 0.2s ease;
         }
-        100% {
-            background-position: 0% 50%;
+        
+        .category-badge:hover {
+            transform: scale(1.05);
         }
-    }
-</style>
+        
+        .skeleton-loader {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+        
+        /* Glass effect for inputs and cards */
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark .glass-effect {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a5b4fc;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1;
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #3b82f6, #8b5cf6);
+        }
+        
+        /* Animated background */
+        .animated-gradient-bg {
+            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #4f46e5, #06b6d4);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen font-sans">
 
-<main class="container mx-auto px-4 pt-20 pb-10">
-    <!-- Hero Section -->
-    <section class="relative rounded-3xl overflow-hidden mb-10 shadow-xl">
-        <div class="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-90"></div>
-        <div class="absolute inset-0 bg-[url('/images/pattern-grid.svg')] opacity-10"></div>
-        
-        <!-- Decorative rings -->
-        <div class="absolute -top-24 -left-24 w-64 h-64 border-4 border-white/10 rounded-full"></div>
-        <div class="absolute top-1/2 -right-16 w-48 h-48 border-4 border-white/10 rounded-full"></div>
-        <div class="absolute bottom-10 left-10 w-16 h-16 border-2 border-white/20 rounded-full animate-pulse-slow"></div>
-        
-        <!-- Decorative dots -->
-        <div class="absolute top-12 right-1/4 w-3 h-3 bg-yellow-300 rounded-full"></div>
-        <div class="absolute top-32 left-1/4 w-2 h-2 bg-green-300 rounded-full"></div>
-        <div class="absolute bottom-16 right-1/3 w-2 h-2 bg-pink-300 rounded-full"></div>
-        
-        <div class="relative z-10 py-16 px-8 md:px-16 flex flex-col items-start">
-            <div class="flex items-center mb-6">
-                <div class="bg-white/20 backdrop-blur-sm rounded-full p-3 mr-4">
-                    <i class="fas fa-calendar-alt text-white text-2xl"></i>
-                </div>
-                <div class="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-white font-medium animate-pulse-slow">
-                    <span class="mr-2 text-xl">🎉</span> Campus Life & Events
-                </div>
-            </div>
-            
-            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">University Events</h1>
-            <p class="text-lg md:text-xl text-white/90 mb-8 max-w-2xl leading-relaxed">Discover exciting competitions, workshops, gatherings, and more happening around your campus. Never miss another opportunity to connect!</p>
-            
-            <div class="flex flex-wrap gap-4">
-                <button onclick="openCreateEventModal()" class="bg-gradient-to-r from-white to-white/90 hover:to-white text-blue-600 px-6 py-3 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 hover:shadow-blue-500/20 hover:shadow-xl">
-                    <i class="fas fa-plus"></i>
-                    <span>Create New Event</span>
-                </button>
-                <a href="#eventsContainer" class="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2 border border-white/30">
-                    <i class="fas fa-arrow-down"></i>
-                    <span>Browse Events</span>
-                </a>
-            </div>
-            
-            <div class="hidden md:block absolute -bottom-10 -right-10 w-64 h-64 bg-white/5 backdrop-blur-sm rounded-full border border-white/10 z-0"></div>
-        </div>
-        
-        <div class="absolute bottom-0 right-0 w-1/3 h-full hidden md:block">
-            <div class="w-full h-full bg-contain bg-no-repeat bg-right-bottom" style="background-image: url('/images/event-illustration.svg');"></div>
-        </div>
-        
-        <!-- Decorative elements -->
-        <div class="absolute top-12 right-96 w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-2xl opacity-20"></div>
-        <div class="absolute bottom-12 left-48 w-32 h-32 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full blur-3xl opacity-20"></div>
-    </section>
 
-    <!-- Responsive improvements for filters section on mobile -->
-    <section class="mb-8">
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
-            <div class="flex flex-col md:flex-row md:items-center">
-                <div class="mb-3 md:mb-0">
-                    <span class="font-medium text-gray-700 dark:text-gray-300 mr-2">Filter by:</span>
-                </div>
-                <div class="flex flex-wrap gap-2 md:gap-3">
-                    <button 
-                        class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-indigo-500 to-red-500 transition-all shadow-sm"
-                        data-category="all">
-                        <i class="fas fa-th-large"></i>
-                        <span>All Events</span>
-                    </button>
-                    <!-- <button 
-                        class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm opacity-60"
-                        data-category="workshop">
-                        <i class="fas fa-laptop-code"></i>
-                        <span>Workshops</span>
-                    </button> -->
-                    <button 
-                        class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
-                        data-category="competition"
-                    >
-                        <i class="fas fa-trophy text-xs"></i>
-                        <span>Competitions</span>
-                    </button>
-                    <button 
-                        class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm"
-                        data-category="workshop"
-                    >
-                        <i class="fas fa-chalkboard-teacher text-xs"></i>
-                        <span>Workshops</span>
-                    </button>
-                    <button 
-                        class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all shadow-sm"
-                        data-category="gathering"
-                    >
-                        <i class="fas fa-users text-xs"></i>
-                        <span>Gatherings</span>
-                    </button>
-                    <button 
-                        class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 transition-all shadow-sm"
-                        data-category="cultural"
-                    >
-                        <i class="fas fa-music text-xs"></i>
-                        <span>Cultural</span>
-                    </button>
-                    <button 
-                        class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all shadow-sm"
-                        data-category="academic"
-                    >
-                        <i class="fas fa-graduation-cap text-xs"></i>
-                        <span>Academic</span>
-                    </button>
+    <main class="container mx-auto px-4 pt-20 pb-10">
+        <!-- Hero Section -->
+        <section class="relative rounded-3xl overflow-hidden mb-10 shadow-xl">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-90"></div>
+            <div class="absolute inset-0 bg-[url('/images/pattern-grid.svg')] opacity-10"></div>
+            
+            <!-- Decorative rings -->
+            <div class="absolute -top-24 -left-24 w-64 h-64 border-4 border-white/10 rounded-full"></div>
+            <div class="absolute top-1/2 -right-16 w-48 h-48 border-4 border-white/10 rounded-full"></div>
+            <div class="absolute bottom-10 left-10 w-16 h-16 border-2 border-white/20 rounded-full animate-pulse-slow"></div>
+            
+            <!-- Decorative dots -->
+            <div class="absolute top-12 right-1/4 w-3 h-3 bg-yellow-300 rounded-full"></div>
+            <div class="absolute top-32 left-1/4 w-2 h-2 bg-green-300 rounded-full"></div>
+            <div class="absolute bottom-16 right-1/3 w-2 h-2 bg-pink-300 rounded-full"></div>
+            
+            <div class="relative z-10 py-16 px-8 md:px-16 flex flex-col items-start">
+                <div class="flex items-center mb-6">
+                    <div class="bg-white/20 backdrop-blur-sm rounded-full p-3 mr-4">
+                        <i class="fas fa-calendar-alt text-white text-2xl"></i>
+                    </div>
+                    <div class="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-white font-medium animate-pulse-slow">
+                        <span class="mr-2 text-xl">🎉</span> Campus Life & Events
+                    </div>
                 </div>
                 
-                <div class="mt-4 md:ml-auto md:mt-0 w-full md:w-auto">
-                    <div class="relative w-full md:w-auto">
-                        <input 
-                            id="eventSearch"
-                            type="text" 
-                            placeholder="Search events..." 
-                            class="pl-10 pr-4 py-2 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full shadow-sm"
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">University Events</h1>
+                <p class="text-lg md:text-xl text-white/90 mb-8 max-w-2xl leading-relaxed">Discover exciting competitions, workshops, gatherings, and more happening around your campus. Never miss another opportunity to connect!</p>
+                
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="openCreateEventModal()" class="bg-gradient-to-r from-white to-white/90 hover:to-white text-blue-600 px-6 py-3 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 hover:shadow-blue-500/20 hover:shadow-xl">
+                        <i class="fas fa-plus"></i>
+                        <span>Create New Event</span>
+                    </button>
+                    <a href="#eventsContainer" class="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2 border border-white/30">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>Browse Events</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:block absolute -bottom-10 -right-10 w-64 h-64 bg-white/5 backdrop-blur-sm rounded-full border border-white/10 z-0"></div>
+            </div>
+            
+            <div class="absolute bottom-0 right-0 w-1/3 h-full hidden md:block">
+                <div class="w-full h-full bg-contain bg-no-repeat bg-right-bottom" style="background-image: url('/images/event-illustration.svg');"></div>
+            </div>
+            
+            <!-- Decorative elements -->
+            <div class="absolute top-12 right-96 w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-2xl opacity-20"></div>
+            <div class="absolute bottom-12 left-48 w-32 h-32 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full blur-3xl opacity-20"></div>
+        </section>
+
+        <!-- Responsive improvements for filters section on mobile -->
+        <section class="mb-8">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
+                <div class="flex flex-col md:flex-row md:items-center">
+                    <div class="mb-3 md:mb-0">
+                        <span class="font-medium text-gray-700 dark:text-gray-300 mr-2">Filter by:</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 md:gap-3">
+                        <button 
+                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
+                            data-category="all"
                         >
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <i class="fas fa-th-large text-xs"></i>
+                            <span>All Events</span>
+                        </button>
+                        <button 
+                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
+                            data-category="competition"
+                        >
+                            <i class="fas fa-trophy text-xs"></i>
+                            <span>Competitions</span>
+                        </button>
+                        <button 
+                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm"
+                            data-category="workshop"
+                        >
+                            <i class="fas fa-chalkboard-teacher text-xs"></i>
+                            <span>Workshops</span>
+                        </button>
+                        <button 
+                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all shadow-sm"
+                            data-category="gathering"
+                        >
+                            <i class="fas fa-users text-xs"></i>
+                            <span>Gatherings</span>
+                        </button>
+                        <button 
+                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 transition-all shadow-sm"
+                            data-category="cultural"
+                        >
+                            <i class="fas fa-music text-xs"></i>
+                            <span>Cultural</span>
+                        </button>
+                        <button 
+                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all shadow-sm"
+                            data-category="academic"
+                        >
+                            <i class="fas fa-graduation-cap text-xs"></i>
+                            <span>Academic</span>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 md:ml-auto md:mt-0 w-full md:w-auto">
+                        <div class="relative w-full md:w-auto">
+                            <input 
+                                id="eventSearch"
+                                type="text" 
+                                placeholder="Search events..." 
+                                class="pl-10 pr-4 py-2 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full shadow-sm"
+                            >
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Upcoming Events Section -->
-    <section class="mb-12">
-        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg text-white">
-                <i class="fas fa-calendar-alt"></i>
+        <!-- Upcoming Events Section -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg text-white">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                Upcoming Events
+            </h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="eventsContainer">
+                <!-- Events will be loaded here via JavaScript -->
+                <!-- Loading Skeletons (will be replaced by actual events) -->
+                <div class="skeleton-loader rounded-xl h-[350px]"></div>
+                <div class="skeleton-loader rounded-xl h-[350px]"></div>
+                <div class="skeleton-loader rounded-xl h-[350px]"></div>
             </div>
-            Upcoming Events
-        </h2>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="eventsContainer">
-            <!-- Events will be loaded here via JavaScript -->
-            <!-- Loading Skeletons (will be replaced by actual events) -->
-            <div class="skeleton-loader rounded-xl h-[350px]"></div>
-            <div class="skeleton-loader rounded-xl h-[350px]"></div>
-            <div class="skeleton-loader rounded-xl h-[350px]"></div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Past Events Section -->
-    <section>
-        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 bg-gradient-to-r from-gray-700 to-gray-500 bg-clip-text text-transparent">
-            <div class="bg-gradient-to-r from-gray-700 to-gray-500 p-2 rounded-lg text-white">
-                <i class="fas fa-history"></i>
+        <!-- Past Events Section -->
+        <section>
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 bg-gradient-to-r from-gray-700 to-gray-500 bg-clip-text text-transparent">
+                <div class="bg-gradient-to-r from-gray-700 to-gray-500 p-2 rounded-lg text-white">
+                    <i class="fas fa-history"></i>
+                </div>
+                Past Events
+            </h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="pastEventsContainer">
+                <!-- Past events will be loaded here -->
             </div>
-            Past Events
-        </h2>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="pastEventsContainer">
-            <!-- Past events will be loaded here -->
-        </div>
-    </section>
-</main>
+        </section>
+    </main>
 
-<!-- Create Event Modal -->
-<div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-    <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-0 mx-4 shadow-2xl">
-        <div class="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-xl z-10">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg sm:text-xl font-bold flex items-center gap-2">
-                    <i class="fas fa-calendar-plus"></i>
-                    Create New Event
-                </h3>
-                <button onclick="closeCreateEventModal()" class="text-white hover:text-gray-200 text-xl p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+    <!-- Create Event Modal -->
+    <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-0 mx-4 shadow-2xl">
+            <div class="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-xl z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+                        <i class="fas fa-calendar-plus"></i>
+                        Create New Event
+                    </h3>
+                    <button onclick="closeCreateEventModal()" class="text-white hover:text-gray-200 text-xl p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="eventForm" class="p-4 sm:p-6">
+                <div class="space-y-4 sm:space-y-6">
+                    <!-- Event Title -->
+                    <div>
+                        <label for="eventTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Title *</label>
+                        <input 
+                            type="text" 
+                            id="eventTitle" 
+                            name="title" 
+                            required
+                            class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
+                            placeholder="Enter an engaging title for your event"
+                        >
+                    </div>
+                    
+                    <!-- Event Category -->
+                    <div>
+                        <label for="eventCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
+                        <select 
+                            id="eventCategory" 
+                            name="category" 
+                            required
+                            class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                        >
+                            <option value="">Select a category</option>
+                            <option value="competition">Competition</option>
+                            <option value="workshop">Workshop</option>
+                            <option value="gathering">Gathering</option>
+                            <option value="cultural">Cultural</option>
+                            <option value="academic">Academic</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Event Description -->
+                    <div>
+                        <label for="eventDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description *</label>
+                        <textarea 
+                            id="eventDescription" 
+                            name="description" 
+                            required
+                            rows="4" 
+                            class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
+                            placeholder="Provide details about your event"
+                        ></textarea>
+                    </div>
+                    
+                    <!-- Date and Time -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="eventStartDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date *</label>
+                            <input 
+                                type="date" 
+                                id="eventStartDate" 
+                                name="startDate" 
+                                required
+                                class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            >
+                        </div>
+                        <div>
+                            <label for="eventStartTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time *</label>
+                            <input 
+                                type="time" 
+                                id="eventStartTime" 
+                                name="startTime" 
+                                required
+                                class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            >
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="eventEndDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date *</label>
+                            <input 
+                                type="date" 
+                                id="eventEndDate" 
+                                name="endDate" 
+                                required
+                                class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            >
+                        </div>
+                        <div>
+                            <label for="eventEndTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time *</label>
+                            <input 
+                                type="time" 
+                                id="eventEndTime" 
+                                name="endTime" 
+                                required
+                                class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            >
+                        </div>
+                    </div>
+                    
+                    <!-- Location -->
+                    <div>
+                        <label for="eventLocation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location *</label>
+                        <input 
+                            type="text" 
+                            id="eventLocation" 
+                            name="location" 
+                            required
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
+                            placeholder="Where will the event take place?"
+                        >
+                    </div>
+                    
+                    <!-- Event Image -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Image</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600 dark:text-gray-400">
+                                    <label for="eventImage" class="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                        <span>Upload a file</span>
+                                        <input id="eventImage" name="image" type="file" class="sr-only" accept="image/*">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    PNG, JPG, GIF up to 10MB
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Registration Link (Optional) -->
+                    <div>
+                        <label for="registrationLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Registration Link (Optional)</label>
+                        <input 
+                            type="url" 
+                            id="registrationLink" 
+                            name="registrationLink" 
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
+                            placeholder="https://example.com/register"
+                        >
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="pt-4">
+                        <button 
+                            type="submit" 
+                            class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all shadow-md flex items-center justify-center gap-2"
+                        >
+                            <i class="fas fa-calendar-plus"></i>
+                            Create Event
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div id="eventDetailModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4 shadow-2xl">
+            <div class="relative">
+                <img id="modalEventImage" src="" alt="Event" class="w-full h-48 sm:h-64 md:h-72 object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+                <button onclick="closeEventDetailModal()" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-all">
                     <i class="fas fa-times"></i>
                 </button>
-            </div>
-        </div>
-        
-        <form id="eventForm" class="p-4 sm:p-6">
-            <div class="space-y-4 sm:space-y-6">
-                <!-- Event Title -->
-                <div>
-                    <label for="eventTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Title *</label>
-                    <input 
-                        type="text" 
-                        id="eventTitle" 
-                        name="title" 
-                        required
-                        class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
-                        placeholder="Enter an engaging title for your event"
-                    >
-                </div>
-                
-                <!-- Event Category -->
-                <div>
-                    <label for="eventCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
-                    <select 
-                        id="eventCategory" 
-                        name="category" 
-                        required
-                        class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                    >
-                        <option value="">Select a category</option>
-                        <option value="competition">Competition</option>
-                        <option value="workshop">Workshop</option>
-                        <option value="gathering">Gathering</option>
-                        <option value="cultural">Cultural</option>
-                        <option value="academic">Academic</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-                
-                <!-- Event Description -->
-                <div>
-                    <label for="eventDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description *</label>
-                    <textarea 
-                        id="eventDescription" 
-                        name="description" 
-                        required
-                        rows="4" 
-                        class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
-                        placeholder="Provide details about your event"
-                    ></textarea>
-                </div>
-                
-                <!-- Date and Time -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="eventStartDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date *</label>
-                        <input 
-                            type="date" 
-                            id="eventStartDate" 
-                            name="startDate" 
-                            required
-                            class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                        >
-                    </div>
-                    <div>
-                        <label for="eventStartTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time *</label>
-                        <input 
-                            type="time" 
-                            id="eventStartTime" 
-                            name="startTime" 
-                            required
-                            class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                        >
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="eventEndDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date *</label>
-                        <input 
-                            type="date" 
-                            id="eventEndDate" 
-                            name="endDate" 
-                            required
-                            class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                        >
-                    </div>
-                    <div>
-                        <label for="eventEndTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time *</label>
-                        <input 
-                            type="time" 
-                            id="eventEndTime" 
-                            name="endTime" 
-                            required
-                            class="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                        >
-                    </div>
-                </div>
-                
-                <!-- Location -->
-                <div>
-                    <label for="eventLocation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location *</label>
-                    <input 
-                        type="text" 
-                        id="eventLocation" 
-                        name="location" 
-                        required
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
-                        placeholder="Where will the event take place?"
-                    >
-                </div>
-                
-                <!-- Event Image -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Image</label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                        <div class="space-y-1 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                                <label for="eventImage" class="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                    <span>Upload a file</span>
-                                    <input id="eventImage" name="image" type="file" class="sr-only" accept="image/*">
-                                </label>
-                                <p class="pl-1">or drag and drop</p>
-                            </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                                PNG, JPG, GIF up to 10MB
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Registration Link (Optional) -->
-                <div>
-                    <label for="registrationLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Registration Link (Optional)</label>
-                    <input 
-                        type="url" 
-                        id="registrationLink" 
-                        name="registrationLink" 
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
-                        placeholder="https://example.com/register"
-                    >
-                </div>
-                
-                <!-- Submit Button -->
-                <div class="pt-4">
-                    <button 
-                        type="submit" 
-                        class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all shadow-md flex items-center justify-center gap-2"
-                    >
-                        <i class="fas fa-calendar-plus"></i>
-                        Create Event
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Event Detail Modal -->
-<div id="eventDetailModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-    <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4 shadow-2xl">
-        <div class="relative">
-            <img id="modalEventImage" src="" alt="Event" class="w-full h-48 sm:h-64 md:h-72 object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
-            <button onclick="closeEventDetailModal()" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-all">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="absolute inset-x-0 bottom-0 py-4 sm:py-6 px-4 sm:px-6">
-                <span id="modalEventCategory" class="inline-block px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r mb-2 sm:mb-3"></span>
-                <h2 id="modalEventTitle" class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2"></h2>
-                <div class="flex items-center text-white/80 text-sm">
-                    <i class="far fa-calendar-alt mr-2"></i>
-                    <span id="modalEventDate"></span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                <div class="space-y-4 bg-gray-50 dark:bg-gray-900/30 p-4 rounded-xl">
-                    <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
-                            <i class="far fa-clock"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Event Time</div>
-                            <span id="modalEventTime" class="font-medium"></span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                        <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Location</div>
-                            <span id="modalEventLocation" class="font-medium"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-4 bg-gray-50 dark:bg-gray-900/30 p-4 rounded-xl">
-                    <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                        <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Organizer</div>
-                            <span id="modalEventOrganizer" class="font-medium"></span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                        <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Attendees</div>
-                            <span><span id="modalEventAttendees" class="font-medium">0</span> people attending</span>
-                        </div>
-                    </div>
-                    <div id="modalEventAttendanceStatus" class="flex items-center gap-3 text-green-600 hidden">
-                        <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <span>You're attending this event</span>
+                <div class="absolute inset-x-0 bottom-0 py-4 sm:py-6 px-4 sm:px-6">
+                    <span id="modalEventCategory" class="inline-block px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r mb-2 sm:mb-3"></span>
+                    <h2 id="modalEventTitle" class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2"></h2>
+                    <div class="flex items-center text-white/80 text-sm">
+                        <i class="far fa-calendar-alt mr-2"></i>
+                        <span id="modalEventDate"></span>
                     </div>
                 </div>
             </div>
             
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 gradient-text">About the Event</h3>
-                <div class="bg-gray-50 dark:bg-gray-900/30 p-5 rounded-xl">
-                    <p id="modalEventDescription" class="text-gray-700 dark:text-gray-300 whitespace-pre-line"></p>
-                </div>
-            </div>
-            
-            <div class="flex flex-wrap gap-3">
-                <button id="modalAttendButton" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-md flex items-center gap-2">
-                    <i class="fas fa-user-plus"></i>
-                    Attend Event
-                </button>
-                <button id="modalRegisterButton" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-md flex items-center gap-2">
-                    <i class="fas fa-check-circle"></i>
-                    Register Now
-                </button>
-                <button class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2">
-                    <i class="fas fa-share-alt"></i>
-                    Share
-                </button>
-            </div>
-            
-            <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <h3 class="text-xl font-semibold mb-5 gradient-text">Attendees</h3>
-                <div id="modalEventAttendeesList" class="bg-gray-50 dark:bg-gray-900/30 p-5 rounded-xl flex flex-wrap gap-3">
-                    <!-- Attendees will be populated here -->
-                    <div class="flex -space-x-2">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 border-2 border-white dark:border-gray-800 flex items-center justify-center text-white">
-                            <i class="fas fa-user text-sm"></i>
-                        </div>
-                    </div>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm ml-2">No attendees yet. Be the first to attend!</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Global variables to store events
-    let allEvents = [];
-    let currentFilter = 'all';
-    let searchQuery = '';
-    let currentUser = null;
-    
-    // Initialize date picker
-    document.addEventListener('DOMContentLoaded', function() {
-        // Set default values for date/time inputs
-        const now = new Date();
-        const today = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-        const currentTime = now.toTimeString().slice(0, 5); // Format: HH:MM
-        
-        // Set default start date/time (today, current time)
-        document.getElementById('eventStartDate').value = today;
-        document.getElementById('eventStartTime').value = currentTime;
-        
-        // Set default end date/time (today, current time + 1 hour)
-        const endTime = new Date(now.getTime() + 60 * 60 * 1000).toTimeString().slice(0, 5);
-        document.getElementById('eventEndDate').value = today;
-        document.getElementById('eventEndTime').value = endTime;
-        
-        // Add event listener to start date to update end date min
-        document.getElementById('eventStartDate').addEventListener('change', function() {
-            // If end date is before start date, update it
-            if (document.getElementById('eventEndDate').value < this.value) {
-                document.getElementById('eventEndDate').value = this.value;
-            }
-        });
-
-        // Set up category filter buttons
-        const filterButtons = document.querySelectorAll('.category-filter');
-        filterButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Remove active class from all buttons
-                filterButtons.forEach(btn => btn.classList.remove('ring-2', 'ring-white'));
-                // Add active class to clicked button
-                this.classList.add('ring-2', 'ring-white');
-                
-                // Set current filter
-                currentFilter = this.dataset.category;
-                
-                // Apply filters
-                filterEvents();
-            });
-        });
-        
-        // Set up search functionality
-        const searchInput = document.getElementById('eventSearch');
-        searchInput.addEventListener('input', function() {
-            searchQuery = this.value.toLowerCase().trim();
-            filterEvents();
-        });
-        
-        // Load current user
-        fetchCurrentUser();
-        
-        // Load events from API
-        loadEvents();
-        loadPastEvents();
-    });
-    
-    // Fetch current user
-    function fetchCurrentUser() {
-        fetch('/api/current-user')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to get current user');
-                }
-                return response.json();
-            })
-            .then(user => {
-                currentUser = user;
-                console.log('Current user loaded:', user);
-            })
-            .catch(error => {
-                console.error('Error fetching current user:', error);
-            });
-    }
-
-    // Function to filter events based on current filter and search query
-    function filterEvents() {
-        const eventsContainer = document.getElementById('eventsContainer');
-        
-        // Filter events
-        let filteredEvents = allEvents;
-        
-        // Apply category filter
-        if (currentFilter !== 'all') {
-            filteredEvents = filteredEvents.filter(event => event.category === currentFilter);
-        }
-        
-        // Apply search filter
-        if (searchQuery) {
-            filteredEvents = filteredEvents.filter(event => 
-                event.title.toLowerCase().includes(searchQuery) || 
-                event.description.toLowerCase().includes(searchQuery) ||
-                event.location.toLowerCase().includes(searchQuery)
-            );
-        }
-        
-        // Clear container
-        eventsContainer.innerHTML = '';
-        
-        if (filteredEvents.length === 0) {
-            // Show empty state
-            eventsContainer.innerHTML = `
-                <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
-                    <div class="w-20 h-20 mx-auto bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-filter-circle-xmark text-3xl text-blue-500"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">No Events Found</h3>
-                    <p class="text-gray-500 dark:text-gray-400 mb-6">Try adjusting your filters or search criteria</p>
-                    <button onclick="resetFilters()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                        <i class="fas fa-undo mr-2"></i>
-                        Reset Filters
-                    </button>
-                </div>
-            `;
-            return;
-        }
-        
-        // Render filtered events
-        renderEvents(filteredEvents, eventsContainer);
-    }
-    
-    // Function to reset filters
-    function resetFilters() {
-        // Reset category filter
-        currentFilter = 'all';
-        document.querySelectorAll('.category-filter').forEach(btn => btn.classList.remove('ring-2', 'ring-white'));
-        document.querySelector('.category-filter[data-category="all"]').classList.add('ring-2', 'ring-white');
-        
-        // Reset search
-        searchQuery = '';
-        document.getElementById('eventSearch').value = '';
-        
-        // Apply filters
-        filterEvents();
-    }
-
-    // Function to load events from API
-    function loadEvents() {
-        const eventsContainer = document.getElementById('eventsContainer');
-        
-        // Show loading state
-        eventsContainer.innerHTML = `
-            <div class="skeleton-loader rounded-xl h-[350px]"></div>
-            <div class="skeleton-loader rounded-xl h-[350px]"></div>
-            <div class="skeleton-loader rounded-xl h-[350px]"></div>
-        `;
-        
-        // Fetch events from API
-        fetch('/api/events')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch events');
-                }
-                return response.json();
-            })
-            .then(events => {
-                // Store events globally
-                allEvents = events;
-                
-                // Clear loading skeletons
-                eventsContainer.innerHTML = '';
-                
-                if (events.length === 0) {
-                    // Show empty state
-                    eventsContainer.innerHTML = `
-                        <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
-                            <div class="w-20 h-20 mx-auto bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
-                                <i class="fas fa-calendar-times text-3xl text-blue-500"></i>
-                            </div>
-                            <h3 class="text-xl font-semibold mb-2">No Upcoming Events</h3>
-                            <p class="text-gray-500 dark:text-gray-400 mb-6">Be the first to create an event!</p>
-                            <button onclick="openCreateEventModal()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                                <i class="fas fa-plus mr-2"></i>
-                                Create New Event
-                            </button>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Render events
-                renderEvents(events, eventsContainer);
-                
-                // Activate the "All" filter button
-                document.querySelector('.category-filter[data-category="all"]').classList.add('ring-2', 'ring-white');
-            })
-            .catch(error => {
-                console.error('Error fetching events:', error);
-                eventsContainer.innerHTML = `
-                    <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
-                        <div class="w-20 h-20 mx-auto bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
-                            <i class="fas fa-exclamation-triangle text-3xl text-red-500"></i>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-2">Error Loading Events</h3>
-                        <p class="text-gray-500 dark:text-gray-400 mb-6">There was a problem loading events. Please try again later.</p>
-                        <button onclick="loadEvents()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                            <i class="fas fa-sync-alt mr-2"></i>
-                            Retry
-                        </button>
-                    </div>
-                `;
-            });
-    }
-
-    // Function to render events
-    function renderEvents(events, container) {
-        events.forEach(event => {
-            // Format the dates
-            const startDate = new Date(event.startDateTime);
-            const endDate = new Date(event.endDateTime);
-            
-            const formattedStartDate = startDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            const formattedStartTime = startDate.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit'
-            });
-            
-            const formattedEndTime = endDate.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit'
-            });
-            
-            // Get category styling
-            const categoryStyle = getCategoryStyle(event.category);
-            
-            // Create event card
-            const eventCard = document.createElement('div');
-            eventCard.className = 'event-card bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg transition-all flex flex-col h-full';
-            eventCard.innerHTML = `
-                <div class="relative">
-                    <img src="${event.image || '/images/default-event.jpg'}" alt="${event.title}" class="w-full h-48 sm:h-52 object-cover transition-transform hover:scale-105 duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-80"></div>
-                    <div class="absolute top-4 left-4">
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r ${categoryStyle.gradient}">${categoryStyle.label}</span>
-                    </div>
-                    <div class="absolute bottom-4 left-4 right-4">
-                        <h3 class="text-xl font-bold mb-1 text-white line-clamp-2">${event.title}</h3>
-                        <div class="flex items-center gap-1 text-white/80 text-sm">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>${formattedStartDate}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-4 sm:p-5 flex-grow flex flex-col">
-                    <div class="flex flex-col gap-2 mb-4 text-sm text-gray-600 dark:text-gray-400 flex-grow">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
+            <div class="p-4 sm:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <div class="space-y-4 bg-gray-50 dark:bg-gray-900/30 p-4 rounded-xl">
+                        <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
                                 <i class="far fa-clock"></i>
                             </div>
-                            <span>${formattedStartTime} - ${formattedEndTime}</span>
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Event Time</div>
+                                <span id="modalEventTime" class="font-medium"></span>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
+                        <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                            <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
                                 <i class="fas fa-map-marker-alt"></i>
                             </div>
-                            <span class="line-clamp-1">${event.location}</span>
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Location</div>
+                                <span id="modalEventLocation" class="font-medium"></span>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500">
+                    </div>
+                    <div class="space-y-4 bg-gray-50 dark:bg-gray-900/30 p-4 rounded-xl">
+                        <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                            <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <span class="line-clamp-1">By: ${event.organizerName || event.organizer?.username || 'Anonymous'}</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <div class="flex -space-x-2">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white border-2 border-white dark:border-gray-800">
-                                <i class="fas fa-user text-xs"></i>
-                            </div>
-                            ${event.attendees && event.attendees.length > 0 ? `
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white border-2 border-white dark:border-gray-800">
-                                <i class="fas fa-user text-xs"></i>
-                            </div>` : ''}
-                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 border-2 border-white dark:border-gray-800">
-                                ${event.attendees?.length || 0}+
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Organizer</div>
+                                <span id="modalEventOrganizer" class="font-medium"></span>
                             </div>
                         </div>
-                        <button 
-                            onclick="showEventDetails('${event._id}')"
-                            class="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium transition-all shadow-md"
-                        >
-                            View Details
-                        </button>
+                        <div class="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Attendees</div>
+                                <span><span id="modalEventAttendees" class="font-medium">0</span> people attending</span>
+                            </div>
+                        </div>
+                        <div id="modalEventAttendanceStatus" class="flex items-center gap-3 text-green-600 hidden">
+                            <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <span>You're attending this event</span>
+                        </div>
                     </div>
                 </div>
-            `;
-            
-            container.appendChild(eventCard);
-        });
-    }
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 gradient-text">About the Event</h3>
+                    <div class="bg-gray-50 dark:bg-gray-900/30 p-5 rounded-xl">
+                        <p id="modalEventDescription" class="text-gray-700 dark:text-gray-300 whitespace-pre-line"></p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-3">
+                    <button id="modalAttendButton" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-md flex items-center gap-2">
+                        <i class="fas fa-user-plus"></i>
+                        Attend Event
+                    </button>
+                    <button id="modalRegisterButton" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-md flex items-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        Register Now
+                    </button>
+                    <button class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2">
+                        <i class="fas fa-share-alt"></i>
+                        Share
+                    </button>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xl font-semibold mb-5 gradient-text">Attendees</h3>
+                    <div id="modalEventAttendeesList" class="bg-gray-50 dark:bg-gray-900/30 p-5 rounded-xl flex flex-wrap gap-3">
+                        <!-- Attendees will be populated here -->
+                        <div class="flex -space-x-2">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 border-2 border-white dark:border-gray-800 flex items-center justify-center text-white">
+                                <i class="fas fa-user text-sm"></i>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm ml-2">No attendees yet. Be the first to attend!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    // Function to load past events
-    function loadPastEvents() {
-        const pastEventsContainer = document.getElementById('pastEventsContainer');
+    <script>
+        // Global variables to store events
+        let allEvents = [];
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let currentUser = null;
         
-        // Fetch past events from API
-        fetch('/api/events/past')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch past events');
+        // Initialize date picker
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default values for date/time inputs
+            const now = new Date();
+            const today = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            const currentTime = now.toTimeString().slice(0, 5); // Format: HH:MM
+            
+            // Set default start date/time (today, current time)
+            document.getElementById('eventStartDate').value = today;
+            document.getElementById('eventStartTime').value = currentTime;
+            
+            // Set default end date/time (today, current time + 1 hour)
+            const endTime = new Date(now.getTime() + 60 * 60 * 1000).toTimeString().slice(0, 5);
+            document.getElementById('eventEndDate').value = today;
+            document.getElementById('eventEndTime').value = endTime;
+            
+            // Add event listener to start date to update end date min
+            document.getElementById('eventStartDate').addEventListener('change', function() {
+                // If end date is before start date, update it
+                if (document.getElementById('eventEndDate').value < this.value) {
+                    document.getElementById('eventEndDate').value = this.value;
                 }
-                return response.json();
-            })
-            .then(events => {
-                pastEventsContainer.innerHTML = '';
-                
-                if (events.length === 0) {
-                    pastEventsContainer.innerHTML = `
-                        <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
-                            <p class="text-gray-500 dark:text-gray-400">No past events to show</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                events.forEach(event => {
-                    // Format the dates
-                    const startDate = new Date(event.startDateTime);
-                    const endDate = new Date(event.endDateTime);
+            });
+
+            // Set up category filter buttons
+            const filterButtons = document.querySelectorAll('.category-filter');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('ring-2', 'ring-white'));
+                    // Add active class to clicked button
+                    this.classList.add('ring-2', 'ring-white');
                     
-                    const formattedStartDate = startDate.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    });
+                    // Set current filter
+                    currentFilter = this.dataset.category;
                     
-                    const formattedStartTime = startDate.toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit'
-                    });
-                    
-                    const formattedEndTime = endDate.toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit'
-                    });
-                    
-                    // Get category styling
-                    const categoryStyle = getCategoryStyle(event.category);
-                    
-                    // Create event card (simpler version for past events)
-                    const eventCard = document.createElement('div');
-                    eventCard.className = 'bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md opacity-75';
-                    eventCard.innerHTML = `
-                        <div class="relative">
-                            <img src="${event.image || '/images/default-event.jpg'}" alt="${event.title}" class="w-full h-36 object-cover filter grayscale">
-                            <div class="absolute top-4 left-4">
-                                <span class="inline-block px-3 py-1 rounded-full text-sm font-medium text-white ${categoryStyle.bg}">${categoryStyle.label}</span>
-                            </div>
-                        </div>
-                        <div class="p-4">
-                            <h3 class="text-lg font-bold mb-2 line-clamp-1">${event.title}</h3>
-                            <div class="flex flex-col gap-2 mb-3 text-sm text-gray-600 dark:text-gray-400">
-                                <div class="flex items-center gap-2">
-                                    <i class="far fa-calendar-alt"></i>
-                                    <span>${formattedStartDate}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <i class="far fa-clock"></i>
-                                    <span>${formattedStartTime} - ${formattedEndTime}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span class="line-clamp-1">${event.location}</span>
-                                </div>
-                            </div>
-                            <button 
-                                onclick="showEventDetails('${event._id}')"
-                                class="w-full px-4 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors text-center"
-                            >
-                                View Details
-                            </button>
-                        </div>
-                    `;
-                    
-                    pastEventsContainer.appendChild(eventCard);
+                    // Apply filters
+                    filterEvents();
                 });
-            })
-            .catch(error => {
-                console.error('Error fetching past events:', error);
-                pastEventsContainer.innerHTML = `
+            });
+            
+            // Set up search functionality
+            const searchInput = document.getElementById('eventSearch');
+            searchInput.addEventListener('input', function() {
+                searchQuery = this.value.toLowerCase().trim();
+                filterEvents();
+            });
+            
+            // Load current user
+            fetchCurrentUser();
+            
+            // Load events from API
+            loadEvents();
+            loadPastEvents();
+        });
+        
+        // Fetch current user
+        function fetchCurrentUser() {
+            fetch('/api/current-user')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to get current user');
+                    }
+                    return response.json();
+                })
+                .then(user => {
+                    currentUser = user;
+                    console.log('Current user loaded:', user);
+                })
+                .catch(error => {
+                    console.error('Error fetching current user:', error);
+                });
+        }
+
+        // Function to filter events based on current filter and search query
+        function filterEvents() {
+            const eventsContainer = document.getElementById('eventsContainer');
+            
+            // Filter events
+            let filteredEvents = allEvents;
+            
+            // Apply category filter
+            if (currentFilter !== 'all') {
+                filteredEvents = filteredEvents.filter(event => event.category === currentFilter);
+            }
+            
+            // Apply search filter
+            if (searchQuery) {
+                filteredEvents = filteredEvents.filter(event => 
+                    event.title.toLowerCase().includes(searchQuery) || 
+                    event.description.toLowerCase().includes(searchQuery) ||
+                    event.location.toLowerCase().includes(searchQuery)
+                );
+            }
+            
+            // Clear container
+            eventsContainer.innerHTML = '';
+            
+            if (filteredEvents.length === 0) {
+                // Show empty state
+                eventsContainer.innerHTML = `
                     <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
-                        <div class="w-20 h-20 mx-auto bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
-                            <i class="fas fa-exclamation-triangle text-3xl text-red-500"></i>
+                        <div class="w-20 h-20 mx-auto bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-filter-circle-xmark text-3xl text-blue-500"></i>
                         </div>
-                        <h3 class="text-xl font-semibold mb-2">Error Loading Past Events</h3>
-                        <p class="text-gray-500 dark:text-gray-400 mb-6">There was a problem loading past events. Please try again later.</p>
-                        <button onclick="loadPastEvents()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                            <i class="fas fa-sync-alt mr-2"></i>
-                            Retry
+                        <h3 class="text-xl font-semibold mb-2">No Events Found</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-6">Try adjusting your filters or search criteria</p>
+                        <button onclick="resetFilters()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-undo mr-2"></i>
+                            Reset Filters
                         </button>
                     </div>
                 `;
-            });
-    }
+                return;
+            }
+            
+            // Render filtered events
+            renderEvents(filteredEvents, eventsContainer);
+        }
+        
+        // Function to reset filters
+        function resetFilters() {
+            // Reset category filter
+            currentFilter = 'all';
+            document.querySelectorAll('.category-filter').forEach(btn => btn.classList.remove('ring-2', 'ring-white'));
+            document.querySelector('.category-filter[data-category="all"]').classList.add('ring-2', 'ring-white');
+            
+            // Reset search
+            searchQuery = '';
+            document.getElementById('eventSearch').value = '';
+            
+            // Apply filters
+            filterEvents();
+        }
 
-    // Show event details
-    function showEventDetails(eventId) {
-        // Clear previous data first
-        document.getElementById('modalEventImage').src = '/images/default-event.jpg';
-        document.getElementById('modalEventTitle').textContent = 'Loading...';
-        document.getElementById('modalEventDescription').textContent = 'Loading event details...';
-        document.getElementById('modalEventDate').textContent = '';
-        document.getElementById('modalEventTime').textContent = '';
-        document.getElementById('modalEventLocation').textContent = '';
-        document.getElementById('modalEventOrganizer').textContent = 'Loading...';
-        document.getElementById('modalEventAttendees').textContent = '0';
-        
-        // Show the modal immediately with loading state
-        document.getElementById('eventDetailModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        // Store the current event ID
-        window.currentEventId = eventId;
-        
-        // Fetch event details from API
-        fetch(`/api/events/${eventId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch event details: ${response.status} ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(event => {
-                console.log('Event details loaded:', event);
-                
-                if (!event) {
-                    throw new Error('No event data received');
-                }
-                
+        // Function to load events from API
+        function loadEvents() {
+            const eventsContainer = document.getElementById('eventsContainer');
+            
+            // Show loading state
+            eventsContainer.innerHTML = `
+                <div class="skeleton-loader rounded-xl h-[350px]"></div>
+                <div class="skeleton-loader rounded-xl h-[350px]"></div>
+                <div class="skeleton-loader rounded-xl h-[350px]"></div>
+            `;
+            
+            // Fetch events from API
+            fetch('/api/events')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch events');
+                    }
+                    return response.json();
+                })
+                .then(events => {
+                    // Store events globally
+                    allEvents = events;
+                    
+                    // Clear loading skeletons
+                    eventsContainer.innerHTML = '';
+                    
+                    if (events.length === 0) {
+                        // Show empty state
+                        eventsContainer.innerHTML = `
+                            <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
+                                <div class="w-20 h-20 mx-auto bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fas fa-calendar-times text-3xl text-blue-500"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-2">No Upcoming Events</h3>
+                                <p class="text-gray-500 dark:text-gray-400 mb-6">Be the first to create an event!</p>
+                                <button onclick="openCreateEventModal()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Create New Event
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Render events
+                    renderEvents(events, eventsContainer);
+                    
+                    // Activate the "All" filter button
+                    document.querySelector('.category-filter[data-category="all"]').classList.add('ring-2', 'ring-white');
+                })
+                .catch(error => {
+                    console.error('Error fetching events:', error);
+                    eventsContainer.innerHTML = `
+                        <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
+                            <div class="w-20 h-20 mx-auto bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+                                <i class="fas fa-exclamation-triangle text-3xl text-red-500"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-2">Error Loading Events</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-6">There was a problem loading events. Please try again later.</p>
+                            <button onclick="loadEvents()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Retry
+                            </button>
+                        </div>
+                    `;
+                });
+        }
+
+        // Function to render events
+        function renderEvents(events, container) {
+            events.forEach(event => {
                 // Format the dates
                 const startDate = new Date(event.startDateTime);
                 const endDate = new Date(event.endDateTime);
@@ -970,421 +802,649 @@
                 // Get category styling
                 const categoryStyle = getCategoryStyle(event.category);
                 
-                // Populate modal with event details
-                document.getElementById('modalEventImage').src = event.image || '/images/default-event.jpg';
-                document.getElementById('modalEventTitle').textContent = event.title;
-                document.getElementById('modalEventCategory').textContent = categoryStyle.label;
-                document.getElementById('modalEventCategory').className = `inline-block px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r ${categoryStyle.gradient}`;
-                document.getElementById('modalEventDate').textContent = formattedStartDate;
-                document.getElementById('modalEventTime').textContent = `${formattedStartTime} - ${formattedEndTime}`;
-                document.getElementById('modalEventLocation').textContent = event.location;
+                // Create event card
+                const eventCard = document.createElement('div');
+                eventCard.className = 'event-card bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg transition-all flex flex-col h-full';
+                eventCard.innerHTML = `
+                    <div class="relative">
+                        <img src="${event.image || '/images/default-event.jpg'}" alt="${event.title}" class="w-full h-48 sm:h-52 object-cover transition-transform hover:scale-105 duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-80"></div>
+                        <div class="absolute top-4 left-4">
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r ${categoryStyle.gradient}">${categoryStyle.label}</span>
+                        </div>
+                        <div class="absolute bottom-4 left-4 right-4">
+                            <h3 class="text-xl font-bold mb-1 text-white line-clamp-2">${event.title}</h3>
+                            <div class="flex items-center gap-1 text-white/80 text-sm">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>${formattedStartDate}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 sm:p-5 flex-grow flex flex-col">
+                        <div class="flex flex-col gap-2 mb-4 text-sm text-gray-600 dark:text-gray-400 flex-grow">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
+                                    <i class="far fa-clock"></i>
+                                </div>
+                                <span>${formattedStartTime} - ${formattedEndTime}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <span class="line-clamp-1">${event.location}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span class="line-clamp-1">By: ${event.organizerName || event.organizer?.username || 'Anonymous'}</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex -space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white border-2 border-white dark:border-gray-800">
+                                    <i class="fas fa-user text-xs"></i>
+                                </div>
+                                ${event.attendees && event.attendees.length > 0 ? `
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white border-2 border-white dark:border-gray-800">
+                                    <i class="fas fa-user text-xs"></i>
+                                </div>` : ''}
+                                <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 border-2 border-white dark:border-gray-800">
+                                    ${event.attendees?.length || 0}+
+                                </div>
+                            </div>
+                            <button 
+                                onclick="showEventDetails('${event._id}')"
+                                class="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium transition-all shadow-md"
+                            >
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
                 
-                // Set organizer name
-                const organizerName = event.organizerName || (event.organizer ? event.organizer.username : 'Anonymous');
-                document.getElementById('modalEventOrganizer').textContent = organizerName;
-                
-                // Set description
-                document.getElementById('modalEventDescription').textContent = event.description || 'No description available';
-                
-                // Update attendees count
-                const attendeesCount = event.attendeesCount || 0;
-                document.getElementById('modalEventAttendees').textContent = attendeesCount;
-                
-                const attendButton = document.getElementById('modalAttendButton');
-                const attendanceStatus = document.getElementById('modalEventAttendanceStatus');
-                
-                // Save the current event ID in a data attribute for later use
-                attendButton.dataset.eventId = event._id;
-                
-                // Only hide attend button if user is not logged in
-                if (!currentUser || !currentUser._id) {
-                    attendButton.classList.add('hidden');
-                } else {
-                    // Show attend button for logged-in users
-                    attendButton.classList.remove('hidden');
+                container.appendChild(eventCard);
+            });
+        }
+
+        // Function to load past events
+        function loadPastEvents() {
+            const pastEventsContainer = document.getElementById('pastEventsContainer');
+            
+            // Fetch past events from API
+            fetch('/api/events/past')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch past events');
+                    }
+                    return response.json();
+                })
+                .then(events => {
+                    pastEventsContainer.innerHTML = '';
                     
-                    if (event.isAttending) {
-                        // User is already attending
-                        attendButton.innerHTML = '<i class="fas fa-user-minus"></i> Cancel Attendance';
-                        attendButton.classList.remove('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
-                        attendButton.classList.add('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
-                        attendanceStatus.classList.remove('hidden');
-                    } else {
-                        // User is not attending
-                        attendButton.innerHTML = '<i class="fas fa-user-plus"></i> Attend Event';
-                        attendButton.classList.remove('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
-                        attendButton.classList.add('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
-                        attendanceStatus.classList.add('hidden');
+                    if (events.length === 0) {
+                        pastEventsContainer.innerHTML = `
+                            <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
+                                <p class="text-gray-500 dark:text-gray-400">No past events to show</p>
+                            </div>
+                        `;
+                        return;
                     }
                     
-                    // Set up attend button click handler
-                    attendButton.onclick = function() {
-                        const currentEventId = this.dataset.eventId;
-                        if (currentEventId) {
-                            attendEvent(currentEventId, event.isAttending);
-                        } else {
-                            console.error("No event ID found in data attribute");
-                            if (window.showToast) {
-                                window.showToast('Error: Missing event information', 'error');
-                            }
-                        }
-                    };
-                }
-                
-                // Populate attendees list
-                updateAttendeesList(event.attendees);
-                
-                // Set registration button
-                const registerButton = document.getElementById('modalRegisterButton');
-                if (event.registrationLink) {
-                    registerButton.textContent = 'Register Now';
-                    registerButton.onclick = () => window.open(event.registrationLink, '_blank');
-                    registerButton.disabled = false;
-                    registerButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    registerButton.textContent = 'No Registration Required';
-                    registerButton.onclick = null;
-                    registerButton.disabled = true;
-                    registerButton.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching event details:', error);
-                document.getElementById('modalEventTitle').textContent = 'Error Loading Event';
-                document.getElementById('modalEventDescription').textContent = 
-                    'There was a problem loading this event. Please try again later or contact support.';
-                
-                if (window.showToast) {
-                    window.showToast('Could not load event details: ' + error.message, 'error');
-                }
-                
-                // Hide action buttons on error
-                document.getElementById('modalAttendButton').classList.add('hidden');
-                document.getElementById('modalRegisterButton').classList.add('hidden');
-            });
-    }
-    
-    // Function to update the attendees list in the modal
-    function updateAttendeesList(attendees) {
-        const attendeesList = document.getElementById('modalEventAttendeesList');
-        if (!attendeesList) return;
-        
-        // Clear current list
-        attendeesList.innerHTML = '';
-        
-        if (!attendees || attendees.length === 0) {
-            attendeesList.innerHTML = '<p class="text-gray-500 italic">No attendees yet</p>';
-            return;
-        }
-        
-        // Create list items for each attendee
-        attendees.forEach(attendee => {
-            const attendeeItem = document.createElement('div');
-            attendeeItem.className = 'flex items-center space-x-2 mb-2';
-            
-            // Create avatar
-            const avatar = document.createElement('img');
-            avatar.src = attendee.profileAvatar || '/images/default-avatar.png';
-            avatar.alt = attendee.username;
-            avatar.className = 'w-8 h-8 rounded-full';
-            
-            // Create name container
-            const nameContainer = document.createElement('div');
-            nameContainer.className = 'flex flex-col';
-            
-            // Add full name if available
-            if (attendee.fullName) {
-                const fullName = document.createElement('span');
-                fullName.className = 'text-sm font-semibold';
-                fullName.textContent = attendee.fullName;
-                nameContainer.appendChild(fullName);
-            }
-            
-            // Add username
-            const username = document.createElement('span');
-            username.className = 'text-xs text-gray-500';
-            username.textContent = '@' + attendee.username;
-            nameContainer.appendChild(username);
-            
-            // Assemble the attendee item
-            attendeeItem.appendChild(avatar);
-            attendeeItem.appendChild(nameContainer);
-            
-            // Add to list
-            attendeesList.appendChild(attendeeItem);
-        });
-    }
-
-    // Function to attend or cancel attendance to an event
-    function attendEvent(eventId, isAttending) {
-        if (!currentUser || !currentUser._id) {
-            if (window.showToast) {
-                window.showToast('Please log in to attend events', 'error');
-            }
-            return;
-        }
-
-        // Make sure we have a valid event ID
-        if (!eventId) {
-            console.error('No event ID provided to attendEvent function');
-            if (window.showToast) {
-                window.showToast('Error: Missing event information', 'error');
-            }
-            return;
-        }
-        
-        console.log(`Attendance action for event ${eventId}, current status: ${isAttending ? 'attending' : 'not attending'}`);
-        
-        // Show loading state on button
-        const attendButton = document.getElementById('modalAttendButton');
-        const originalText = attendButton.innerHTML;
-        attendButton.disabled = true;
-        attendButton.innerHTML = `
-            <div class="inline-block animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-            ${isAttending ? 'Cancelling...' : 'Attending...'}
-        `;
-        
-        // Send request to API
-        fetch(`/api/events/${eventId}/attend`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ action: isAttending ? 'cancel' : 'attend' })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.error || 'Failed to update attendance');
+                    events.forEach(event => {
+                        // Format the dates
+                        const startDate = new Date(event.startDateTime);
+                        const endDate = new Date(event.endDateTime);
+                        
+                        const formattedStartDate = startDate.toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                        
+                        const formattedStartTime = startDate.toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                        });
+                        
+                        const formattedEndTime = endDate.toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                        });
+                        
+                        // Get category styling
+                        const categoryStyle = getCategoryStyle(event.category);
+                        
+                        // Create event card (simpler version for past events)
+                        const eventCard = document.createElement('div');
+                        eventCard.className = 'bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md opacity-75';
+                        eventCard.innerHTML = `
+                            <div class="relative">
+                                <img src="${event.image || '/images/default-event.jpg'}" alt="${event.title}" class="w-full h-36 object-cover filter grayscale">
+                                <div class="absolute top-4 left-4">
+                                    <span class="inline-block px-3 py-1 rounded-full text-sm font-medium text-white ${categoryStyle.bg}">${categoryStyle.label}</span>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold mb-2 line-clamp-1">${event.title}</h3>
+                                <div class="flex flex-col gap-2 mb-3 text-sm text-gray-600 dark:text-gray-400">
+                                    <div class="flex items-center gap-2">
+                                        <i class="far fa-calendar-alt"></i>
+                                        <span>${formattedStartDate}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="far fa-clock"></i>
+                                        <span>${formattedStartTime} - ${formattedEndTime}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span class="line-clamp-1">${event.location}</span>
+                                    </div>
+                                </div>
+                                <button 
+                                    onclick="showEventDetails('${event._id}')"
+                                    class="w-full px-4 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors text-center"
+                                >
+                                    View Details
+                                </button>
+                            </div>
+                        `;
+                        
+                        pastEventsContainer.appendChild(eventCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching past events:', error);
+                    pastEventsContainer.innerHTML = `
+                        <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-10">
+                            <div class="w-20 h-20 mx-auto bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+                                <i class="fas fa-exclamation-triangle text-3xl text-red-500"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-2">Error Loading Past Events</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-6">There was a problem loading past events. Please try again later.</p>
+                            <button onclick="loadPastEvents()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Retry
+                            </button>
+                        </div>
+                    `;
                 });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Attendance updated:', data);
-            
-            if (!data || !data.event) {
-                throw new Error('Invalid response from server');
-            }
-            
-            // Show success message
-            if (window.showToast) {
-                window.showToast(
-                    isAttending ? 'Attendance cancelled.' : 'You are now attending this event!', 
-                    'success'
-                );
-            }
-            
-            // Update UI with the new event data
-            const event = data.event;
-            
-            // Update attendees count
-            document.getElementById('modalEventAttendees').textContent = event.attendeesCount;
-            
-            // Update attendance status
-            const attendanceStatus = document.getElementById('modalEventAttendanceStatus');
-            
-            if (event.isAttending) {
-                // User is now attending
-                attendButton.innerHTML = '<i class="fas fa-user-minus"></i> Cancel Attendance';
-                attendButton.classList.remove('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
-                attendButton.classList.add('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
-                attendanceStatus.classList.remove('hidden');
-            } else {
-                // User is not attending
-                attendButton.innerHTML = '<i class="fas fa-user-plus"></i> Attend Event';
-                attendButton.classList.remove('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
-                attendButton.classList.add('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
-                attendanceStatus.classList.add('hidden');
-            }
-            
-            // Update attendees list
-            if (event.attendees) {
-                updateAttendeesList(event.attendees);
-            }
-            
-            // Update onclick handler with new attendance state
-            attendButton.onclick = function() {
-                attendEvent(eventId, event.isAttending);
-            };
-            
-            // Also reload events list to update the counts
-            loadEvents();
-            
-            // Re-enable button
-            attendButton.disabled = false;
-        })
-        .catch(error => {
-            console.error('Error updating attendance:', error);
-            
-            // Show error message
-            if (window.showToast) {
-                window.showToast('Could not update attendance: ' + error.message, 'error');
-            }
-            
-            // Reset button state
-            attendButton.disabled = false;
-            attendButton.innerHTML = originalText;
-        });
-    }
+        }
 
-    // Get category styling
-    function getCategoryStyle(category) {
-        const styles = {
-            competition: { 
-                bg: 'bg-blue-500', 
-                gradient: 'from-blue-500 to-blue-600',
-                label: 'Competition', 
-                icon: 'fa-trophy' 
-            },
-            workshop: { 
-                bg: 'bg-purple-500', 
-                gradient: 'from-purple-500 to-purple-600',
-                label: 'Workshop', 
-                icon: 'fa-chalkboard-teacher' 
-            },
-            gathering: { 
-                bg: 'bg-green-500', 
-                gradient: 'from-green-500 to-green-600',
-                label: 'Gathering', 
-                icon: 'fa-users' 
-            },
-            cultural: { 
-                bg: 'bg-yellow-500', 
-                gradient: 'from-yellow-500 to-yellow-600',
-                label: 'Cultural', 
-                icon: 'fa-music' 
-            },
-            academic: { 
-                bg: 'bg-red-500', 
-                gradient: 'from-red-500 to-red-600',
-                label: 'Academic', 
-                icon: 'fa-graduation-cap' 
-            },
-            other: { 
-                bg: 'bg-gray-500', 
-                gradient: 'from-gray-500 to-gray-600',
-                label: 'Other', 
-                icon: 'fa-calendar' 
-            }
-        };
-        
-        return styles[category] || styles.other;
-    }
-
-    // Modal functions
-    function openCreateEventModal() {
-        document.getElementById('createEventModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeCreateEventModal() {
-        document.getElementById('createEventModal').classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-    
-    function closeEventDetailModal() {
-        document.getElementById('eventDetailModal').classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-
-    // Add toast notification system if not already available
-    if (!window.showToast) {
-        // Create toast container if it doesn't exist
-        let toastContainer = document.getElementById('toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.id = 'toast-container';
-            toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col items-end space-y-2';
-            document.body.appendChild(toastContainer);
+        // Show event details
+        function showEventDetails(eventId) {
+            // Clear previous data first
+            document.getElementById('modalEventImage').src = '/images/default-event.jpg';
+            document.getElementById('modalEventTitle').textContent = 'Loading...';
+            document.getElementById('modalEventDescription').textContent = 'Loading event details...';
+            document.getElementById('modalEventDate').textContent = '';
+            document.getElementById('modalEventTime').textContent = '';
+            document.getElementById('modalEventLocation').textContent = '';
+            document.getElementById('modalEventOrganizer').textContent = 'Loading...';
+            document.getElementById('modalEventAttendees').textContent = '0';
+            
+            // Show the modal immediately with loading state
+            document.getElementById('eventDetailModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Store the current event ID
+            window.currentEventId = eventId;
+            
+            // Fetch event details from API
+            fetch(`/api/events/${eventId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch event details: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(event => {
+                    console.log('Event details loaded:', event);
+                    
+                    if (!event) {
+                        throw new Error('No event data received');
+                    }
+                    
+                    // Format the dates
+                    const startDate = new Date(event.startDateTime);
+                    const endDate = new Date(event.endDateTime);
+                    
+                    const formattedStartDate = startDate.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    
+                    const formattedStartTime = startDate.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                    });
+                    
+                    const formattedEndTime = endDate.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                    });
+                    
+                    // Get category styling
+                    const categoryStyle = getCategoryStyle(event.category);
+                    
+                    // Populate modal with event details
+                    document.getElementById('modalEventImage').src = event.image || '/images/default-event.jpg';
+                    document.getElementById('modalEventTitle').textContent = event.title;
+                    document.getElementById('modalEventCategory').textContent = categoryStyle.label;
+                    document.getElementById('modalEventCategory').className = `inline-block px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r ${categoryStyle.gradient}`;
+                    document.getElementById('modalEventDate').textContent = formattedStartDate;
+                    document.getElementById('modalEventTime').textContent = `${formattedStartTime} - ${formattedEndTime}`;
+                    document.getElementById('modalEventLocation').textContent = event.location;
+                    
+                    // Set organizer name
+                    const organizerName = event.organizerName || (event.organizer ? event.organizer.username : 'Anonymous');
+                    document.getElementById('modalEventOrganizer').textContent = organizerName;
+                    
+                    // Set description
+                    document.getElementById('modalEventDescription').textContent = event.description || 'No description available';
+                    
+                    // Update attendees count
+                    const attendeesCount = event.attendeesCount || 0;
+                    document.getElementById('modalEventAttendees').textContent = attendeesCount;
+                    
+                    const attendButton = document.getElementById('modalAttendButton');
+                    const attendanceStatus = document.getElementById('modalEventAttendanceStatus');
+                    
+                    // Save the current event ID in a data attribute for later use
+                    attendButton.dataset.eventId = event._id;
+                    
+                    // Only hide attend button if user is not logged in
+                    if (!currentUser || !currentUser._id) {
+                        attendButton.classList.add('hidden');
+                    } else {
+                        // Show attend button for logged-in users
+                        attendButton.classList.remove('hidden');
+                        
+                        if (event.isAttending) {
+                            // User is already attending
+                            attendButton.innerHTML = '<i class="fas fa-user-minus"></i> Cancel Attendance';
+                            attendButton.classList.remove('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
+                            attendButton.classList.add('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
+                            attendanceStatus.classList.remove('hidden');
+                        } else {
+                            // User is not attending
+                            attendButton.innerHTML = '<i class="fas fa-user-plus"></i> Attend Event';
+                            attendButton.classList.remove('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
+                            attendButton.classList.add('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
+                            attendanceStatus.classList.add('hidden');
+                        }
+                        
+                        // Set up attend button click handler
+                        attendButton.onclick = function() {
+                            const currentEventId = this.dataset.eventId;
+                            if (currentEventId) {
+                                attendEvent(currentEventId, event.isAttending);
+                            } else {
+                                console.error("No event ID found in data attribute");
+                                if (window.showToast) {
+                                    window.showToast('Error: Missing event information', 'error');
+                                }
+                            }
+                        };
+                    }
+                    
+                    // Populate attendees list
+                    updateAttendeesList(event.attendees);
+                    
+                    // Set registration button
+                    const registerButton = document.getElementById('modalRegisterButton');
+                    if (event.registrationLink) {
+                        registerButton.textContent = 'Register Now';
+                        registerButton.onclick = () => window.open(event.registrationLink, '_blank');
+                        registerButton.disabled = false;
+                        registerButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        registerButton.textContent = 'No Registration Required';
+                        registerButton.onclick = null;
+                        registerButton.disabled = true;
+                        registerButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching event details:', error);
+                    document.getElementById('modalEventTitle').textContent = 'Error Loading Event';
+                    document.getElementById('modalEventDescription').textContent = 
+                        'There was a problem loading this event. Please try again later or contact support.';
+                    
+                    if (window.showToast) {
+                        window.showToast('Could not load event details: ' + error.message, 'error');
+                    }
+                    
+                    // Hide action buttons on error
+                    document.getElementById('modalAttendButton').classList.add('hidden');
+                    document.getElementById('modalRegisterButton').classList.add('hidden');
+                });
         }
         
-        // Toast function
-        window.showToast = function(message, type = 'info') {
-            const toast = document.createElement('div');
+        // Function to update the attendees list in the modal
+        function updateAttendeesList(attendees) {
+            const attendeesList = document.getElementById('modalEventAttendeesList');
+            if (!attendeesList) return;
             
-            // Set styles based on type
-            let bgColor, icon;
-            switch (type) {
-                case 'success':
-                    bgColor = 'bg-green-500';
-                    icon = 'fas fa-check-circle';
-                    break;
-                case 'error':
-                    bgColor = 'bg-red-500';
-                    icon = 'fas fa-exclamation-circle';
-                    break;
-                case 'warning':
-                    bgColor = 'bg-yellow-500';
-                    icon = 'fas fa-exclamation-triangle';
-                    break;
-                default:
-                    bgColor = 'bg-blue-500';
-                    icon = 'fas fa-info-circle';
+            // Clear current list
+            attendeesList.innerHTML = '';
+            
+            if (!attendees || attendees.length === 0) {
+                attendeesList.innerHTML = '<p class="text-gray-500 italic">No attendees yet</p>';
+                return;
             }
             
-            toast.className = `${bgColor} text-white rounded-lg px-4 py-3 shadow-lg flex items-center gap-2 max-w-xs`;
-            toast.innerHTML = `
-                <i class="${icon}"></i>
-                <span class="flex-1">${message}</span>
-                <button class="text-white hover:text-gray-200" onclick="this.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
+            // Create list items for each attendee
+            attendees.forEach(attendee => {
+                const attendeeItem = document.createElement('div');
+                attendeeItem.className = 'flex items-center space-x-2 mb-2';
+                
+                // Create avatar
+                const avatar = document.createElement('img');
+                avatar.src = attendee.profileAvatar || '/images/default-avatar.png';
+                avatar.alt = attendee.username;
+                avatar.className = 'w-8 h-8 rounded-full';
+                
+                // Create name container
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'flex flex-col';
+                
+                // Add full name if available
+                if (attendee.fullName) {
+                    const fullName = document.createElement('span');
+                    fullName.className = 'text-sm font-semibold';
+                    fullName.textContent = attendee.fullName;
+                    nameContainer.appendChild(fullName);
+                }
+                
+                // Add username
+                const username = document.createElement('span');
+                username.className = 'text-xs text-gray-500';
+                username.textContent = '@' + attendee.username;
+                nameContainer.appendChild(username);
+                
+                // Assemble the attendee item
+                attendeeItem.appendChild(avatar);
+                attendeeItem.appendChild(nameContainer);
+                
+                // Add to list
+                attendeesList.appendChild(attendeeItem);
+            });
+        }
+
+        // Function to attend or cancel attendance to an event
+        function attendEvent(eventId, isAttending) {
+            if (!currentUser || !currentUser._id) {
+                if (window.showToast) {
+                    window.showToast('Please log in to attend events', 'error');
+                }
+                return;
+            }
+
+            // Make sure we have a valid event ID
+            if (!eventId) {
+                console.error('No event ID provided to attendEvent function');
+                if (window.showToast) {
+                    window.showToast('Error: Missing event information', 'error');
+                }
+                return;
+            }
+            
+            console.log(`Attendance action for event ${eventId}, current status: ${isAttending ? 'attending' : 'not attending'}`);
+            
+            // Show loading state on button
+            const attendButton = document.getElementById('modalAttendButton');
+            const originalText = attendButton.innerHTML;
+            attendButton.disabled = true;
+            attendButton.innerHTML = `
+                <div class="inline-block animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                ${isAttending ? 'Cancelling...' : 'Attending...'}
             `;
             
-            // Add to container
-            toastContainer.appendChild(toast);
-            
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                setTimeout(() => toast.remove(), 300);
-            }, 5000);
-            
-            return toast;
-        };
-    }
+            // Send request to API
+            fetch(`/api/events/${eventId}/attend`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: isAttending ? 'cancel' : 'attend' })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Failed to update attendance');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Attendance updated:', data);
+                
+                if (!data || !data.event) {
+                    throw new Error('Invalid response from server');
+                }
+                
+                // Show success message
+                if (window.showToast) {
+                    window.showToast(
+                        isAttending ? 'Attendance cancelled.' : 'You are now attending this event!', 
+                        'success'
+                    );
+                }
+                
+                // Update UI with the new event data
+                const event = data.event;
+                
+                // Update attendees count
+                document.getElementById('modalEventAttendees').textContent = event.attendeesCount;
+                
+                // Update attendance status
+                const attendanceStatus = document.getElementById('modalEventAttendanceStatus');
+                
+                if (event.isAttending) {
+                    // User is now attending
+                    attendButton.innerHTML = '<i class="fas fa-user-minus"></i> Cancel Attendance';
+                    attendButton.classList.remove('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
+                    attendButton.classList.add('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
+                    attendanceStatus.classList.remove('hidden');
+                } else {
+                    // User is not attending
+                    attendButton.innerHTML = '<i class="fas fa-user-plus"></i> Attend Event';
+                    attendButton.classList.remove('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
+                    attendButton.classList.add('from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800');
+                    attendanceStatus.classList.add('hidden');
+                }
+                
+                // Update attendees list
+                if (event.attendees) {
+                    updateAttendeesList(event.attendees);
+                }
+                
+                // Update onclick handler with new attendance state
+                attendButton.onclick = function() {
+                    attendEvent(eventId, event.isAttending);
+                };
+                
+                // Also reload events list to update the counts
+                loadEvents();
+                
+                // Re-enable button
+                attendButton.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error updating attendance:', error);
+                
+                // Show error message
+                if (window.showToast) {
+                    window.showToast('Could not update attendance: ' + error.message, 'error');
+                }
+                
+                // Reset button state
+                attendButton.disabled = false;
+                attendButton.innerHTML = originalText;
+            });
+        }
 
-    // Event form submission
-    document.getElementById('eventForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+        // Get category styling
+        function getCategoryStyle(category) {
+            const styles = {
+                competition: { 
+                    bg: 'bg-blue-500', 
+                    gradient: 'from-blue-500 to-blue-600',
+                    label: 'Competition', 
+                    icon: 'fa-trophy' 
+                },
+                workshop: { 
+                    bg: 'bg-purple-500', 
+                    gradient: 'from-purple-500 to-purple-600',
+                    label: 'Workshop', 
+                    icon: 'fa-chalkboard-teacher' 
+                },
+                gathering: { 
+                    bg: 'bg-green-500', 
+                    gradient: 'from-green-500 to-green-600',
+                    label: 'Gathering', 
+                    icon: 'fa-users' 
+                },
+                cultural: { 
+                    bg: 'bg-yellow-500', 
+                    gradient: 'from-yellow-500 to-yellow-600',
+                    label: 'Cultural', 
+                    icon: 'fa-music' 
+                },
+                academic: { 
+                    bg: 'bg-red-500', 
+                    gradient: 'from-red-500 to-red-600',
+                    label: 'Academic', 
+                    icon: 'fa-graduation-cap' 
+                },
+                other: { 
+                    bg: 'bg-gray-500', 
+                    gradient: 'from-gray-500 to-gray-600',
+                    label: 'Other', 
+                    icon: 'fa-calendar' 
+                }
+            };
+            
+            return styles[category] || styles.other;
+        }
+
+        // Modal functions
+        function openCreateEventModal() {
+            document.getElementById('createEventModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
         
-        try {
-            // Validate form
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        function closeCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        function closeEventDetailModal() {
+            document.getElementById('eventDetailModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
 
-            // Get form data
-            const formData = new FormData();
-            
-            // Add text fields
-            formData.append('title', document.getElementById('eventTitle').value);
-            formData.append('category', document.getElementById('eventCategory').value);
-            formData.append('description', document.getElementById('eventDescription').value);
-            formData.append('startDate', document.getElementById('eventStartDate').value);
-            formData.append('startTime', document.getElementById('eventStartTime').value);
-            formData.append('endDate', document.getElementById('eventEndDate').value);
-            formData.append('endTime', document.getElementById('eventEndTime').value);
-            formData.append('location', document.getElementById('eventLocation').value);
-            
-            // Add optional registration link if provided
-            const registrationLink = document.getElementById('registrationLink').value;
-            if (registrationLink) {
-                formData.append('registrationLink', registrationLink);
+        // Add toast notification system if not already available
+        if (!window.showToast) {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col items-end space-y-2';
+                document.body.appendChild(toastContainer);
             }
             
-            // Add image if selected
-            const imageInput = document.getElementById('eventImage');
-            if (imageInput.files.length > 0) {
-                console.log("Image selected:", imageInput.files[0].name);
-                formData.append('image', imageInput.files[0]);
-            } else {
-                console.log("No image selected");
-            }
+            // Toast function
+            window.showToast = function(message, type = 'info') {
+                const toast = document.createElement('div');
+                
+                // Set styles based on type
+                let bgColor, icon;
+                switch (type) {
+                    case 'success':
+                        bgColor = 'bg-green-500';
+                        icon = 'fas fa-check-circle';
+                        break;
+                    case 'error':
+                        bgColor = 'bg-red-500';
+                        icon = 'fas fa-exclamation-circle';
+                        break;
+                    case 'warning':
+                        bgColor = 'bg-yellow-500';
+                        icon = 'fas fa-exclamation-triangle';
+                        break;
+                    default:
+                        bgColor = 'bg-blue-500';
+                        icon = 'fas fa-info-circle';
+                }
+                
+                toast.className = `${bgColor} text-white rounded-lg px-4 py-3 shadow-lg flex items-center gap-2 max-w-xs`;
+                toast.innerHTML = `
+                    <i class="${icon}"></i>
+                    <span class="flex-1">${message}</span>
+                    <button class="text-white hover:text-gray-200" onclick="this.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                // Add to container
+                toastContainer.appendChild(toast);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => toast.remove(), 300);
+                }, 5000);
+                
+                return toast;
+            };
+        }
+
+        // Event form submission
+        document.getElementById('eventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            // Log form data keys for debugging
+            try {
+                // Validate form
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+                // Get form data
+                const formData = new FormData();
+                
+                // Add text fields
+                formData.append('title', document.getElementById('eventTitle').value);
+                formData.append('category', document.getElementById('eventCategory').value);
+                formData.append('description', document.getElementById('eventDescription').value);
+                formData.append('startDate', document.getElementById('eventStartDate').value);
+                formData.append('startTime', document.getElementById('eventStartTime').value);
+                formData.append('endDate', document.getElementById('eventEndDate').value);
+                formData.append('endTime', document.getElementById('eventEndTime').value);
+                formData.append('location', document.getElementById('eventLocation').value);
+                
+                // Add optional registration link if provided
+                const registrationLink = document.getElementById('registrationLink').value;
+                if (registrationLink) {
+                    formData.append('registrationLink', registrationLink);
+                }
+                
+                // Add image if selected
+                const imageInput = document.getElementById('eventImage');
+                if (imageInput.files.length > 0) {
+                    console.log("Image selected:", imageInput.files[0].name);
+                    formData.append('image', imageInput.files[0]);
+                } else {
+                    console.log("No image selected");
+                }
+                
+                // Log form data keys for debugging
                 console.log("Form data keys being sent:", [...formData.keys()]);
                 
                 // Send directly to the API
