@@ -30,18 +30,18 @@
         <% } else { %>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <% savedPosts.forEach(post => { %>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden post-container flex flex-col border border-gray-100 dark:border-gray-700 relative">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden post-container flex flex-col border border-gray-100 dark:border-gray-700 relative">
                         <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         
-                        <div class="p-2 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
+                        <div class="p-1.5 flex items-center justify-between">
                             <% if (post.user) { %>
                                 <a href="/user/<%= post.user.username %>" class="flex items-center group">
                                     <img src="<%= post.user.profileImage || '/images/placeholder.webp' %>" 
                                          alt="<%= post.user.name %>" 
                                          onerror="this.src='/images/placeholder.webp'"
                                          class="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600">
-                                    <div class="ml-3">
-                                        <span class="font-medium text-gray-800 dark:text-white group-hover:text-blue-500"><%= post.user.name %></span>
+                                    <div class="ml-2">
+                                        <span class="font-medium text-gray-800 dark:text-white group-hover:text-blue-500 text-sm"><%= post.user.name %></span>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">@<%= post.user.username %></p>
                                     </div>
                                 </a>
@@ -50,14 +50,14 @@
                                     <img src="/images/placeholder.webp" 
                                          alt="User" 
                                          class="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600">
-                                    <div class="ml-3">
-                                        <span class="font-medium text-gray-800 dark:text-white">User unavailable</span>
+                                    <div class="ml-2">
+                                        <span class="font-medium text-gray-800 dark:text-white text-sm">User unavailable</span>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">@unknown</p>
                                     </div>
                                 </div>
                             <% } %>
-                            <button onclick="toggleSavePost('<%= post._id %>')" class="text-blue-500 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                                <i class="fas fa-bookmark"></i>
+                            <button onclick="toggleSavePost('<%= post._id %>')" class="text-blue-500 hover:text-blue-600 p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                                <i class="fas fa-bookmark text-base"></i>
                             </button>
                         </div>
                         
@@ -95,39 +95,39 @@
                             <% } %>
                             
                             <!-- Post Text Content -->
-                            <div class="p-2 flex-1">
-                                <div class="mb-2">
+                            <div class="p-2.5 flex-1">
+                                <div class="mb-1">
                                     <div class="text-sm flex flex-wrap items-start">
-                                        <span class="font-medium text-gray-800 dark:text-white mr-1.5"><%= post.user ? post.user.username : 'Unknown' %></span>
+                                        <span class="font-medium text-gray-800 dark:text-white mr-1"><%= post.user ? post.user.username : 'Unknown' %></span>
                                         <span class="caption-content text-gray-600 dark:text-gray-300">
                                             <%= post.content && post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content %>
                                         </span>
                                     </div>
                                 </div>
                                 
-                                <a href="/post/<%= post._id %>" class="text-xs text-blue-500 hover:text-blue-600 font-medium">
-                                    View full post
+                                <a href="/post/<%= post._id %>" class="text-sm text-blue-500 hover:text-blue-600 font-medium">
+                                    View post
                                 </a>
                             </div>
                         </div>
                         
                         <!-- Post Actions -->
-                        <div class="p-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/20">
+                        <div class="p-1.5 bg-gray-50 dark:bg-gray-700/20">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-3">
                                     <button onclick="toggleLike('<%= post._id %>')" 
                                             id="like-btn-<%= post._id %>"
                                             class="like-btn flex items-center <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500">
-                                        <i class="fas fa-heart"></i>
-                                        <span class="like-count text-sm ml-1.5"><%= post.likes.length %></span>
+                                        <i class="fas fa-heart text-base"></i>
+                                        <span class="like-count text-sm ml-1"><%= post.likes.length %></span>
                                     </button>
                                     <a href="/post/<%= post._id %>" class="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                                        <i class="fas fa-comment"></i>
-                                        <span class="text-sm ml-1.5"><%= post.comments.length %></span>
+                                        <i class="fas fa-comment text-base"></i>
+                                        <span class="text-sm ml-1"><%= post.comments.length %></span>
                                     </a>
                                 </div>
-                                <button onclick="sharePost('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                    <i class="fas fa-share"></i>
+                                <button onclick="sharePost('<%= post._id %>')" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-share text-base"></i>
                                 </button>
                             </div>
                         </div>
@@ -309,11 +309,16 @@
     max-width: 100%;
     display: inline;
     color: #4B5563;
+    line-height: 1.4;
 }
 
 /* Fixed height for post content area to maintain card consistency */
 .post-container .p-3.flex-1 {
-    min-height: 70px;
+    min-height: 60px;
+}
+
+.post-container {
+    line-height: 1.4;
 }
 
 /* Story ring gradient styling */
