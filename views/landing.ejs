@@ -208,13 +208,39 @@
                 padding-bottom: 5rem;
             }
             
+            /* Mobile 3D phone enhancements */
+            .mobile-3d-phone {
+                margin-top: 1.5rem;
+                margin-bottom: 2rem;
+                max-width: 280px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            
+            /* Improved float animation for mobile */
+            @keyframes float-mobile {
+                0% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-8px) rotate(1deg); }
+                100% { transform: translateY(0px) rotate(0deg); }
+            }
+            
+            .animate-float-mobile {
+                animation: float-mobile 4s ease-in-out infinite;
+            }
+            
+            /* Mobile optimized decorative elements */
+            .mobile-decor {
+                opacity: 0.7;
+                filter: blur(8px);
+            }
+            
             /* Fixed height for mobile hero section to avoid content being cut off */
-            section.md\:hidden.py-16.hero-gradient {
-                min-height: 85vh;
+            section.md\:hidden.hero-gradient {
+                min-height: 100vh !important;
+                padding-top: 4.5rem;
+                padding-bottom: 2rem;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
-                padding-top: 4rem;
             }
             
             /* Adjust spacing for all sections on mobile */
@@ -259,149 +285,14 @@
                 grid-gap: 1rem;
             }
             
-            /* Custom class for mobile buttons */
-            .mobile-cta {
-                position: fixed;
-                bottom: 5rem;
-                left: 1rem;
-                right: 1rem;
-                background: #4f46e5;
-                color: white;
-                padding: 0.75rem;
-                border-radius: 0.5rem;
-                font-weight: 600;
-                text-align: center;
-                box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-                z-index: 900;
-                animation: slideUp 0.5s ease-out forwards;
+            /* Wave shape size adjustment for mobile */
+            .wave-shape svg {
+                height: 60px;
             }
             
-            /* Mobile-optimized hero layout */
-            .mobile-hero {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                padding: 1rem;
-                margin-top: 3.5rem;
-            }
-            
-            .mobile-hero h1 {
-                font-size: 2rem;
-                font-weight: 800;
-                margin-bottom: 1rem;
-                line-height: 1.2;
-            }
-            
-            .mobile-hero p {
-                font-size: 1rem;
-                margin-bottom: 1.5rem;
-                line-height: 1.5;
-            }
-            
-            /* Improved button styling for mobile */
-            .mobile-btn {
-                display: inline-block;
-                background: white;
-                color: #4f46e5;
-                padding: 0.75rem 1.5rem;
-                border-radius: 2rem;
-                font-weight: 600;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                margin: 0.5rem;
-                transition: all 0.3s ease;
-            }
-            
-            .mobile-btn:active {
-                transform: scale(0.98);
-            }
-            
-            .mobile-btn-primary {
-                background: #4f46e5;
-                color: white;
-            }
-            
-            /* Other styles remain the same */
-            .mobile-nav-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                color: #4f46e5;
-                text-decoration: none;
-                font-size: 0.75rem;
-                padding: 0.5rem;
-            }
-
-            .mobile-nav-item i {
-                font-size: 1.25rem;
-                margin-bottom: 0.25rem;
-            }
-
-            /* Mobile Animations */
-            @keyframes slideUp {
-                from {
-                    transform: translateY(20px);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateY(0);
-                    opacity: 1;
-                }
-            }
-
-            .animate-slide-up {
-                animation: slideUp 0.5s ease-out forwards;
-            }
-
-            /* Mobile App-like Header */
-            .app-header {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                background: white;
-                padding: 1rem;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                z-index: 1000;
-            }
-
-            .app-logo {
-                height: 2rem;
-                width: auto;
-            }
-
-            /* Mobile-friendly Buttons */
-            .mobile-button {
-                width: 100%;
-                padding: 1rem;
-                border-radius: 0.5rem;
-                background: #4f46e5;
-                color: white;
-                font-weight: 600;
-                text-align: center;
-                margin: 0.5rem 0;
-                box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
-            }
-
-            /* Mobile-friendly Cards */
-            .mobile-card {
-                background: white;
-                border-radius: 1rem;
-                padding: 1.5rem;
-                margin: 1rem 0;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-
-            /* Mobile-friendly Images */
-            .mobile-image {
-                width: 100%;
-                height: auto;
-                border-radius: 1rem;
-                margin: 1rem 0;
+            /* Better text readability on mobile */
+            .text-transparent.bg-clip-text {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.1);
             }
         }
 
@@ -500,6 +391,43 @@
             0% { opacity: 0; transform: translateY(20px); }
             10% { opacity: 1; transform: translateY(0); }
             100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Keyframes for animate-visible class used with intersection observer */
+        .animate-visible {
+            animation-play-state: running !important;
+        }
+        
+        /* Performance optimizations for mobile */
+        @media (max-width: 768px) {
+            .performance-critical {
+                will-change: transform;
+                backface-visibility: hidden;
+                transform: translateZ(0);
+                perspective: 1000px;
+            }
+            
+            /* Preload animations to avoid jank when they start */
+            .preload-animation {
+                animation-duration: 0.001s !important;
+                animation-fill-mode: forwards !important;
+                visibility: hidden;
+            }
+            
+            /* Additional optimizations for 3D phone */
+            .mobile-3d-phone {
+                animation-play-state: paused;
+                transition: max-width 0.3s ease;
+            }
+            
+            /* Lazily initialize heavy animations */
+            .lazy-animation {
+                animation: none !important;
+            }
+            
+            .lazy-animation.animate-visible {
+                animation: inherit !important;
+            }
         }
     </style>
 </head>
@@ -912,18 +840,194 @@
     </section>
     
     <!-- Mobile Hero Alternative -->
-    <section class="md:hidden py-16 hero-gradient text-white mobile-hero">
-        <div class="container mx-auto px-4 text-center">
-            <h1 class="text-3xl font-extrabold mb-4">JCCbuzz</h1>
-            <p class="mb-6">The exclusive social platform for Jagannath University students</p>
-            <div class="flex flex-wrap justify-center">
-                <a href="/register" class="mobile-btn mobile-btn-primary">
-                    Get Started
-                </a>
-                <a href="#how-it-works" class="mobile-btn">
-                    How It Works
-                </a>
+    <section class="md:hidden py-16 hero-gradient text-white relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        
+        <!-- Decorative rings for mobile -->
+        <div class="decor-ring w-24 h-24 bg-purple-400 blur-xl -top-10 -left-10"></div>
+        <div class="decor-ring w-32 h-32 bg-indigo-300 blur-xl bottom-20 -right-10"></div>
+        <div class="decor-ring w-16 h-16 bg-blue-300 blur-xl top-20 right-1/4"></div>
+        
+        <div class="container mx-auto px-4">
+            <!-- Text content -->
+            <div class="text-center mb-12">
+                <h1 class="text-3xl tracking-tight font-extrabold text-white sm:text-4xl">
+                    <span class="block bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">Your Campus World</span>
+                    <span class="block mt-1 bg-clip-text text-transparent bg-gradient-to-r from-indigo-200 via-purple-300 to-pink-300">Everywhere With You</span>
+                </h1>
+                <p class="mt-4 text-base text-indigo-100 sm:text-lg">
+                    <span class="font-semibold text-white">Connect · Share · Discover</span> — The digital pulse of Jagannath 
+                    University.
+                </p>
+                <div class="mt-6 flex justify-center">
+                    <a href="/register" class="relative group px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-purple-700 text-white font-medium text-base inline-flex items-center justify-center shadow-lg shadow-indigo-500/30 transform hover:scale-105 transition-all duration-300 overflow-hidden">
+                        <!-- Shimmering overlay -->
+                        <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -translate-x-full group-hover:animate-[shimmer_1s_forwards]"></span>
+                        
+                        <span class="relative flex items-center">
+                            Get Started
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                    </a>
+                </div>
             </div>
+            
+            <!-- Mobile 3D Phone -->
+            <div class="relative mx-auto w-full max-w-xs mobile-3d-phone">
+                <!-- Decorative floating elements -->
+                <div class="absolute -top-10 -right-6 h-16 w-16 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-full opacity-90 animate-float-mobile blur-sm mobile-decor" style="animation-delay: 0.5s; filter: saturate(1.5)"></div>
+                <div class="absolute -bottom-10 -left-10 h-24 w-24 bg-gradient-to-br from-fuchsia-400 to-purple-600 rounded-full opacity-90 animate-float-mobile blur-sm mobile-decor" style="animation-delay: 1s; filter: saturate(1.4)"></div>
+                <div class="absolute top-1/4 right-1/3 h-12 w-12 bg-gradient-to-br from-pink-300 to-rose-500 rounded-full opacity-80 animate-float-mobile blur-sm mobile-decor" style="animation-delay: 1.5s; filter: saturate(1.3)"></div>
+                
+                <!-- 3D Phone Container -->
+                <div class="relative z-10 overflow-hidden rounded-2xl shadow-[0_15px_40px_-10px_rgba(86,59,255,0.6)] transform rotate-1 hover:rotate-0 transition-all duration-500 animate-float-mobile w-4/5 mx-auto">
+                    <!-- Animated Ring Around Phone -->
+                    <div class="absolute -inset-3 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-[50px] opacity-70 blur-lg animate-pulse"></div>
+                    
+                    <!-- 3D Smartphone Container with proper aspect ratio -->
+                    <div class="relative w-full pb-[180%] overflow-hidden rounded-2xl">
+                        <!-- Phone Frame with 3D perspective -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <!-- Phone Body with Shadow and Highlights -->
+                            <div class="w-[88%] h-[97%] bg-gradient-to-br from-gray-800 via-gray-900 to-black rounded-[40px] relative overflow-hidden transform hover:scale-[1.01] transition-transform duration-300" 
+                                 style="box-shadow: 0 40px 70px -20px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2), inset 0 -5px 15px rgba(0,0,0,0.4);">
+                                
+                                <!-- Shimmer effect -->
+                                <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-5 transform -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                                
+                                <!-- Phone Screen with Reflection -->
+                                <div class="absolute inset-[5px] rounded-[36px] bg-gradient-to-tr from-indigo-50 via-white to-blue-50 overflow-hidden"
+                                     style="box-shadow: inset 0 0 5px rgba(0,0,0,0.15);">
+                                    
+                                    <!-- Subtle Screen Reflection Overlay -->
+                                    <div class="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-20 z-20 pointer-events-none"></div>
+                                    
+                                    <!-- App Interface -->
+                                    <div class="absolute inset-0 bg-gradient-to-b from-indigo-50 to-white">
+                                        <!-- App Status Bar -->
+                                        <div class="h-[5%] bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 flex items-center justify-between px-4">
+                                            <div class="text-white text-xs font-medium">9:41</div>
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-4 h-3 bg-white opacity-80 rounded-sm"></div>
+                                                <div class="w-3 h-3 bg-white opacity-80 rounded-full"></div>
+                                                <div class="w-5 h-3 bg-white opacity-80 rounded-sm"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- App Header -->
+                                        <div class="h-[8%] bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 flex items-center px-4 shadow-md relative overflow-hidden">
+                                            <!-- Sparkle effects -->
+                                            <div class="absolute top-1 left-10 w-1 h-1 bg-white rounded-full opacity-80 animate-ping" style="animation-duration: 1.5s"></div>
+                                            
+                                            <div class="text-white font-bold text-base flex items-center">
+                                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-white">Jcc</span>
+                                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-yellow-200">BUZZ</span>
+                                                <span class="ml-1 text-yellow-200">✨</span>
+                                            </div>
+                                            <div class="ml-auto flex space-x-3">
+                                                <div class="w-7 h-7 flex items-center justify-center">
+                                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                        <path d="M3 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                        <path d="M17 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- App Content - Feed with simplified animations for mobile -->
+                                        <div class="h-[87%] overflow-hidden py-2 bg-gradient-to-b from-indigo-50/50 to-white">
+                                            <!-- Stories -->
+                                            <div class="px-2 pb-3">
+                                                <div class="flex space-x-3 overflow-x-hidden px-1">
+                                                    <div class="w-14 flex-shrink-0">
+                                                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 p-[2px] animate-pulse" style="animation-duration: 3s">
+                                                            <div class="w-full h-full rounded-full bg-white border-2 border-white flex items-center justify-center">
+                                                                <span class="text-indigo-600 text-xs font-bold">You</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-center mt-1 text-gray-700 truncate font-medium">Your Story</div>
+                                                    </div>
+                                                    <div class="w-14 flex-shrink-0">
+                                                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 p-[2px]">
+                                                            <div class="w-full h-full rounded-full bg-orange-100 border-2 border-white flex items-center justify-center">
+                                                                <span class="text-orange-600 text-lg">🎭</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-center mt-1 text-gray-700 truncate font-medium">Events</div>
+                                                    </div>
+                                                    <div class="w-14 flex-shrink-0">
+                                                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 p-[2px]">
+                                                            <div class="w-full h-full rounded-full bg-blue-100 border-2 border-white flex items-center justify-center">
+                                                                <span class="text-blue-600 text-lg">🏫</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-center mt-1 text-gray-700 truncate font-medium">Campus</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Post 1 - Simplified for mobile -->
+                                            <div class="border-t border-gray-200 pt-3 pb-4">
+                                                <div class="flex items-center px-3 pb-2">
+                                                    <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">JU</div>
+                                                    <div class="ml-2">
+                                                        <div class="font-semibold text-sm">University News</div>
+                                                        <div class="text-xs text-gray-500">5m ago</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Post Content -->
+                                                <div class="h-36 bg-gradient-to-br from-indigo-500 to-purple-600 mx-3 rounded-xl flex items-center justify-center overflow-hidden relative shadow-md">
+                                                    <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-90"></div>
+                                                    <span class="relative z-10 text-white font-bold text-xl text-center px-4">Spring Campus Festival</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Phone Notch -->
+                                <div class="absolute top-[5px] left-1/2 transform -translate-x-1/2 w-[35%] h-6 bg-black rounded-b-2xl z-10 flex justify-center overflow-hidden">
+                                    <div class="w-10 h-3 bg-gray-800 rounded-full mt-1 relative">
+                                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-600 rounded-full"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Phone Side Button Highlights -->
+                                <div class="absolute top-[20%] left-0 w-2 h-10 bg-gradient-to-r from-gray-600 to-gray-800 rounded-r-lg transform -translate-x-1/2 shadow-lg"></div>
+                                <div class="absolute top-[35%] left-0 w-2 h-10 bg-gradient-to-r from-gray-600 to-gray-800 rounded-r-lg transform -translate-x-1/2 shadow-lg"></div>
+                                <div class="absolute top-[28%] right-0 w-2 h-12 bg-gradient-to-l from-gray-600 to-gray-800 rounded-l-lg transform translate-x-1/2 shadow-lg"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 3D Effect Perspective Shadow -->
+                        <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[70%] h-[2%] bg-black opacity-30 blur-md rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scroll indicator for mobile -->
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+            <span class="text-xs text-indigo-200 mb-1">Scroll to explore</span>
+            <div class="animate-bounce">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Wavy separator for mobile -->
+        <div class="wave-shape">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" class="w-full h-16 transform scale-y-[-1]">
+                <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" class="shape-fill" fill="#F9FAFB"></path>
+                <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" class="shape-fill" fill="#F9FAFB"></path>
+                <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" class="shape-fill" fill="#F9FAFB"></path>
+            </svg>
         </div>
     </section>
     
@@ -1360,6 +1464,54 @@
 </div>
 
 <script>
+    // Mobile optimization
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if device is mobile
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+            // Optimize animations for mobile
+            const animatedElements = document.querySelectorAll('.animate-pulse, .animate-ping');
+            animatedElements.forEach(el => {
+                // Reduce animation complexity on mobile
+                if (el.classList.contains('animate-pulse')) {
+                    el.style.animationDuration = '3s';
+                }
+                if (el.classList.contains('animate-ping')) {
+                    el.style.animationDuration = '4s';
+                }
+            });
+            
+            // Add intersection observer to only animate elements when they're visible
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            document.querySelectorAll('.mobile-3d-phone, .feature-card, .testimonial-card').forEach(el => {
+                observer.observe(el);
+            });
+            
+            // Handle orientation change to adjust 3D phone size
+            window.addEventListener('orientationchange', function() {
+                const phone = document.querySelector('.mobile-3d-phone');
+                if (phone) {
+                    if (window.orientation === 90 || window.orientation === -90) {
+                        // Landscape mode - make phone smaller
+                        phone.style.maxWidth = '220px';
+                    } else {
+                        // Portrait mode - restore size
+                        phone.style.maxWidth = '280px';
+                    }
+                }
+            });
+        }
+    });
+    
     // Mobile menu toggle
     document.getElementById('mobile-menu-button').addEventListener('click', function() {
         const mobileMenu = document.getElementById('mobile-menu');

@@ -45,7 +45,7 @@ const students = [
     {"enrollment_number": "021723003", "name": "Deepanshu Yadav", "contact": "8510005663", "email": "raodeepanshu5000@gmail.com"},
     {"enrollment_number": "021723005", "name": "Rohit", "contact": "8168848171", "email": "rohitsharma11055@gmail.com"},
     {"enrollment_number": "021723006", "name": "Ronit Budhwar", "contact": "9050651722", "email": "ronitbudhwar946@gmail.com"},
-    {"enrollment_number": "021723007", "name": "Siddharth", "contact": "8595775758", "email": "siddharth220605@gmail.com"}
+    {"enrollment_number": "021723007", "name": "Siddharth", "contact": "8595775758", "email": "siddharth220605@gmail.com"},
 ];
 
 module.exports = students; 

@@ -2615,14 +2615,43 @@ app.post("/verify/request-otp", async (req, res) => {
             
             if (!sent) {
                 console.error("Failed to send OTP to email:", student.email);
-                // Always show OTP in development mode
+                
+                // Try SMS as fallback if phone number exists
+                if (student.contact_number) {
+                    console.log("Attempting SMS fallback to:", student.contact_number);
+                    const smsSent = await sendOTP(student.contact_number, otp);
+                    
+                    if (smsSent) {
+                        console.log("Successfully sent OTP via SMS to:", student.contact_number);
+                        // Update student record with OTP
+                        student.otp = {
+                            code: otp,
+                            expires_at: expiresAt
+                        };
+                        await student.save();
+                        
+                        // In development, return the OTP for testing
+                        const devOtpInfo = process.env.NODE_ENV !== 'production' ? { dev_otp: otp } : {};
+                        
+                        return res.json({ 
+                            success: true, 
+                            message: "OTP sent successfully via SMS",
+                            expires_at: expiresAt,
+                            student_phone: student.contact_number,
+                            ...devOtpInfo
+                        });
+                    }
+                }
+                
+                // Always show OTP in development mode if both email and SMS fail
                 if (process.env.NODE_ENV !== 'production') {
                     return res.status(200).json({ 
                         success: true, 
-                        message: "Development mode: OTP saved but email failed",
+                        message: "Development mode: OTP saved but email and SMS failed",
                         dev_otp: otp,
                         expires_at: expiresAt,
-                        student_email: student.email
+                        student_email: student.email,
+                        student_phone: student.contact_number || "No phone number"
                     });
                 } else {
                     return res.status(500).json({ 
