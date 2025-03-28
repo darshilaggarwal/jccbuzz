@@ -148,16 +148,19 @@
                     return; // Skip this post entirely
                 }
             %>
-                <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden transform transition-all post-container" data-post-id="<%= post._id %>" data-user-id="<%= post.user._id %>">
-                    <!-- Post Header -->
-                    <div class="p-3 flex items-center justify-between">
+                <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden post-container relative mb-4" data-post-id="<%= post._id %>" data-user-id="<%= post.user._id %>">
+                    <!-- Gradient accent line with improved visual effects -->
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600"></div>
+                    
+                    <!-- Post Header with improved spacing -->
+                    <div class="px-3 py-2 flex items-center justify-between">
                         <a href="/user/<%= post.user.username %>" class="flex items-center group">
                             <div class="relative">
-                                <div class="<%= post.user.hasActiveStory ? 'story-ring rounded-full p-[2px]' : '' %>">
+                                <div class="<%= post.user.hasActiveStory ? 'story-ring rounded-full p-[1px]' : '' %>">
                                     <div class="bg-white dark:bg-black p-[1px] rounded-full">
                                 <img src="<%= post.user.profileImage %>" 
                                      alt="Profile" 
-                                             class="w-8 h-8 rounded-full object-cover">
+                                     class="w-8 h-8 rounded-full object-cover">
                             </div>
                                 </div>
                             </div>
@@ -179,7 +182,7 @@
                                     <% post.images.forEach(image => { %>
                                         <div class="swiper-slide">
                                             <img src="<%= image.url %>" 
-                                                 alt="Post image"
+                                                 alt="Post image" 
                                                  class="w-full h-full object-cover">
                                         </div>
                                     <% }) %>
@@ -188,7 +191,7 @@
                                     <div class="swiper-pagination"></div>
                                     <div class="swiper-button-next"></div>
                                     <div class="swiper-button-prev"></div>
-                                    <div class="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
+                                    <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
                                         <span class="current-slide">1</span>/<%= post.images.length %>
                                     </div>
                                 <% } %>
@@ -200,35 +203,36 @@
                     <% } %>
 
                     <!-- Post Content -->
-                    <div class="px-4 pb-4">
-                        <!-- Actions -->
-                        <div class="flex items-center justify-between py-3">
+                    <div class="px-3 pb-3">
+                        <!-- Actions with subtle gradient hover effects -->
+                        <div class="flex items-center justify-between py-2 my-1 relative border-t border-b border-gray-100 dark:border-gray-800">
+                            
                             <div class="flex items-center space-x-4">
                                 <button onclick="toggleLike('<%= post._id %>')" 
                                         id="like-btn-<%= post._id %>"
-                                        class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-800 dark:text-white' %> hover:scale-110 transform transition-transform">
+                                        class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-800 dark:text-white' %>">
                                     <% if (post.likes.some(id => id.toString() === user._id.toString())) { %>
-                                    <i class="fas fa-heart text-2xl"></i>
+                                    <i class="fas fa-heart text-xl"></i>
                                     <% } else { %>
-                                        <i class="far fa-heart text-2xl"></i>
+                                        <i class="far fa-heart text-xl"></i>
                                     <% } %>
                                 </button>
                                 <button onclick="showComments('<%= post._id %>')" 
-                                        class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
-                                    <i class="far fa-comment text-2xl"></i>
+                                        class="text-gray-800 dark:text-white">
+                                    <i class="far fa-comment text-xl"></i>
                                 </button>
                                 <button onclick="sharePost('<%= post._id %>')" 
-                                        class="text-gray-800 dark:text-white hover:scale-110 transform transition-transform">
-                                    <i class="far fa-paper-plane text-2xl"></i>
+                                        class="text-gray-800 dark:text-white">
+                                    <i class="far fa-paper-plane text-xl"></i>
                                 </button>
                             </div>
                             <button onclick="toggleSavePost('<%= post._id %>')"
                                     id="save-btn-<%= post._id %>"
-                                    class="save-btn hover:scale-110 transform transition-transform">
+                                    class="save-btn">
                                 <% if (user.savedPosts && user.savedPosts.includes(post._id)) { %>
-                                    <i class="fas fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
+                                    <i class="fas fa-bookmark text-xl text-gray-800 dark:text-white"></i>
                                 <% } else { %>
-                                    <i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>
+                                    <i class="far fa-bookmark text-xl text-gray-800 dark:text-white"></i>
                                 <% } %>
                             </button>
                         </div>
@@ -242,10 +246,12 @@
 
                         <!-- Caption -->
                         <div class="mb-2">
-                            <p class="text-sm text-gray-800 dark:text-white">
-                                <span class="font-semibold mr-1"><%= post.user.username %></span>
-                                <%= post.content %>
-                            </p>
+                            <div class="text-sm text-gray-800 dark:text-white flex flex-wrap items-start">
+                                <span class="font-semibold mr-1.5"><%= post.user.username %></span>
+                                <span class="caption-content">
+                                    <%= post.content && post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content %>
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Post Metadata -->
@@ -266,7 +272,7 @@
 
         <!-- Loading Spinner -->
         <div class="flex justify-center my-8 loading-spinner">
-            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <div class="animate-spin rounded-full h-8 w-8 border-2 border-t-blue-500 border-r-indigo-500 border-b-purple-500 border-l-blue-500"></div>
         </div>
     <% } %>
 </div>
@@ -285,7 +291,7 @@
         <form id="createPostForm" class="p-4" onsubmit="handlePostSubmit(event)">
             <!-- Image Upload Section -->
             <div class="mb-4">
-                <div id="imagePreviewContainer" class="hidden grid grid-cols-2 gap-2 mb-4 max-h-[220px] overflow-y-auto p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div id="imagePreviewContainer" class="hidden grid grid-cols-2 gap-2 mb-4 max-h-[300px] overflow-y-auto p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <!-- Image previews will be added here -->
                 </div>
                 
@@ -295,7 +301,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload photos</span>
-                        <span class="mt-1 text-xs text-gray-400 dark:text-gray-500">Images will be cropped to a square (3000×3000)</span>
+                        <span class="mt-1 text-xs text-gray-400 dark:text-gray-500">Images will be cropped to a square (1:1 ratio)</span>
                         <input type="file" id="imageInput" name="processedImages" multiple accept="image/*" class="hidden" onchange="handleImageSelect(event)">
                     </label>
                 </div>
@@ -635,15 +641,15 @@
 }
 
 .story-ring {
-    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    background: linear-gradient(to right, #3B82F6, #8B5CF6, #D946EF);
     border-radius: 50%;
-    padding: 2px;
+    padding: 1px;
 }
 
 .story-ring-viewed {
     background: #8e8e8e;
     border-radius: 50%;
-    padding: 2px;
+    padding: 1px;
 }
 
 @keyframes storyProgressAnimation {
@@ -751,6 +757,22 @@
     max-width: 470px;
     margin-left: auto;
     margin-right: auto;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Remove the hover transform and effects */
+.post-container::before {
+    display: none;
+}
+
+.post-container:hover {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transform: none;
+}
+
+.post-container:hover::before {
+    opacity: 0;
 }
 
 .swiper-container.aspect-square {
@@ -764,6 +786,55 @@
         max-width: 470px;
     }
 }
+
+@media (max-width: 640px) {
+    .post-container {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin-bottom: 1rem;
+    }
+    
+    .swiper-button-next,
+    .swiper-button-prev {
+        display: none;
+    }
+    
+    .post-options-button {
+        width: 2rem;
+        height: 2rem;
+    }
+    
+    .notification-filter {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    #createPostModal .modal-content {
+        margin: 0;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.gradient-bg {
+    background-size: 200% 200%;
+    animation: gradient-shift 15s ease infinite;
+}
+
+.post-container .bg-gradient-to-r {
+    background-size: 200% 200%;
+    animation: gradient-shift 15s ease infinite;
+}
+
+/* Add subtle hover effects to post containers */
 </style>
 
 <script>
@@ -781,26 +852,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize Swiper carousels for post images
     const swipers = document.querySelectorAll('.swiper-container');
-    swipers.forEach((container, index) => {
+    swipers.forEach((container) => {
         const swiper = new Swiper(container, {
             pagination: {
-                el: '.swiper-pagination',
+                el: container.querySelector('.swiper-pagination'),
+                clickable: true,
                 dynamicBullets: true,
             },
             navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
+                nextEl: container.querySelector('.swiper-button-next'),
+                prevEl: container.querySelector('.swiper-button-prev'),
             },
+            slidesPerView: 1,
+            observer: true,
+            observeParents: true,
+            observeSlideChildren: true,
             grabCursor: true,
-            keyboard: {
-                enabled: true,
-            },
+            loop: false,
             on: {
                 slideChange: function() {
                     const currentSlideIndicator = container.querySelector('.current-slide');
                     if (currentSlideIndicator) {
                         currentSlideIndicator.textContent = this.activeIndex + 1;
                     }
+                },
+                init: function() {
+                    console.log(`Swiper initialized with ${this.slides.length} slides`);
+                    // Force update to ensure proper rendering
+                    this.update();
                 }
             }
         });
@@ -1930,10 +2009,10 @@ function finishCropping() {
     console.log('Finishing cropping process');
     
     try {
-        // Get the cropped canvas
+        // Get the cropped canvas - ensuring square aspect ratio
         const canvas = currentCropper.getCroppedCanvas({
-            width: 3000,
-            height: 3000,
+            width: 1080, // Instagram standard size
+            height: 1080, // Keep it square
             fillColor: '#fff',
             imageSmoothingEnabled: true,
             imageSmoothingQuality: 'high'
@@ -1982,7 +2061,7 @@ function finishCropping() {
             if (imagesToCrop.length > 0) {
                 startCroppingNext();
             }
-        }, 'image/jpeg', 0.95); // High quality JPEG
+        }, 'image/jpeg', 0.9); // Good quality JPEG for performance
     } catch (error) {
         console.error('Error in finishCropping:', error);
         showToast('Error processing image. Please try again.');
@@ -2830,3 +2909,28 @@ async function openUserStories(userId) {
 </div>
 
 <%- include('partials/footer') %>
+
+<script>
+    // Make sure we have the latest image in the preview
+    previewContent.innerHTML = this.value.replace(/\n/g, '<br>');
+});
+
+    }
+});
+</script>
+
+<style>
+    /* Caption content styling */
+    .caption-content {
+        word-break: break-word;
+        max-width: 100%;
+        display: inline;
+        color: #4B5563;
+    }
+    
+    /* Story ring gradient styling */
+    .story-ring {
+        background: linear-gradient(to right, #3B82F6, #8B5CF6, #D946EF);
+    }
+</style>
+

@@ -56,7 +56,8 @@ body {
 
 /* Story ring */
 .bg-gradient-to-tr.from-yellow-400.to-fuchsia-600 {
-    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    background: linear-gradient(45deg, #3b82f6 0%, #4f46e5 50%, #8b5cf6 100%);
+    padding: 1px;
 }
 </style>
 
@@ -74,13 +75,12 @@ console.log('Current user ID set at page load:', window.currentUserId);
             <div class="flex justify-center md:justify-start md:shrink-0">
                 <div class="relative">
                     <!-- Story Ring (if user has active story) -->
-                    <div class="<%= profileUser.hasActiveStory ? 'bg-gradient-to-tr from-yellow-400 to-fuchsia-600' : '' %> rounded-full p-[2px]" id="profileImageContainer">
-                        <div class="bg-white dark:bg-black rounded-full p-[2px]">
-                            <img src="<%= profileUser.profileImage %>" 
-                                 alt="<%= profileUser.name %>" 
-                                 class="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-800 cursor-pointer"
-                                 id="profileImage">
-                        </div>
+                    <div class="<%= profileUser.hasActiveStory ? 'bg-gradient-to-tr from-yellow-400 to-fuchsia-600' : '' %> rounded-full p-[1px]" id="profileImageContainer">
+                        <img src="<%= profileUser.profileImage || '/images/placeholder.webp' %>" 
+                             alt="<%= profileUser.name %>" 
+                             onerror="this.src='/images/placeholder.webp'" 
+                             class="w-24 h-24 rounded-full object-cover border-2 <%= profileUser.isOnline ? 'border-green-500' : 'border-white dark:border-gray-800' %>"
+                             id="profileImage">
                     </div>
                 </div>
             </div>
