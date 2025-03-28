@@ -1,0 +1,113 @@
+<!-- Add standardized toast container -->
+<div id="toast-container" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"></div>
+
+<script>
+    // Global standardized toast function
+    window.showToast = function(message, type = 'info', showOnlyImportant = false) {
+        // If this is a non-important toast and showOnlyImportant is true, don't show it
+        if (showOnlyImportant && ['post-save', 'comment', 'like', 'minor'].includes(type)) {
+            return;
+        }
+        
+        // Map type to style
+        let gradientClass, icon;
+        switch(type) {
+            case 'success':
+            case 'post-save': // These will be suppressed when showOnlyImportant is true
+            case 'comment':
+            case 'like':
+                gradientClass = 'from-blue-500 via-indigo-600 to-purple-600';
+                icon = '<i class="fas fa-check-circle mr-2"></i>';
+                break;
+            case 'error':
+                gradientClass = 'from-red-500 via-red-600 to-red-700';
+                icon = '<i class="fas fa-exclamation-circle mr-2"></i>';
+                break;
+            case 'warning':
+                gradientClass = 'from-yellow-400 via-yellow-500 to-orange-500';
+                icon = '<i class="fas fa-exclamation-triangle mr-2"></i>';
+                break;
+            default:
+                gradientClass = 'from-blue-500 via-indigo-600 to-purple-600';
+                icon = '<i class="fas fa-info-circle mr-2"></i>';
+        }
+        
+        // Get toast container
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast
+        const toast = document.createElement('div');
+        toast.className = `bg-gradient-to-r ${gradientClass} text-white px-6 py-3 rounded-full shadow-lg opacity-0 transform translate-y-4 transition-all duration-300 mb-3 flex items-center`;
+        toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`;
+        
+        // Add to container
+        toastContainer.appendChild(toast);
+        
+        // Show toast (slight delay for animation)
+        setTimeout(() => {
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+        }, 10);
+        
+        // Auto-hide toast
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toastContainer.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
+    };
+    
+    // Set global option for toast messages (show only important ones)
+    window.showOnlyImportantToasts = true;
+</script>
+
+<!-- Remove focus outlines globally -->
+<style>
+    /* Remove focus outlines across the site */
+    *:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Optional: add a subtle indication for keyboard navigation without blue outline */
+    *:focus-visible {
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1) !important;
+    }
+    
+    /* Override any Tailwind focus classes */
+    .focus\:outline-none:focus,
+    .focus\:ring-2:focus,
+    .focus\:ring-blue-500:focus,
+    .focus\:ring-indigo-500:focus,
+    .focus\:ring-offset-2:focus,
+    .focus\:border-blue-500:focus,
+    .focus\:border-indigo-500:focus,
+    .focus\:z-10:focus,
+    .focus\:ring-inset:focus,
+    .focus\:ring-primary:focus,
+    [class*="focus:outline"],
+    [class*="focus:ring"],
+    [class*="focus:border"] {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: inherit !important;
+    }
+    
+    /* Specific styles for post action buttons - no focus rings */
+    .post-action-btn:focus,
+    .post-action-btn:active,
+    .post-action-btn:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+</style> 

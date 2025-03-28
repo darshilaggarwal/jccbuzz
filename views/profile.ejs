@@ -655,7 +655,7 @@ async function handlePostSubmit(e) {
     
     if (!files || files.length === 0) {
         console.log('No files selected');
-        showToast('Please add at least one image to your post');
+        showToast('Please add at least one image to your post', 'warning');
         return;
     }
     
@@ -722,7 +722,7 @@ async function handlePostSubmit(e) {
             // Parse the JSON response
             const data = await response.json();
             console.log('Success response:', data);
-            showToast(data.message || 'Post shared successfully!');
+            showToast(data.message || 'Post shared successfully!', 'success');
             closeCreatePostModal();
             
             // Reload the page after a short delay
@@ -750,11 +750,11 @@ async function handlePostSubmit(e) {
                 }
             }
             
-            showToast('Error: ' + errorMsg);
+            showToast('Error: ' + errorMsg, 'error');
         }
     } catch (error) {
         console.error('Network error creating post:', error);
-        showToast('Network error. Please try again.');
+        showToast('Network error. Please try again.', 'error');
     } finally {
         console.log('Resetting button state');
         // Reset button state
@@ -896,7 +896,7 @@ function handleStoryUpload(event) {
     if (!file) return;
     
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        showToast('Please select an image or video file');
+        showToast('Please select an image or video file', 'warning');
         return;
     }
 
@@ -939,7 +939,7 @@ function handleStoryUpload(event) {
 // Upload story
 async function uploadStory() {
     if (!storyFile) {
-        showToast('Please select a file first');
+        showToast('Please select a file first', 'warning');
         return;
     }
 
@@ -956,7 +956,7 @@ async function uploadStory() {
 
         if (data.success) {
             closeStoryPreview();
-            showToast('Story uploaded successfully!');
+            showToast('Story uploaded successfully!', 'success');
             // Update UI to show active story if needed
             setTimeout(() => {
                 window.location.reload();
@@ -964,11 +964,11 @@ async function uploadStory() {
         } else {
             const errorMsg = data.error || 'Error uploading story';
             const details = data.details ? `: ${data.details}` : '';
-            showToast(`${errorMsg}${details}`);
+            showToast(`${errorMsg}${details}`, 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Error uploading story. Please try again.');
+        showToast('Error uploading story. Please try again.', 'error');
     }
 }
 
@@ -985,7 +985,7 @@ async function deleteStory() {
     // Get the current active story ID
     const storyRing = document.querySelector('.story-ring');
     if (!storyRing) {
-        showToast('No active story to delete');
+        showToast('No active story to delete', 'warning');
         return;
     }
     
@@ -1001,7 +1001,7 @@ async function deleteStory() {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Story deleted successfully');
+            showToast('Story deleted successfully', 'success');
             closeStoryPreview();
             
             // Refresh the page to update UI
@@ -1009,11 +1009,11 @@ async function deleteStory() {
                 window.location.reload();
             }, 1000);
         } else {
-            showToast(data.error || 'Failed to delete story');
+            showToast(data.error || 'Failed to delete story', 'error');
         }
     } catch (error) {
         console.error('Error deleting story:', error);
-        showToast('An error occurred while deleting the story');
+        showToast('An error occurred while deleting the story', 'error');
     }
 }
 
@@ -1096,7 +1096,7 @@ async function confirmDeletePost() {
                 console.error('Post element not found in DOM');
             }
             
-            showToast('Post deleted successfully');
+            showToast('Post deleted successfully', 'success');
         } else {
             console.error('Error in delete response:', response.status);
             let errorData;
@@ -1106,12 +1106,12 @@ async function confirmDeletePost() {
             } catch (e) {
                 console.error('Could not parse error response as JSON');
             }
-            showToast(errorData?.error || 'Failed to delete post');
+            showToast(errorData?.error || 'Failed to delete post', 'error');
         }
         closeDeleteConfirmModal();
     } catch (error) {
         console.error('Exception in delete post:', error);
-        showToast('An error occurred while deleting the post');
+        showToast('An error occurred while deleting the post', 'error');
         closeDeleteConfirmModal();
     }
 }
@@ -1139,39 +1139,6 @@ window.addEventListener('click', function(event) {
     if (event.target === storyPreviewModal) closeStoryPreview();
     if (event.target === createPostModal) closeCreatePostModal();
 });
-
-// Toast notification function
-function showToast(message) {
-    // If toast exists, remove it
-    let toast = document.getElementById('toast');
-    if (toast) {
-        document.body.removeChild(toast);
-    }
-    
-    // Create new toast
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    // Show toast
-    setTimeout(() => {
-        toast.classList.add('opacity-100');
-    }, 100);
-    
-    // Hide toast after 3 seconds
-    setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        
-        // Remove after fade out
-        setTimeout(() => {
-            if (toast.parentNode) {
-                document.body.removeChild(toast);
-            }
-        }, 300);
-    }, 3000);
-}
 
 function preventDefaults(e) {
     e.preventDefault();

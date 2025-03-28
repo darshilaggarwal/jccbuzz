@@ -758,13 +758,13 @@ document.getElementById('moveToGeneralBtn').addEventListener('click', function()
                 if (isInGeneral) {
                     // Move from General to Primary
                     generalChatIds = generalChatIds.filter(id => id !== currentChatId);
-                    showToast('Chat moved to primary');
+                    showToast('Chat moved to primary', 'success');
                 } else {
                     // Move from Primary to General
                     if (!generalChatIds.includes(currentChatId)) {
                         generalChatIds.push(currentChatId);
                     }
-                    showToast('Chat moved to general');
+                    showToast('Chat moved to general', 'success');
                 }
                 
                 // Save changes to localStorage
@@ -856,10 +856,10 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function()
                     refreshChatList(false);
                 }
                 
-                showToast('Chat deleted successfully');
+                showToast('Chat deleted successfully', 'success');
             }, 300);
         } else {
-            showToast('Chat deleted successfully');
+            showToast('Chat deleted successfully', 'success');
         }
         
         // Reset button state
@@ -869,7 +869,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function()
 });
 
 // Toast notification function
-window.showToast = function(message) {
+window.showToast = function(message, type) {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
     

@@ -210,7 +210,7 @@
                             <div class="flex items-center space-x-3">
                                 <button onclick="toggleLike('<%= post._id %>')" 
                                         id="like-btn-<%= post._id %>"
-                                        class="like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-800 dark:text-white' %>">
+                                        class="post-action-btn like-btn <%= post.likes.some(id => id.toString() === user._id.toString()) ? 'text-red-500' : 'text-gray-800 dark:text-white' %>">
                                     <% if (post.likes.some(id => id.toString() === user._id.toString())) { %>
                                     <i class="fas fa-heart text-xl"></i>
                                     <% } else { %>
@@ -218,17 +218,17 @@
                                     <% } %>
                                 </button>
                                 <button onclick="showComments('<%= post._id %>')" 
-                                        class="text-gray-800 dark:text-white">
+                                        class="post-action-btn text-gray-800 dark:text-white">
                                     <i class="far fa-comment text-xl"></i>
                                 </button>
                                 <button onclick="sharePost('<%= post._id %>')" 
-                                        class="text-gray-800 dark:text-white">
+                                        class="post-action-btn text-gray-800 dark:text-white">
                                     <i class="far fa-paper-plane text-xl"></i>
                                 </button>
                             </div>
                             <button onclick="toggleSavePost('<%= post._id %>')"
                                     id="save-btn-<%= post._id %>"
-                                    class="save-btn">
+                                    class="post-action-btn save-btn">
                                 <% if (user.savedPosts && user.savedPosts.includes(post._id)) { %>
                                     <i class="fas fa-bookmark text-xl text-gray-800 dark:text-white"></i>
                                 <% } else { %>
@@ -1099,7 +1099,7 @@ function addCommentFromModal(postId) {
     })
     .then(data => {
         if (data.error) {
-            showToast(data.error);
+            showToast(data.error, 'error');
         } else {
             // Clear input
             input.value = '';
@@ -1107,13 +1107,13 @@ function addCommentFromModal(postId) {
             // Refresh comments
             showComments(postId);
             
-            // Show success toast
-            showToast('Comment added successfully');
+            // Show success toast with comment type and showOnlyImportant set to true
+            showToast('Comment added successfully', 'comment', true);
         }
     })
     .catch(error => {
         console.error('Error adding comment:', error);
-        showToast('Failed to add comment');
+        showToast('Failed to add comment', 'error');
     })
     .finally(() => {
         // Re-enable input
@@ -1191,10 +1191,16 @@ function toggleLike(postId) {
             likeBtn.classList.add('text-red-500');
             likeBtn.classList.add('liked');
             setTimeout(() => likeBtn.classList.remove('liked'), 300);
+            
+            // No need to show toast for likes
+            // showToast('Post liked', 'like', true);
         } else {
             likeBtn.innerHTML = '<i class="far fa-heart text-2xl"></i>';
             likeBtn.classList.remove('text-red-500');
             likeBtn.classList.add('text-gray-800', 'dark:text-white');
+            
+            // No need to show toast for unlikes
+            // showToast('Post unliked', 'like', true);
         }
     })
     .catch(error => {
@@ -1298,9 +1304,10 @@ function toggleSavePost(postId) {
         } else {
                 saveBtn.innerHTML = '<i class="far fa-bookmark text-2xl text-gray-800 dark:text-white"></i>';
             }
-            showToast(data.error);
+            showToast(data.error, 'error');
         } else {
-            showToast(data.saved ? 'Post saved. View in <a href="/saved-posts" class="underline">saved posts</a>.' : 'Post removed from your collection');
+            // Set showOnlyImportant to true for save notifications
+            showToast(data.saved ? 'Post saved. View in <a href="/saved-posts" class="underline">saved posts</a>.' : 'Post removed from your collection', 'post-save', true);
             
             // Update the page to show saved posts if on saved posts page
             if (window.location.pathname === '/saved-posts') {
@@ -1424,7 +1431,7 @@ function confirmShare() {
 }
 
 // Toast notification
-function showToast(message) {
+function showToast(message, type, showOnlyImportant) {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
     

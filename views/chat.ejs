@@ -1657,7 +1657,7 @@ voiceButton.addEventListener('click', async () => {
         
     } catch (error) {
         console.error('Error starting voice recording:', error);
-        showToast('Could not access microphone. Please check your permissions.');
+        showToast('Could not access microphone. Please check your permissions.', 'error');
     }
 });
 
@@ -1723,7 +1723,7 @@ function stopRecordingAndDiscard() {
         audioChunks = [];
         
         console.log('Voice recording successfully cancelled');
-        showToast('Recording cancelled');
+        showToast('Recording cancelled', 'info');
     } catch (error) {
         console.error('Error cancelling recording:', error);
     }
@@ -1954,11 +1954,11 @@ async function sendVoiceMessage(audioBlob) {
             }
         } else {
             console.error('Error sending voice message:', data.error);
-            showToast('Failed to send voice message. Please try again.');
+            showToast('Failed to send voice message. Please try again.', 'error');
         }
     } catch (error) {
         console.error('Error sending voice message:', error);
-        showToast('Network error. Please check your connection and try again.');
+        showToast('Network error. Please check your connection and try again.', 'error');
     }
 }
 
@@ -2164,33 +2164,36 @@ socket.on('receive message', (message) => {
 });
 
 // Toast notification function
-function showToast(message) {
-    // If toast exists, remove it
-    let toast = document.getElementById('toast');
-    if (toast) {
-        document.body.removeChild(toast);
+function showToast(message, type = 'error') {
+    // Check if a toast container exists
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col items-end space-y-2';
+        document.body.appendChild(toastContainer);
     }
     
-    // Create new toast
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300';
-    toast.textContent = message;
-    document.body.appendChild(toast);
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg shadow-lg max-w-xs transform transition-all duration-300 opacity-0 translate-y-2 ${type === 'success' ? 'bg-green-500' : type === 'info' ? 'bg-yellow-500' : 'bg-red-500'}`;
+    toast.innerHTML = message;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
     
     // Show toast
     setTimeout(() => {
-        toast.classList.add('opacity-100');
-    }, 100);
+        toast.classList.remove('opacity-0', 'translate-y-2');
+        toast.classList.add('opacity-100', 'translate-y-0');
+    }, 10);
     
-    // Hide toast after 3 seconds
+    // Auto-remove after 3 seconds
     setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        
-        // Remove after fade out
+        toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => {
             if (toast.parentNode) {
-                document.body.removeChild(toast);
+                toastContainer.removeChild(toast);
             }
         }, 300);
     }, 3000);
@@ -2220,14 +2223,14 @@ async function deleteStory(storyId) {
                 }
             });
             
-            showToast('Story deleted successfully');
+            showToast('Story deleted successfully', 'success');
         } else {
             const errorData = await response.json();
-            showToast(errorData.error || 'Failed to delete story');
+            showToast(errorData.error || 'Failed to delete story', 'error');
         }
     } catch (error) {
         console.error('Error deleting story:', error);
-        showToast('An error occurred while deleting the story');
+        showToast('An error occurred while deleting the story', 'error');
     }
 }
 
@@ -2361,7 +2364,7 @@ function sharePost(postId) {
     const recipient = currentChatUser._id;
     
     // Show loading toast
-    showToast('Sharing post...');
+    showToast('Sharing post...', 'info');
     
     // Make API call to share post
     fetch('/api/posts/share', {
@@ -2377,16 +2380,16 @@ function sharePost(postId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('Post shared successfully');
+            showToast('Post shared successfully', 'success');
             // Append the new message to the chat
             appendNewMessage(data.message);
         } else {
-            showToast('Error: ' + (data.error || 'Failed to share post'));
+            showToast('Error: ' + (data.error || 'Failed to share post'), 'error');
         }
     })
     .catch(error => {
         console.error('Error sharing post:', error);
-        showToast('Error sharing post');
+        showToast('Error sharing post', 'error');
     });
 }
 

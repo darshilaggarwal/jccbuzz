@@ -243,37 +243,4 @@ function sharePostToUser(userId, username) {
         showToast('Error sharing post');
     });
 }
-
-// Toast notification function if not already defined
-if (typeof showToast !== 'function') {
-    window.showToast = function(message) {
-        // Check if toast element exists
-        let toast = document.getElementById('toast');
-        if (!toast) {
-            // Create toast element if it doesn't exist
-            toast = document.createElement('div');
-            toast.id = 'toast';
-            toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-full transition-all duration-300 z-50 opacity-0';
-            toast.innerHTML = `
-                <div class="bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-sm">
-                    <span id="toast-message" class="font-medium text-sm"></span>
-                </div>
-            `;
-            document.body.appendChild(toast);
-        }
-        
-        const toastMessage = document.getElementById('toast-message');
-        
-        // Set message and show toast
-        toastMessage.innerHTML = message;
-        toast.classList.remove('translate-y-full', 'opacity-0');
-        toast.classList.add('translate-y-0', 'opacity-100');
-        
-        // Hide after 3 seconds
-        setTimeout(() => {
-            toast.classList.remove('translate-y-0', 'opacity-100');
-            toast.classList.add('translate-y-full', 'opacity-0');
-        }, 3000);
-    };
-}
 </script> 
