@@ -3,25 +3,30 @@
 <div class="max-w-4xl mx-auto mt-8 px-4">
     <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden flex flex-col h-[calc(100vh-8rem)]">
         <!-- Chat Header - Make it sticky -->
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-black sticky top-0 z-10">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-black sticky top-0 z-10 relative">
+            <!-- Gradient accent line at top -->
+            <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+            
             <a href="/user/<%= otherUser.username %>" class="flex items-center hover:opacity-80">
                 <div class="relative">
-                    <img src="<%= otherUser.profileImage %>" 
-                         alt="Profile" 
-                         class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700">
+                    <div class="<%= otherUser.hasActiveStory ? 'p-[1px] bg-gradient-to-r from-blue-500 to-purple-600 rounded-full' : '' %>">
+                        <img src="<%= otherUser.profileImage %>" 
+                             alt="Profile" 
+                             class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700">
+                    </div>
                     <div class="absolute bottom-0 right-0 w-3 h-3 <%= otherUser.isOnline ? 'bg-green-500' : 'bg-gray-400' %> rounded-full border-2 border-white dark:border-gray-700"></div>
                 </div>
                 <div class="ml-3">
                     <h5 class="font-semibold text-gray-800 dark:text-white"><%= otherUser.name %></h5>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
                         @<%= otherUser.username %>
-                        <span id="typingStatus" class="ml-2 text-blue-500 italic hidden">typing...</span>
+                        <span id="typingStatus" class="ml-2 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent italic hidden">typing...</span>
                     </p>
                 </div>
             </a>
             
             <!-- Add call button -->
-            <button id="callButton" class="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none">
+            <button id="callButton" class="p-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-shadow focus:outline-none transform hover:scale-105 transition-transform">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
@@ -32,7 +37,7 @@
         <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages">
             <% chat.messages.forEach(message => { %>
                 <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %> group mb-6">
-                    <div class="relative max-w-[70%] <%= message.sender._id.toString() === user._id.toString() ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3" data-message-id="<%= message._id %>">
+                    <div class="relative max-w-[70%] <%= message.sender._id.toString() === user._id.toString() ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3 <%= message.sender._id.toString() === user._id.toString() ? 'shadow-blue-500/20 shadow-md' : '' %>" data-message-id="<%= message._id %>">
                         <% if (message.isStoryReply) { %>
                             <!-- Story reply text for server-side rendering -->
                             <div class="story-reply mb-1 text-sm font-semibold <%= message.sender._id.toString() === user._id.toString() ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300' %>">
@@ -116,15 +121,18 @@
         </div>
 
         <!-- Message Input -->
-        <div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-black sticky bottom-0">
+        <div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-black sticky bottom-0 relative">
+            <!-- Subtle gradient line above input -->
+            <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-blue-500/30 to-purple-600/30"></div>
+            
             <form id="messageForm" class="flex items-center space-x-2">
                 <input type="file" id="mediaInput" class="hidden" accept="image/*,video/*">
-                <button type="button" id="mediaButton" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
+                <button type="button" id="mediaButton" class="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-purple-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
                     <i class="fas fa-image"></i>
                 </button>
                 
                 <!-- Voice Recording Button -->
-                <button type="button" id="voiceButton" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
+                <button type="button" id="voiceButton" class="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-purple-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
                     <i class="fas fa-microphone"></i>
                 </button>
                 
@@ -147,7 +155,7 @@
                 </div>
                 
                 <button type="submit" 
-                        class="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        class="p-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transform hover:scale-105 transition-all">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </form>
@@ -156,19 +164,22 @@
 </div>
 
 <!-- Message Options Modal -->
-<div id="messageOptionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-xl">
+<div id="messageOptionsModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-xl overflow-hidden">
+        <!-- Gradient accent line at top -->
+        <div class="h-1 w-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
+        
         <div class="p-0 divide-y divide-gray-200 dark:divide-gray-700">
-            <button onclick="showReactionPicker()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+            <button onclick="showReactionPicker()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-500 dark:hover:text-purple-400 text-gray-700 dark:text-gray-300 transition-colors">
                 React
             </button>
-            <button onclick="editMessage()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+            <button onclick="editMessage()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-500 dark:hover:text-purple-400 text-gray-700 dark:text-gray-300 transition-colors">
                 Edit
             </button>
-            <button onclick="deleteMessage()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-red-500">
+            <button onclick="deleteMessage()" class="w-full text-left py-3 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-red-500 transition-colors">
                 Delete
             </button>
-            <button onclick="closeMessageOptions()" class="w-full text-center py-3 text-sm text-gray-500">
+            <button onclick="closeMessageOptions()" class="w-full text-center py-3 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 Cancel
             </button>
         </div>
@@ -176,8 +187,11 @@
 </div>
 
 <!-- Reaction Picker Modal -->
-<div id="reactionPickerModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl shadow-lg">
+<div id="reactionPickerModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden">
+        <!-- Gradient accent line at top -->
+        <div class="h-1 w-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
+        
         <div class="p-3">
             <div class="flex justify-around text-2xl">
                 <button onclick="addReaction('❤️')" class="p-2 hover:scale-125 transition-transform">❤️</button>
@@ -192,25 +206,31 @@
 </div>
 
 <!-- Media Preview -->
-<div id="mediaPreview" class="fixed bottom-20 left-0 right-0 bg-white dark:bg-gray-900 p-4 hidden">
+<div id="mediaPreview" class="fixed bottom-20 left-0 right-0 bg-white dark:bg-gray-900 p-4 hidden shadow-lg">
+    <!-- Gradient accent line at top -->
+    <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+    
     <div class="flex items-center justify-between">
         <div id="previewContent" class="flex-1"></div>
-        <button id="cancelMedia" class="ml-4 text-red-500">
+        <button id="cancelMedia" class="ml-4 text-red-500 hover:text-red-600 transition-colors">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
 <!-- Voice Recording Controls (Hidden by default) -->
-<div id="voiceControls" class="fixed bottom-20 left-0 right-0 bg-white dark:bg-gray-900 p-4 hidden">
+<div id="voiceControls" class="fixed bottom-20 left-0 right-0 bg-white dark:bg-gray-900 p-4 hidden shadow-lg">
+    <!-- Gradient accent line at top -->
+    <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+    
     <div class="flex items-center justify-between max-w-4xl mx-auto">
-        <button id="cancelRecording" class="p-2 text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+        <button id="cancelRecording" class="p-2 text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <i class="fas fa-trash"></i>
         </button>
         <div class="flex-1 flex items-center justify-center">
             <div id="waveform" class="w-full h-12"></div>
         </div>
-        <button id="sendRecording" class="p-2 text-blue-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+        <button id="sendRecording" class="p-2 text-blue-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
@@ -275,7 +295,7 @@ function createMessageHTML(message) {
     // Special handling for story replies
     if (message.isStoryReply) {
         return `
-            <div class="relative max-w-[70%] ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3" data-message-id="${message._id}">
+            <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
                 <!-- Story reply text first -->
                 <div class="story-reply mb-1 text-sm font-semibold ${isSender ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'}">
                     ${isSender ? 'Replied to their story' : 'Replied to your story'}
@@ -330,7 +350,7 @@ function createMessageHTML(message) {
     
     // Regular messages (unchanged)
     return `
-        <div class="relative max-w-[70%] ${isSender ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3" data-message-id="${message._id}">
+        <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
             ${message.mediaType !== 'none' && message.mediaUrl ? `
                 ${message.mediaType === 'image' ? 
                     `<img src="${message.mediaUrl}" alt="Shared image" class="max-w-full rounded-lg mb-2">` :
@@ -892,18 +912,277 @@ scrollToBottom();
 // Update reaction bubble styling
 document.head.insertAdjacentHTML('beforeend', `
 <style>
+/* Story ring gradient */
+.story-ring {
+    background: linear-gradient(45deg, #3B82F6 0%, #6366F1 50%, #A855F7 100%);
+    border-radius: 50%;
+}
+
+/* Add Instagram-style styling */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Toast animation */
+@keyframes slideUp {
+    from { transform: translate(-50%, 100%); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.toast-show {
+    animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Recording dot animation */
+.recording-dot {
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(45deg, #f56565, #e53e3e);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Message bubble hover effect */
+.message-bubble {
+    transition: all 0.2s ease;
+}
+
+.message-bubble:hover {
+    /* Removing the scale effect */
+    /* transform: scale(1.02); */
+}
+
+/* Reactions styling */
 .reaction-bubble {
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
     border-radius: 1rem;
     padding: 0.2rem 0.4rem;
     z-index: 10;
     display: inline-block;
     font-size: 1.25rem;
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+    animation: bounceIn 0.3s ease-out;
 }
 
+@keyframes bounceIn {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Audio player styling with gradient */
+.audio-player .waveform {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.audio-player .waveform::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+    animation: wave 2s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.audio-player.playing .waveform::before {
+    opacity: 1;
+}
+
+.audio-player .play-btn {
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.audio-player .play-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+}
+
+.audio-player .progress-bar {
+    position: relative;
+}
+
+.audio-player .progress-bar::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #fff;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.audio-player.playing .progress-bar::after {
+    opacity: 1;
+}
+
+@keyframes wave {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Instagram-style ripple effect for button clicks */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+    border-radius: 50%;
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    to {
+        transform: translate(-50%, -50%) scale(3);
+        opacity: 0;
+    }
+}
+
+/* Instagram glass-morphism effect for modals */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient text */
+.gradient-text {
+    background: linear-gradient(to right, #3B82F6, #A855F7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Shimmer effect for loading states */
+.shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.2) 20%,
+        rgba(255, 255, 255, 0.5) 60%,
+        rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Call button pulse effect */
+#callButton {
+    position: relative;
+}
+
+#callButton::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(45deg, #3B82F6, #A855F7);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.7;
+    animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Message input focus effect */
+#messageInput:focus {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Make scrollbar more stylish */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #3B82F6, #A855F7);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #2563EB, #9333EA);
+}
+
+/* Message text style */
 .message-text {
     word-break: break-word;
+}
+
+/* Media size constraints for chat messages */
+.max-w-full {
+    max-width: 200px !important; /* Limit image/video width */
+    max-height: 200px !important; /* Limit image/video height */
+    object-fit: contain !important; /* Maintain aspect ratio */
 }
 </style>
 `);
@@ -1498,6 +1777,120 @@ document.querySelectorAll('[data-message-id]').forEach(messageEl => {
         const storyId = deleteBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
         if (storyId) {
             messageEl.setAttribute('data-story-id', storyId);
+        }
+    }
+});
+
+// Add ripple effect to buttons
+document.querySelectorAll('button').forEach(button => {
+    button.classList.add('ripple');
+    
+    button.addEventListener('click', function(e) {
+        // Remove existing ripple elements
+        const ripples = button.querySelectorAll('.ripple-element');
+        ripples.forEach(ripple => ripple.remove());
+        
+        // Create new ripple element
+        const rippleEl = document.createElement('span');
+        rippleEl.classList.add('ripple-element');
+        button.appendChild(rippleEl);
+        
+        // Position the ripple
+        const rect = button.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        rippleEl.style.width = rippleEl.style.height = `${size}px`;
+        rippleEl.style.left = `${e.clientX - rect.left - size/2}px`;
+        rippleEl.style.top = `${e.clientY - rect.top - size/2}px`;
+        
+        // Remove after animation completes
+        setTimeout(() => {
+            rippleEl.remove();
+        }, 600);
+    });
+});
+
+// Add styles for the ripple element
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+    .ripple {
+        position: relative;
+        overflow: hidden;
+    }
+    .ripple-element {
+        position: absolute;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.7);
+        transform: scale(0);
+        animation: ripple-animation 0.6s linear;
+        pointer-events: none;
+    }
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(styleEl);
+
+// Add message bubble hover effect
+document.querySelectorAll('[data-message-id]').forEach(message => {
+    message.classList.add('message-bubble');
+});
+
+// Apply glass-effect to modals
+document.querySelectorAll('#messageOptionsModal > div, #reactionPickerModal > div, #mediaPreview, #voiceControls').forEach(modal => {
+    modal.classList.add('glass-effect');
+});
+
+// Add shimmer effect to loading states 
+function addShimmerToLoading() {
+    const waveforms = document.querySelectorAll('.waveform');
+    waveforms.forEach(waveform => {
+        waveform.classList.add('shimmer');
+    });
+}
+
+// Add gradient text effect to appropriate elements
+document.querySelectorAll('#typingStatus, .story-reply').forEach(element => {
+    element.classList.add('gradient-text');
+});
+
+// Enhance message bubbles with ripple effect on click
+document.querySelectorAll('[data-message-id]').forEach(message => {
+    message.addEventListener('click', function(e) {
+        if (e.target.closest('button')) return; // Don't trigger if clicking a button inside
+        
+        // Add ripple effect
+        const ripple = document.createElement('div');
+        ripple.className = 'absolute inset-0 bg-white bg-opacity-10 rounded-lg transform scale-0 origin-center';
+        message.appendChild(ripple);
+        
+        // Animate the ripple
+        requestAnimationFrame(() => {
+            ripple.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+            ripple.style.transform = 'scale(1)';
+            ripple.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                ripple.style.opacity = '0';
+                setTimeout(() => ripple.remove(), 400);
+            }, 200);
+        });
+    });
+});
+
+// Initialize audio players with enhanced visuals
+document.querySelectorAll('.audio-player').forEach(player => {
+    // Apply gradient to audio player waveforms
+    const waveform = player.querySelector('.waveform');
+    if (waveform) {
+        waveform.classList.add('bg-gradient-to-r', 'from-blue-500/10', 'to-purple-600/10');
+        
+        // Update progress bar with gradient
+        const progressBar = waveform.querySelector('.progress-bar');
+        if (progressBar) {
+            progressBar.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-purple-600');
         }
     }
 });

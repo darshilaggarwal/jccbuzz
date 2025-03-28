@@ -2,7 +2,7 @@
 
 <!-- Toast notification for message status -->
 <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-full transition-all duration-300 z-50 opacity-0">
-    <div class="bg-black bg-opacity-75 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-sm">
+    <div class="bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-sm">
         <span id="toast-message" class="font-medium text-sm"></span>
     </div>
 </div>
@@ -13,22 +13,22 @@
     <div class="sticky top-0 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 z-30 px-4 py-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center">
-                <h1 class="text-xl font-bold text-gray-800 dark:text-white">Messages</h1>
-                <span class="ml-1 text-sm font-normal text-blue-500">
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Messages</h1>
+                <span class="ml-1 text-sm font-normal bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
                     <% const unreadCount = chats.reduce((total, chat) => {
                         return total + (chat.unreadCount || 0);
                     }, 0); %>
                     <%= unreadCount > 0 ? `(${unreadCount})` : '' %>
                 </span>
             </div>
-            <div class="flex items-center">
-                <a href="/groups" class="text-blue-500 hover:text-blue-600 mr-4">
+            <!-- <div class="flex items-center">
+                <a href="/groups" class="text-blue-500 hover:text-purple-600 mr-4 transition-colors">
                     <i class="fas fa-users text-lg" title="Group Chats"></i>
                 </a>
-                <button id="newMessageBtn" class="text-blue-500 hover:text-blue-600">
-                    <i class="fas fa-edit text-lg"></i>
+                <button id="newMessageBtn" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-2 rounded-full hover:shadow-lg transition-shadow">
+                    <i class="fas fa-edit text-sm"></i>
                 </button>
-            </div>
+            </div> -->
         </div>
         
         <!-- Search Bar -->
@@ -36,7 +36,7 @@
             <input type="text" 
                    id="searchChats" 
                    placeholder="Search messages" 
-                   class="w-full py-2 pl-10 pr-4 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white text-sm">
+                   class="w-full py-2.5 pl-10 pr-4 border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white text-sm">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fas fa-search text-gray-400"></i>
             </div>
@@ -44,25 +44,25 @@
         
         <!-- Filter Options (Primary/General) -->
         <div class="flex mt-3 border-b border-gray-200 dark:border-gray-800">
-            <button class="flex-1 text-center py-2 border-b-2 border-blue-500 text-blue-500 font-medium">
+            <button id="primaryFilterBtn" class="flex-1 text-center py-2 border-b-2 border-blue-500 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 font-medium focus:outline-none">
                 Primary
             </button>
-            <button class="flex-1 text-center py-2 border-b-2 border-transparent text-gray-500 dark:text-gray-400">
+            <button id="generalFilterBtn" class="flex-1 text-center py-2 border-b-2 border-transparent text-gray-500 dark:text-gray-400 focus:outline-none">
                 General
             </button>
         </div>
     </div>
     
     <!-- Chat List -->
-    <div class="divide-y divide-gray-200 dark:divide-gray-800">
+    <div id="chatListContainer" class="divide-y divide-gray-100 dark:divide-gray-800">
         <% if (chats.length === 0) { %>
-            <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                    <i class="fas fa-paper-plane text-gray-400 text-xl"></i>
+            <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-5 shadow-md">
+                    <i class="fas fa-paper-plane text-white text-2xl"></i>
                 </div>
-                <h3 class="text-gray-800 dark:text-white font-medium mb-2">No messages yet</h3>
+                <h3 class="text-gray-800 dark:text-white font-medium mb-3 text-lg">No messages yet</h3>
                 <p class="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
-                        When you send or receive messages, they'll appear here. Start a conversation by tapping the edit button above.
+                    When you send or receive messages, they'll appear here. Start a conversation by tapping the edit button above.
                 </p>
             </div>
         <% } else { %>
@@ -89,14 +89,14 @@
                     }
                 %>
                 <a href="/chat/<%= otherUser._id %>" 
-                   class="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
-                    <div class="relative">
+                   class="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors relative <%= hasUnread ? 'bg-blue-50 dark:bg-blue-900/10' : '' %> chat-item group">
+                    <div class="relative flex-shrink-0">
                         <!-- Story ring if user has active story -->
-                        <div class="<%= otherUser.hasActiveStory ? 'story-ring p-[2px]' : '' %> rounded-full">
+                        <div class="<%= otherUser.hasActiveStory ? 'story-ring p-[1px]' : '' %> rounded-full">
                             <div class="bg-white dark:bg-black <%= otherUser.hasActiveStory ? 'p-[1px]' : '' %> rounded-full">
                                 <img src="<%= otherUser.profileImage %>" 
                                      alt="Profile" 
-                                     class="w-14 h-14 rounded-full object-cover">
+                                     class="w-12 h-12 rounded-full object-cover">
                             </div>
                         </div>
                         
@@ -113,7 +113,7 @@
                         </div>
                         
                         <div class="flex justify-between items-center mt-1">
-                            <p class="text-sm <%= hasUnread ? 'font-semibold text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400' %> truncate">
+                            <p class="text-sm <%= hasUnread ? 'font-semibold text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400' %> truncate max-w-[85%]">
                                 <% if (lastMessage) { %>
                                     <% if (lastMessage.sender._id.toString() === user._id.toString()) { %>
                                         <span class="text-gray-400 dark:text-gray-500">You: </span>
@@ -130,16 +130,32 @@
                             </p>
                             
                             <% if (hasUnread) { %>
-                                <span class="ml-2 w-5 h-5 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center flex-shrink-0">
+                                <span class="ml-2 min-w-5 h-5 px-1.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full text-white text-xs flex items-center justify-center flex-shrink-0">
                                     <%= chat.unreadCount > 9 ? '9+' : chat.unreadCount %>
                                 </span>
                             <% } %>
                         </div>
                     </div>
+                    
+                    <!-- Three dots menu button (visible on hover) -->
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="chat-menu-btn p-1.5 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors" 
+                                data-chat-id="<%= chat._id %>" 
+                                data-other-user-name="<%= otherUser.name %>"
+                                data-other-user-id="<%= otherUser._id %>"
+                                onclick="event.preventDefault(); showChatMenu(this);">
+                            <i class="fas fa-ellipsis-h text-gray-500 dark:text-gray-400"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Subtle accent line when unread -->
+                    <% if (hasUnread) { %>
+                        <div class="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-purple-600 rounded-r-md"></div>
+                    <% } %>
                 </a>
                 <% } else { %>
                 <div class="flex items-center p-4 text-gray-500 dark:text-gray-400">
-                    <div class="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
                         <i class="fas fa-user text-gray-400 dark:text-gray-500"></i>
                     </div>
                     <div class="ml-3">
@@ -153,28 +169,85 @@
     </div>
     
     <!-- New Message Modal -->
-    <div id="newMessageModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-        <div class="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full mx-auto mt-20 overflow-hidden">
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <button id="closeNewMessageModal" class="text-gray-500 dark:text-gray-400">
+    <div id="newMessageModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden">
+        <div class="bg-white dark:bg-gray-900 rounded-xl max-w-lg w-full mx-auto mt-20 overflow-hidden shadow-xl">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center relative">
+                <!-- Gradient accent line at top -->
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+                
+                <button id="closeNewMessageModal" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">New Message</h3>
+                <h3 class="text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">New Message</h3>
                 <div class="w-6"></div> <!-- Empty div for flex alignment -->
             </div>
             
             <div class="p-4">
                 <div class="relative mb-4">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
                     <input type="text" 
                            id="searchUsers" 
                            placeholder="Search users..." 
-                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                           class="w-full pl-10 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
                 </div>
                 
-                <div id="userSearchResults" class="max-h-72 overflow-y-auto">
-                    <!-- Results will appear here -->
+                <div id="userSearchResults" class="max-h-72 overflow-y-auto rounded-lg">
+                    <!-- Default message -->
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-6">
+                        <div class="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-search text-gray-400 text-xl"></i>
+                        </div>
+                        <p>Search for users to message</p>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Options Modal -->
+<div id="chatOptionsModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-64 mb-16 bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg">
+        <!-- Gradient accent line at top -->
+        <div class="h-1 w-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
+        
+        <!-- Chat name header -->
+        <div class="p-3 border-b border-gray-200 dark:border-gray-800">
+            <h3 id="chatOptionsTitle" class="text-center font-medium text-sm text-gray-800 dark:text-white truncate"></h3>
+        </div>
+        
+        <div class="p-0 divide-y divide-gray-200 dark:divide-gray-700">
+            <button id="moveToGeneralBtn" class="w-full text-left py-2.5 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-500 dark:hover:text-purple-400 text-gray-700 dark:text-gray-300 transition-colors">
+                <i class="fas fa-exchange-alt mr-2"></i> <span id="moveToGeneralText">Move to General</span>
+            </button>
+            <button id="deleteChatBtn" class="w-full text-left py-2.5 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-red-500 transition-colors">
+                <i class="fas fa-trash mr-2"></i> Delete chat
+            </button>
+            <button id="closeChatOptionsBtn" class="w-full text-center py-2.5 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl max-w-xs w-full p-4 shadow-xl">
+        <!-- Gradient accent line at top -->
+        <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+        
+        <h3 class="text-lg font-medium text-center text-gray-800 dark:text-white mb-2">Delete Chat</h3>
+        <p class="text-gray-500 dark:text-gray-400 text-center text-sm mb-4">Are you sure you want to delete this chat?</p>
+        
+        <div class="flex justify-center space-x-3">
+            <button id="cancelDeleteBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                Cancel
+            </button>
+            <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                Delete
+            </button>
         </div>
     </div>
 </div>
@@ -182,7 +255,8 @@
 <style>
 /* Story ring gradient */
 .story-ring {
-    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    background: linear-gradient(45deg, #3B82F6 0%, #6366F1 50%, #A855F7 100%);
+    border-radius: 50%;
 }
 
 /* Animations */
@@ -204,9 +278,186 @@
 .toast-show {
     animation: slideUp 0.3s ease-out forwards;
 }
+
+/* Gradient text for various elements */
+.gradient-text {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, #3B82F6, #A855F7);
+}
+
+/* Loading spinner with gradient */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: transparent;
+    border-right-color: #3B82F6;
+    border-bottom-color: #A855F7;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Instagram-style ripple effect for active items */
+.chat-item-active {
+    position: relative;
+    overflow: hidden;
+}
+
+.chat-item-active::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+    border-radius: 50%;
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    to {
+        transform: translate(-50%, -50%) scale(3);
+        opacity: 0;
+    }
+}
+
+/* Chat menu styles */
+.chat-item {
+    position: relative;
+}
+
+.chat-menu-btn {
+    z-index: 10;
+}
+
+/* Hover effect to show menu */
+.chat-item .chat-menu-btn {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.chat-item:hover .chat-menu-btn {
+    opacity: 1;
+}
+
+.chat-item, button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.chat-item:focus, button:focus {
+    outline: none !important;
+}
+
+/* Fix for mobile tap highlight */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Remove focus outlines */
+*:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
 </style>
 
 <script>
+// Track chat categories in memory - global scope so showChatMenu can access it
+let generalChatIds = [];
+let allChats = [];
+let primaryFilterBtn, generalFilterBtn;
+let chatListContainer;
+let currentChatId = null;
+let currentOtherUserId = null;
+
+// Function to save general chat IDs to localStorage - global scope
+function saveGeneralChats() {
+    localStorage.setItem('generalChatIds', JSON.stringify(generalChatIds));
+}
+
+// Function to attach chat menu event listeners - global scope
+function attachChatMenuListeners() {
+    // Add menu button click handlers
+    document.querySelectorAll('.chat-menu-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            showChatMenu(this);
+        });
+    });
+    
+    // Add active state effect on chat items
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.addEventListener('click', function() {
+            this.classList.add('chat-item-active');
+        });
+    });
+}
+
+// Function to refresh the chat list based on filter - global scope
+function refreshChatList(showGeneral = false) {
+    if (!chatListContainer) {
+        chatListContainer = document.getElementById('chatListContainer');
+    }
+    
+    // Clear the container
+    chatListContainer.innerHTML = '';
+    
+    // Get chats to show based on filter
+    const chatsToShow = allChats.filter(chat => 
+        showGeneral ? generalChatIds.includes(chat.id) : !generalChatIds.includes(chat.id)
+    );
+    
+    if (chatsToShow.length > 0) {
+        // Add chats to the container
+        chatsToShow.forEach(chat => {
+            const clone = chat.element.cloneNode(true);
+            // Update general-category class based on current state
+            if (generalChatIds.includes(chat.id)) {
+                clone.classList.add('general-category');
+            } else {
+                clone.classList.remove('general-category');
+            }
+            chatListContainer.appendChild(clone);
+        });
+    } else {
+        // No chats found - show empty state
+        const emptyMessage = showGeneral ? 
+            `<div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-5 shadow-md">
+                    <i class="fas fa-inbox text-white text-2xl"></i>
+                </div>
+                <h3 class="text-gray-800 dark:text-white font-medium mb-3 text-lg">No chats in General</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
+                    You can move conversations to General to keep your Primary inbox focused.
+                </p>
+            </div>` :
+            `<div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-5 shadow-md">
+                    <i class="fas fa-paper-plane text-white text-2xl"></i>
+                </div>
+                <h3 class="text-gray-800 dark:text-white font-medium mb-3 text-lg">No messages in Primary</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
+                    All your conversations are in the General tab.
+                </p>
+            </div>`;
+        
+        chatListContainer.innerHTML = emptyMessage;
+    }
+    
+    // Re-attach event listeners for new DOM elements
+    attachChatMenuListeners();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Search functionality for chats
     const searchInput = document.getElementById('searchChats');
@@ -227,6 +478,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Add active state effect on chat items
+    document.querySelectorAll('.divide-y > a').forEach(item => {
+        item.addEventListener('click', function() {
+            this.classList.add('chat-item-active');
+        });
+    });
+    
     // New Message Modal
     const newMessageBtn = document.getElementById('newMessageBtn');
     const newMessageModal = document.getElementById('newMessageModal');
@@ -234,82 +492,192 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchUsers = document.getElementById('searchUsers');
     const userSearchResults = document.getElementById('userSearchResults');
     
-    newMessageBtn.addEventListener('click', function() {
-        newMessageModal.classList.remove('hidden');
-        searchUsers.focus();
-    });
+    if (newMessageBtn) {
+        newMessageBtn.addEventListener('click', function() {
+            newMessageModal.classList.remove('hidden');
+            searchUsers.focus();
+        });
+    }
     
-    closeNewMessageModal.addEventListener('click', function() {
-        newMessageModal.classList.add('hidden');
-    });
+    if (closeNewMessageModal) {
+        closeNewMessageModal.addEventListener('click', function() {
+            newMessageModal.classList.add('hidden');
+        });
+    }
     
     // Close modal when clicking outside
-    newMessageModal.addEventListener('click', function(e) {
-        if (e.target === newMessageModal) {
-            newMessageModal.classList.add('hidden');
-        }
-    });
+    if (newMessageModal) {
+        newMessageModal.addEventListener('click', function(e) {
+            if (e.target === newMessageModal) {
+                newMessageModal.classList.add('hidden');
+            }
+        });
+    }
     
     // Search users functionality
-    searchUsers.addEventListener('input', function() {
-        const searchTerm = this.value.trim();
-        
-        if (searchTerm.length < 2) {
-            userSearchResults.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Type at least 2 characters to search</div>';
-            return;
-        }
-        
-        // Show loading state
-        userSearchResults.innerHTML = '<div class="text-center py-4"><div class="spinner"></div></div>';
-        
-        // Fetch users
-        fetch(`/api/search-users?q=${encodeURIComponent(searchTerm)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (!data.users || data.users.length === 0) {
-                    userSearchResults.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">No users found</div>';
-                    return;
-                }
-                
-                let resultsHTML = '';
-                data.users.forEach(user => {
-                    resultsHTML += `
-                        <a href="/chat/${user._id}" class="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg mb-1">
-                            <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
-                            <div class="ml-3">
-                                <h4 class="font-medium text-gray-800 dark:text-white">${user.name}</h4>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">@${user.username}</p>
+    if (searchUsers) {
+        searchUsers.addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            
+            if (searchTerm.length < 2) {
+                userSearchResults.innerHTML = `
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-6">
+                        <div class="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-search text-gray-400 text-xl"></i>
+                        </div>
+                        <p>Type at least 2 characters to search</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Show loading state
+            userSearchResults.innerHTML = `
+                <div class="text-center py-6">
+                    <div class="spinner mx-auto mb-3"></div>
+                    <p class="text-gray-500 dark:text-gray-400">Searching users...</p>
+                </div>
+            `;
+            
+            // Fetch users
+            fetch(`/api/search-users?q=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.users || data.users.length === 0) {
+                        userSearchResults.innerHTML = `
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-6">
+                                <div class="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fas fa-user-slash text-gray-400 text-xl"></i>
+                                </div>
+                                <p>No users found matching "${searchTerm}"</p>
                             </div>
-                        </a>
+                        `;
+                        return;
+                    }
+                    
+                    let resultsHTML = '';
+                    data.users.forEach(user => {
+                        resultsHTML += `
+                            <a href="/chat/${user._id}" class="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg mb-1 transition-colors">
+                                <div class="relative flex-shrink-0">
+                                    <div class="${user.hasActiveStory ? 'story-ring p-[1px]' : ''} rounded-full">
+                                        <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
+                                    </div>
+                                    ${user.isOnline ? '<div class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white dark:border-black"></div>' : ''}
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="font-medium text-gray-800 dark:text-white">${user.name}</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">@${user.username}</p>
+                                </div>
+                            </a>
+                        `;
+                    });
+                    
+                    userSearchResults.innerHTML = resultsHTML;
+                })
+                .catch(error => {
+                    console.error('Error searching users:', error);
+                    userSearchResults.innerHTML = `
+                        <div class="text-center py-6">
+                            <div class="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                            </div>
+                            <p class="text-red-500">Error searching users</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Please try again later</p>
+                        </div>
                     `;
                 });
-                
-                userSearchResults.innerHTML = resultsHTML;
-            })
-            .catch(error => {
-                console.error('Error searching users:', error);
-                userSearchResults.innerHTML = '<div class="text-center text-red-500 py-4">Error searching users</div>';
-            });
-    });
-    
-    // Toast notification function
-    window.showToast = function(message) {
-        const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toast-message');
-        
-        toastMessage.innerHTML = message;
-        toast.classList.remove('translate-y-full', 'opacity-0');
-        toast.classList.add('translate-y-0', 'opacity-100');
-        
-        // Hide after 3 seconds
-        setTimeout(() => {
-            toast.classList.remove('translate-y-0', 'opacity-100');
-            toast.classList.add('translate-y-full', 'opacity-0');
-        }, 3000);
-    };
+        });
+    }
     
     // Initialize socket connection for real-time updates
     initializeSocketConnection();
+
+    // Filter functionality for Primary/General
+    primaryFilterBtn = document.getElementById('primaryFilterBtn');
+    generalFilterBtn = document.getElementById('generalFilterBtn');
+    chatListContainer = document.getElementById('chatListContainer');
+
+    // Load general chat IDs from localStorage on page load
+    const savedGeneralChats = localStorage.getItem('generalChatIds');
+    if (savedGeneralChats) {
+        try {
+            generalChatIds = JSON.parse(savedGeneralChats);
+        } catch (e) {
+            console.error('Error parsing saved general chats:', e);
+            generalChatIds = [];
+        }
+    }
+
+    // Initial state - collect all chats and store them
+    document.querySelectorAll('.chat-item').forEach(chat => {
+        const chatMenuBtn = chat.querySelector('.chat-menu-btn');
+        if (!chatMenuBtn) return; // Skip if no menu button
+        
+        const chatId = chatMenuBtn.getAttribute('data-chat-id');
+        // Check if this chat should be in general based on localStorage
+        const isGeneral = generalChatIds.includes(chatId);
+        
+        // Update UI to match saved state
+        if (isGeneral) {
+            chat.classList.add('general-category');
+            
+            // Hide general chats if we're on the primary tab (default)
+            if (primaryFilterBtn.classList.contains('border-blue-500')) {
+                chat.style.display = 'none';
+            }
+        } else {
+            chat.classList.remove('general-category');
+        }
+        
+        const chatData = {
+            element: chat.cloneNode(true),
+            id: chatId,
+            isGeneral: isGeneral
+        };
+        
+        allChats.push(chatData);
+    });
+
+    // Check if we should start in General tab based on URL hash
+    if (window.location.hash === '#general') {
+        // Switch to General tab programmatically
+        generalFilterBtn.click();
+    }
+
+    // Function to toggle active filter state
+    function toggleFilter(activeButton, inactiveButton) {
+        // Update button styles
+        activeButton.classList.add('border-blue-500', 'text-transparent', 'bg-clip-text', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-600', 'font-medium');
+        activeButton.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+        
+        inactiveButton.classList.remove('border-blue-500', 'text-transparent', 'bg-clip-text', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-600', 'font-medium');
+        inactiveButton.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+    }
+
+    // Primary filter
+    primaryFilterBtn.addEventListener('click', function() {
+        toggleFilter(primaryFilterBtn, generalFilterBtn);
+        refreshChatList(false); // Show primary chats
+        // Update URL hash
+        window.location.hash = '';
+    });
+
+    // General filter
+    generalFilterBtn.addEventListener('click', function() {
+        toggleFilter(generalFilterBtn, primaryFilterBtn);
+        refreshChatList(true); // Show general chats
+        // Update URL hash
+        window.location.hash = 'general';
+    });
+    
+    // Run attachChatMenuListeners on page load
+    attachChatMenuListeners();
+    
+    // Fix for browser outlines
+    document.querySelectorAll('a, button, input, .chat-item').forEach(element => {
+        element.classList.add('focus:outline-none');
+    });
 });
 
 // Socket connection for real-time updates
@@ -338,6 +706,193 @@ function initializeSocketConnection() {
         console.log('User online:', data);
     });
 }
+
+// Chat options functionality
+function showChatMenu(button) {
+    // Get chat information from data attributes
+    currentChatId = button.getAttribute('data-chat-id');
+    const otherUserName = button.getAttribute('data-other-user-name');
+    currentOtherUserId = button.getAttribute('data-other-user-id');
+    
+    // Set the title in the modal
+    document.getElementById('chatOptionsTitle').textContent = otherUserName;
+    
+    // Check if chat is in general based on our tracking array
+    const isInGeneral = generalChatIds.includes(currentChatId);
+    document.getElementById('moveToGeneralText').textContent = isInGeneral ? 'Move to Primary' : 'Move to General';
+    
+    // Show the modal
+    document.getElementById('chatOptionsModal').classList.remove('hidden');
+}
+
+document.getElementById('closeChatOptionsBtn').addEventListener('click', function() {
+    document.getElementById('chatOptionsModal').classList.add('hidden');
+});
+
+// Close modal when clicking outside
+document.getElementById('chatOptionsModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+});
+
+// Move to General functionality
+document.getElementById('moveToGeneralBtn').addEventListener('click', function() {
+    if (!currentChatId) return;
+    
+    // Get the button text element
+    const btnText = this.querySelector('#moveToGeneralText');
+    const isInGeneral = btnText.textContent.includes('Move to Primary');
+    
+    // Show loading state
+    const originalHTML = this.innerHTML;
+    this.innerHTML = '<div class="spinner mx-auto"></div>';
+    this.disabled = true;
+    
+    // Simulate API call with timeout (client-side only)
+    setTimeout(() => {
+        // Hide the options modal
+        document.getElementById('chatOptionsModal').classList.add('hidden');
+        
+        // Find the chat item
+        const chatElement = document.querySelector(`[data-chat-id="${currentChatId}"]`).closest('.chat-item');
+        
+        if (chatElement) {
+            // Fade out animation
+            chatElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            chatElement.style.opacity = '0';
+            chatElement.style.transform = 'translateX(100px)';
+            
+            // Update our tracking arrays and refresh the view
+            setTimeout(() => {
+                if (isInGeneral) {
+                    // Move from General to Primary
+                    generalChatIds = generalChatIds.filter(id => id !== currentChatId);
+                    showToast('Chat moved to primary');
+                } else {
+                    // Move from Primary to General
+                    if (!generalChatIds.includes(currentChatId)) {
+                        generalChatIds.push(currentChatId);
+                    }
+                    showToast('Chat moved to general');
+                }
+                
+                // Save changes to localStorage
+                saveGeneralChats();
+                
+                // Update all chats array with latest state
+                allChats.forEach(chat => {
+                    if (chat.id === currentChatId) {
+                        chat.isGeneral = !isInGeneral;
+                        
+                        // Update the element to reflect new state
+                        if (chat.isGeneral) {
+                            chat.element.classList.add('general-category');
+                        } else {
+                            chat.element.classList.remove('general-category');
+                        }
+                    }
+                });
+                
+                // Refresh the current view
+                if (generalFilterBtn.classList.contains('border-blue-500')) {
+                    refreshChatList(true); // Refresh general tab
+                } else {
+                    refreshChatList(false); // Refresh primary tab
+                }
+            }, 300);
+        }
+        
+        // Re-enable the button with updated text for next time
+        this.disabled = false;
+        this.innerHTML = originalHTML;
+        btnText.textContent = isInGeneral ? 'Move to General' : 'Move to Primary';
+    }, 800);
+});
+
+// Delete chat button click
+document.getElementById('deleteChatBtn').addEventListener('click', function() {
+    // Close options modal and show delete confirmation
+    document.getElementById('chatOptionsModal').classList.add('hidden');
+    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+});
+
+// Cancel delete button
+document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+    document.getElementById('deleteConfirmModal').classList.add('hidden');
+});
+
+// Close delete modal when clicking outside
+document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+});
+
+// Confirm delete button
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (!currentChatId) return;
+    
+    // Show loading state
+    const originalHTML = this.innerHTML;
+    this.innerHTML = '<div class="spinner mx-auto"></div>';
+    this.disabled = true;
+    
+    // Simulate API call with timeout (client-side only)
+    setTimeout(() => {
+        // Hide the confirmation modal
+        document.getElementById('deleteConfirmModal').classList.add('hidden');
+        
+        // Find the chat element
+        const chatElement = document.querySelector(`[data-chat-id="${currentChatId}"]`).closest('.chat-item');
+        if (chatElement) {
+            // Fade out animation
+            chatElement.style.transition = 'opacity 0.3s ease';
+            chatElement.style.opacity = '0';
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                // Remove from our tracking arrays
+                generalChatIds = generalChatIds.filter(id => id !== currentChatId);
+                allChats = allChats.filter(chat => chat.id !== currentChatId);
+                
+                // Save changes to localStorage
+                saveGeneralChats();
+                
+                // Refresh the current view
+                if (generalFilterBtn.classList.contains('border-blue-500')) {
+                    refreshChatList(true);
+                } else {
+                    refreshChatList(false);
+                }
+                
+                showToast('Chat deleted successfully');
+            }, 300);
+        } else {
+            showToast('Chat deleted successfully');
+        }
+        
+        // Reset button state
+        this.disabled = false;
+        this.innerHTML = originalHTML;
+    }, 800);
+});
+
+// Toast notification function
+window.showToast = function(message) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    
+    toastMessage.innerHTML = message;
+    toast.classList.remove('translate-y-full', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-full', 'opacity-0');
+    }, 3000);
+};
 </script>
 
 </body>
