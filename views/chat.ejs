@@ -566,8 +566,8 @@ socket.on('connect', () => {
     console.log('✅ Socket connected with ID:', socket.id);
     
     // Authenticate immediately after connection
-    socket.emit('authenticate', userId);
-    
+socket.emit('authenticate', userId);
+
     // Join chat room
     socket.emit('joinChat', chatId);
     console.log('Joining chat room:', chatId);
@@ -686,7 +686,7 @@ socket.on('newMessage', (data) => {
             }
             
             // Scroll to bottom
-            scrollToBottom();
+        scrollToBottom();
         } else {
             console.log('Message not for this chat, ignoring');
         }

@@ -418,6 +418,89 @@
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
         }
+
+        /* Phone Feed Scrolling Animation */
+        @keyframes feed-scroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-200px); }
+        }
+
+        /* Stories Horizontal Scroll Animation */
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(-40px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Typing Animation */
+        .typing-animation {
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid transparent;
+            width: fit-content;
+            margin: 0 auto;
+            animation: typing 3s steps(25) 1s forwards, blink 0.8s infinite;
+        }
+
+        .typing-text {
+            opacity: 0;
+            animation: fadeTyping 3s forwards 2s;
+        }
+
+        .typing-cursor {
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink {
+            from, to { border-color: transparent; }
+            50% { border-color: white; }
+        }
+
+        @keyframes fadeTyping {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Like Button Animation */
+        .like-button {
+            position: relative;
+        }
+
+        .like-button:active svg {
+            transform: scale(1.5);
+            transition: transform 0.2s ease;
+        }
+
+        /* Notification Animation */
+        .notification-animation {
+            animation: notificationPopup 5s ease-in-out 3s forwards;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        @keyframes notificationPopup {
+            0% { opacity: 0; transform: translateY(-30px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        /* New Post Animation */
+        .new-post-animation {
+            animation: newPostAppear 4s ease-in-out 6s forwards;
+        }
+
+        @keyframes newPostAppear {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -527,9 +610,9 @@
                                 </svg>
                             </span>
                         </a>
-                        <a href="#how-it-works" class="relative px-8 py-3 rounded-full border-2 border-white/80 text-white backdrop-blur-sm hover:bg-white/10 transition-all font-medium text-base inline-flex items-center justify-center transform hover:scale-105 duration-300">
+                        <!-- <a href="#how-it-works" class="relative px-8 py-3 rounded-full border-2 border-white/80 text-white backdrop-blur-sm hover:bg-white/10 transition-all font-medium text-base inline-flex items-center justify-center transform hover:scale-105 duration-300">
                             How It Works
-                        </a>
+                        </a> -->
                     </div>
                 </div>
                 
@@ -564,9 +647,9 @@
                     <div class="absolute bottom-1/3 left-1/3 w-16 h-16 rounded-full border-2 border-white opacity-20 animate-ping" style="animation-duration: 4s;"></div>
                     <div class="absolute top-1/4 right-1/5 w-10 h-10 rounded-full border-2 border-indigo-300 opacity-30 animate-ping" style="animation-duration: 5s; animation-delay: 0.7s;"></div>
                     
-                    <div class="relative mx-auto w-full max-w-md">
-                        <!-- 3D Phone Model with App Display -->
-                        <div class="relative z-10 overflow-hidden rounded-2xl shadow-[0_20px_60px_-10px_rgba(86,59,255,0.6)] transform rotate-1 hover:rotate-0 transition-all duration-500 hover:scale-105 animate-float">
+                    <div class="relative mx-auto w-full max-w-md flex justify-center">
+                        <!-- 3D Phone Model with App Display - Reduced size to 85% of the container -->
+                        <div class="relative z-10 overflow-hidden rounded-2xl shadow-[0_20px_60px_-10px_rgba(86,59,255,0.6)] transform rotate-1 hover:rotate-0 transition-all duration-500 hover:scale-103 animate-float w-[85%]">
                             <!-- Animated Ring Around Phone -->
                             <div class="absolute -inset-3 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-[50px] opacity-70 blur-lg animate-pulse"></div>
                             
@@ -627,11 +710,11 @@
                                                     </div>
                                                 </div>
                                                 
-                                                <!-- App Content - Feed - More colorful and vibrant -->
+                                                <!-- App Content - Feed with realistic animations -->
                                                 <div class="h-[87%] overflow-hidden py-2 bg-gradient-to-b from-indigo-50/50 to-white">
                                                     <!-- Stories - Enhanced with more vibrant gradients -->
                                                     <div class="px-2 pb-3">
-                                                        <div class="flex space-x-3 overflow-x-hidden px-1">
+                                                        <div class="flex space-x-3 overflow-x-hidden px-1 animate-[scroll_15s_linear_infinite]">
                                                             <div class="w-14 flex-shrink-0">
                                                                 <div class="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 p-[2px] animate-pulse" style="animation-duration: 3s">
                                                                     <div class="w-full h-full rounded-full bg-white border-2 border-white flex items-center justify-center">
@@ -667,69 +750,114 @@
                                                         </div>
                                                     </div>
                                                     
-                                                    <!-- Post 1 - Enhanced with more vibrant gradients and animations -->
-                                                    <div class="border-t border-gray-200 pt-3 pb-4">
-                                                        <div class="flex items-center px-3 pb-2">
-                                                            <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">JU</div>
-                                                            <div class="ml-2">
-                                                                <div class="font-semibold text-sm">University News</div>
-                                                                <div class="text-xs text-gray-500">5m ago</div>
+                                                    <!-- Scrolling Feed Animation -->
+                                                    <div class="feed-container h-[calc(100%-40px)] overflow-hidden">
+                                                        <div class="animate-[feed-scroll_20s_ease-in-out_infinite_alternate]">
+                                                            <!-- Post 1 - Enhanced with more vibrant gradients and animations -->
+                                                            <div class="border-t border-gray-200 pt-3 pb-4">
+                                                                <div class="flex items-center px-3 pb-2">
+                                                                    <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">JU</div>
+                                                                    <div class="ml-2">
+                                                                        <div class="font-semibold text-sm">University News</div>
+                                                                        <div class="text-xs text-gray-500">5m ago</div>
+                                                                    </div>
+                                                                    <div class="ml-auto">
+                                                                        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <!-- Animated Post Content -->
+                                                                <div class="h-44 bg-gradient-to-br from-indigo-500 to-purple-600 mx-3 rounded-xl flex items-center justify-center overflow-hidden relative shadow-md">
+                                                                    <!-- Animated party confetti -->
+                                                                    <div class="absolute top-2 left-4 text-xl animate-bounce" style="animation-duration: 1s">🎉</div>
+                                                                    <div class="absolute bottom-4 right-5 text-xl animate-bounce" style="animation-duration: 1.5s; animation-delay: 0.5s">🎊</div>
+                                                                    
+                                                                    <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-90"></div>
+                                                                    <span class="relative z-10 text-white font-bold text-2xl text-center px-4">Spring Campus Festival<br/><span class="text-base font-normal mt-2 inline-block typing-animation">This Weekend!</span></span>
+                                                                </div>
+                                                                
+                                                                <!-- Like Animation -->
+                                                                <div class="flex px-3 pt-3 items-center">
+                                                                    <div class="flex space-x-4">
+                                                                        <button class="flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity like-button">
+                                                                            <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                        <button class="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+                                                                            <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                                <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                        <button class="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+                                                                            <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                                <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="ml-auto text-xs font-medium text-indigo-600 like-count">128 likes</div>
+                                                                </div>
                                                             </div>
-                                                            <div class="ml-auto">
-                                                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                                </svg>
-                                                            </div>
-                                                        </div>
-                                                        <div class="h-44 bg-gradient-to-br from-indigo-500 to-purple-600 mx-3 rounded-xl flex items-center justify-center overflow-hidden relative shadow-md">
-                                                            <!-- Animated party confetti -->
-                                                            <div class="absolute top-2 left-4 text-xl animate-bounce" style="animation-duration: 1s">🎉</div>
-                                                            <div class="absolute bottom-4 right-5 text-xl animate-bounce" style="animation-duration: 1.5s; animation-delay: 0.5s">🎊</div>
                                                             
-                                                            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-90"></div>
-                                                            <span class="relative z-10 text-white font-bold text-2xl text-center px-4">Spring Campus Festival<br/><span class="text-base font-normal mt-2 inline-block">This Weekend!</span></span>
-                                                        </div>
-                                                        <div class="flex px-3 pt-3 items-center">
-                                                            <div class="flex space-x-4">
-                                                                <button class="flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                                                                    <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
-                                                                    </svg>
-                                                                </button>
-                                                                <button class="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
-                                                                    <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd"></path>
-                                                                    </svg>
-                                                                </button>
-                                                                <button class="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
-                                                                    <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"></path>
-                                                                    </svg>
-                                                                </button>
+                                                            <!-- Post 2 - With typing animation -->
+                                                            <div class="border-t border-gray-200 pt-3 mb-4">
+                                                                <div class="flex items-center px-3 pb-2">
+                                                                    <div class="w-9 h-9 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">SC</div>
+                                                                    <div class="ml-2">
+                                                                        <div class="font-semibold text-sm">Student Club</div>
+                                                                        <div class="text-xs text-gray-500">15m ago</div>
+                                                                    </div>
+                                                                    <div class="ml-auto">
+                                                                        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="h-20 mx-3 rounded-xl overflow-hidden relative shadow-md">
+                                                                    <div class="absolute inset-0 bg-gradient-to-r from-rose-400 via-fuchsia-500 to-pink-500"></div>
+                                                                    <div class="relative z-10 p-3">
+                                                                        <div class="text-white font-medium typing-text">Join us for Game Night this Friday! Bring your friends and have fun 🎮</div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <!-- Comment box with typing animation -->
+                                                                <div class="flex items-center px-3 pt-3">
+                                                                    <div class="relative w-full">
+                                                                        <input type="text" class="w-full rounded-full bg-gray-100 px-4 py-2 text-xs text-gray-800 pr-8 focus:outline-none" placeholder="Add a comment...">
+                                                                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 typing-cursor hidden">|</div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div class="ml-auto text-xs font-medium text-indigo-600">128 likes</div>
+                                                            
+                                                            <!-- Post 3 - New post animation -->
+                                                            <div class="border-t border-gray-200 pt-3 pb-4 new-post-animation" style="opacity: 0; transform: translateY(20px);">
+                                                                <div class="flex items-center px-3 pb-2">
+                                                                    <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">TG</div>
+                                                                    <div class="ml-2">
+                                                                        <div class="font-semibold text-sm">Tech Group</div>
+                                                                        <div class="text-xs text-gray-500">Just now</div>
+                                                                    </div>
+                                                                    <div class="ml-auto">
+                                                                        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="px-3">
+                                                                    <div class="text-gray-800 text-sm">Check out our new project on AI and Machine Learning! Demo next Tuesday.</div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     
-                                                    <!-- Post 2 (Partial) - Enhanced to match the first post style -->
-                                                    <div class="border-t border-gray-200 pt-3">
-                                                        <div class="flex items-center px-3 pb-2">
-                                                            <div class="w-9 h-9 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner">SC</div>
-                                                            <div class="ml-2">
-                                                                <div class="font-semibold text-sm">Student Club</div>
-                                                                <div class="text-xs text-gray-500">15m ago</div>
-                                                            </div>
-                                                            <div class="ml-auto">
-                                                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                                </svg>
-                                                            </div>
-                                                        </div>
-                                                        <div class="h-20 mx-3 rounded-xl overflow-hidden relative shadow-md">
-                                                            <div class="absolute inset-0 bg-gradient-to-r from-rose-400 via-fuchsia-500 to-pink-500"></div>
-                                                            <div class="relative z-10 p-3">
-                                                                <div class="text-white font-medium">Join us for Game Night this Friday! Bring your friends and have fun 🎮</div>
-                                                            </div>
+                                                    <!-- Notification Popup Animation -->
+                                                    <div class="notification-popup fixed top-[13%] w-[90%] mx-auto left-0 right-0 bg-white shadow-lg rounded-lg p-3 flex items-center z-30 notification-animation">
+                                                        <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">BF</div>
+                                                        <div class="ml-2 flex-grow">
+                                                            <div class="font-semibold text-xs">New message from Best Friend</div>
+                                                            <div class="text-xs text-gray-500 truncate">Are we meeting today?</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -965,10 +1093,10 @@
                                 <div class="bg-red-500 rounded-md p-3">
                                     <i class="fas fa-users text-white text-xl feature-icon"></i>
                                 </div>
-                                <h3 class="ml-3 text-lg font-medium text-gray-900">Study Groups</h3>
+                                <h3 class="ml-3 text-lg font-medium text-gray-900">Projects Hub</h3>
                             </div>
                             <p class="mt-4 text-base text-gray-500">
-                                Create and join study groups for your courses. Share notes, collaborate on projects, and ace your exams.
+                                Showcase your work, find collaborators, and discover innovative student projects. Connect with like-minded creators across campus.
                             </p>
                         </div>
                     </div>
@@ -1246,6 +1374,51 @@
             navbar.classList.remove('bg-transparent');
         } else {
             navbar.classList.remove('shadow-md');
+        }
+    });
+    
+    // 3D Phone Animations - Comment box typing simulation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Typing animation for the comment box
+        setTimeout(() => {
+            const typingCursor = document.querySelector('.typing-cursor');
+            const commentInput = typingCursor.previousElementSibling;
+            
+            if (typingCursor && commentInput) {
+                typingCursor.classList.remove('hidden');
+                
+                // Simulate typing
+                let text = "Great! Can't wait 😊";
+                let index = 0;
+                let typingInterval = setInterval(() => {
+                    if (index < text.length) {
+                        commentInput.value += text.charAt(index);
+                        index++;
+                    } else {
+                        clearInterval(typingInterval);
+                        setTimeout(() => {
+                            typingCursor.classList.add('hidden');
+                        }, 500);
+                    }
+                }, 100);
+            }
+        }, 5000); // Start typing after 5 seconds
+        
+        // Like button animation
+        const likeButton = document.querySelector('.like-button');
+        const likeCount = document.querySelector('.like-count');
+        
+        if (likeButton && likeCount) {
+            let liked = false;
+            setTimeout(() => {
+                likeButton.click();
+                liked = true;
+                likeCount.textContent = "129 likes";
+                likeButton.querySelector('svg').classList.add('scale-125');
+                setTimeout(() => {
+                    likeButton.querySelector('svg').classList.remove('scale-125');
+                }, 300);
+            }, 8000); // Like after 8 seconds
         }
     });
     
