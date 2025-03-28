@@ -1,0 +1,279 @@
+<!-- Share Post to Chat Modal -->
+<div id="sharePostModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl w-full max-w-md shadow-xl">
+        <!-- Gradient accent line at top -->
+        <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+        
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <button id="closeSharePostModal" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h3 class="text-lg font-semibold text-center bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent flex-1">Share Post</h3>
+            <div class="w-4"></div> <!-- Empty div for flex alignment -->
+        </div>
+        
+        <div class="p-4">
+            <div class="relative mb-4">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <input type="text" 
+                       id="searchShareRecipients" 
+                       placeholder="Search users..." 
+                       class="w-full pl-10 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
+            </div>
+            
+            <div id="shareRecipientsResults" class="max-h-72 overflow-y-auto rounded-lg">
+                <!-- Loading state initially -->
+                <div class="text-center py-4">
+                    <div class="spinner mx-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Share button to post actions -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add share to chat option
+    const actionBar = document.querySelector('.post-actions');
+    if (actionBar) {
+        const shareBtn = document.createElement('button');
+        shareBtn.className = 'text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors';
+        shareBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+        shareBtn.setAttribute('title', 'Share to chat');
+        shareBtn.onclick = function() {
+            openSharePostModal();
+        };
+        
+        // Insert after comment button
+        const commentBtn = actionBar.querySelector('.comment-btn');
+        if (commentBtn) {
+            commentBtn.parentNode.insertBefore(shareBtn, commentBtn.nextSibling);
+        } else {
+            actionBar.appendChild(shareBtn);
+        }
+    }
+    
+    // Share post modal functionality
+    const sharePostModal = document.getElementById('sharePostModal');
+    const closeSharePostModal = document.getElementById('closeSharePostModal');
+    const searchShareRecipients = document.getElementById('searchShareRecipients');
+    const shareRecipientsResults = document.getElementById('shareRecipientsResults');
+    
+    // Load recent contacts when modal opens
+    function openSharePostModal() {
+        sharePostModal.classList.remove('hidden');
+        loadRecentContacts();
+    }
+    
+    if (closeSharePostModal) {
+        closeSharePostModal.addEventListener('click', function() {
+            sharePostModal.classList.add('hidden');
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (sharePostModal) {
+        sharePostModal.addEventListener('click', function(e) {
+            if (e.target === sharePostModal) {
+                sharePostModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Load recent chat contacts
+    function loadRecentContacts() {
+        fetch('/api/chats/recent')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.chats || data.chats.length === 0) {
+                    shareRecipientsResults.innerHTML = `
+                        <div class="text-center text-gray-500 dark:text-gray-400 py-6">
+                            <div class="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-users text-gray-400 text-xl"></i>
+                            </div>
+                            <p>No recent conversations</p>
+                            <p class="text-xs mt-1">Search for users to share with</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let resultsHTML = '<div class="mb-2 px-2 text-xs text-gray-500 dark:text-gray-400">Recent</div>';
+                data.chats.forEach(chat => {
+                    const otherUser = chat.otherUser;
+                    resultsHTML += `
+                        <button onclick="sharePostToUser('${otherUser._id}', '${otherUser.username}')" 
+                                class="flex items-center w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg mb-1 transition-colors text-left">
+                            <div class="relative flex-shrink-0">
+                                <div class="${otherUser.hasActiveStory ? 'story-ring p-[1px]' : ''} rounded-full">
+                                    <img src="${otherUser.profileImage}" alt="${otherUser.name}" class="w-10 h-10 rounded-full object-cover">
+                                </div>
+                                ${otherUser.isOnline ? '<div class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white dark:border-black"></div>' : ''}
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="font-medium text-gray-800 dark:text-white">${otherUser.name}</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">@${otherUser.username}</p>
+                            </div>
+                        </button>
+                    `;
+                });
+                
+                shareRecipientsResults.innerHTML = resultsHTML;
+            })
+            .catch(error => {
+                console.error('Error loading recent contacts:', error);
+                shareRecipientsResults.innerHTML = `
+                    <div class="text-center py-6">
+                        <div class="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                        </div>
+                        <p class="text-red-500">Error loading contacts</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Please try again later</p>
+                    </div>
+                `;
+            });
+    }
+    
+    // Search functionality
+    if (searchShareRecipients) {
+        searchShareRecipients.addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            
+            if (searchTerm.length < 2) {
+                loadRecentContacts();
+                return;
+            }
+            
+            // Show loading state
+            shareRecipientsResults.innerHTML = `
+                <div class="text-center py-6">
+                    <div class="spinner mx-auto mb-3"></div>
+                    <p class="text-gray-500 dark:text-gray-400">Searching users...</p>
+                </div>
+            `;
+            
+            // Search users
+            fetch(`/api/search-users?q=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.users || data.users.length === 0) {
+                        shareRecipientsResults.innerHTML = `
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-6">
+                                <div class="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fas fa-user-slash text-gray-400 text-xl"></i>
+                                </div>
+                                <p>No users found matching "${searchTerm}"</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    let resultsHTML = '';
+                    data.users.forEach(user => {
+                        resultsHTML += `
+                            <button onclick="sharePostToUser('${user._id}', '${user.username}')" 
+                                    class="flex items-center w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg mb-1 transition-colors text-left">
+                                <div class="relative flex-shrink-0">
+                                    <div class="${user.hasActiveStory ? 'story-ring p-[1px]' : ''} rounded-full">
+                                        <img src="${user.profileImage}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover">
+                                    </div>
+                                    ${user.isOnline ? '<div class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white dark:border-black"></div>' : ''}
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="font-medium text-gray-800 dark:text-white">${user.name}</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">@${user.username}</p>
+                                </div>
+                            </button>
+                        `;
+                    });
+                    
+                    shareRecipientsResults.innerHTML = resultsHTML;
+                })
+                .catch(error => {
+                    console.error('Error searching users:', error);
+                    shareRecipientsResults.innerHTML = `
+                        <div class="text-center py-6">
+                            <div class="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                            </div>
+                            <p class="text-red-500">Error searching users</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Please try again later</p>
+                        </div>
+                    `;
+                });
+        });
+    }
+});
+
+// Function to share post to specific user
+function sharePostToUser(userId, username) {
+    // Get post ID from the page context
+    const postId = document.querySelector('[data-post-id]').getAttribute('data-post-id');
+    
+    // Show loading toast
+    showToast(`Sharing post to ${username}...`);
+    
+    // Hide modal
+    document.getElementById('sharePostModal').classList.add('hidden');
+    
+    // Make API call to share post
+    fetch('/api/posts/share', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            postId: postId,
+            recipientId: userId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Post shared to ${username}`);
+        } else {
+            showToast('Error: ' + (data.error || 'Failed to share post'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sharing post:', error);
+        showToast('Error sharing post');
+    });
+}
+
+// Toast notification function if not already defined
+if (typeof showToast !== 'function') {
+    window.showToast = function(message) {
+        // Check if toast element exists
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            // Create toast element if it doesn't exist
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-full transition-all duration-300 z-50 opacity-0';
+            toast.innerHTML = `
+                <div class="bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-sm">
+                    <span id="toast-message" class="font-medium text-sm"></span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+        }
+        
+        const toastMessage = document.getElementById('toast-message');
+        
+        // Set message and show toast
+        toastMessage.innerHTML = message;
+        toast.classList.remove('translate-y-full', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-full', 'opacity-0');
+        }, 3000);
+    };
+}
+</script> 

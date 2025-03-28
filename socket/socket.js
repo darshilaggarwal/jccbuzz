@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/user');
 const Group = require('../models/Group');
 const { createNotification } = require('../utils/notifications');
 const socketIO = require('socket.io');
@@ -26,7 +26,10 @@ function initSocket(server) {
                 userSockets.set(userId, socket.id);
                 try {
                     await User.findByIdAndUpdate(userId, { isOnline: true });
-                    socket.broadcast.emit('userOnline', { userId });
+                    
+                    // Broadcast to all clients about this user's online status
+                    // Use a consistent object format with userId property
+                    socket.broadcast.emit('userOnline', { userId: userId });
                     
                     // Automatically join user's own notification room
                     socket.join(`user:${userId}`);
@@ -154,11 +157,56 @@ function initSocket(server) {
 
             // Handle typing indicators
             socket.on('typing', (data) => {
-                const { chatId, isTyping } = data;
-                socket.to(`chat_${chatId}`).emit('typing', {
-                    userId,
-                    isTyping
+                const { receiverId, chatId, userId } = data;
+                console.log('Server received typing event:', data);
+                
+                // First, emit to the chat room
+                socket.to(`chat_${chatId}`).emit('userTyping', {
+                    userId: userId || socket.userId,
+                    chatId: chatId,
+                    timestamp: Date.now()
                 });
+                console.log(`Emitted 'userTyping' to chat room: chat_${chatId}`);
+                
+                // Also emit directly to the recipient for better reliability
+                if (receiverId && userSockets.has(receiverId)) {
+                    io.to(userSockets.get(receiverId)).emit('userTyping', {
+                        userId: userId || socket.userId, 
+                        chatId: chatId,
+                        timestamp: Date.now()
+                    });
+                    console.log(`Emitted 'userTyping' directly to user: ${receiverId}`);
+                } else if (receiverId) {
+                    console.log(`Recipient ${receiverId} is not online or doesn't have an active socket`);
+                }
+            });
+
+            // Handle voice recording status indicators
+            socket.on('recordingVoice', (data) => {
+                const { receiverId, chatId, userId, isRecording } = data;
+                console.log('Server received recording voice event:', data);
+                
+                // First, emit to the chat room
+                socket.to(`chat_${chatId}`).emit('userRecordingVoice', {
+                    userId: userId || socket.userId,
+                    chatId: chatId,
+                    isRecording: isRecording,
+                    timestamp: Date.now()
+                });
+                console.log(`Emitted 'userRecordingVoice' to chat room: chat_${chatId}`);
+                
+                // Also emit directly to the recipient for better reliability
+                if (receiverId && userSockets.has(receiverId)) {
+                    io.to(userSockets.get(receiverId)).emit('userRecordingVoice', {
+                        userId: userId || socket.userId, 
+                        chatId: chatId,
+                        isRecording: isRecording,
+                        timestamp: Date.now()
+                    });
+                    console.log(`Emitted 'userRecordingVoice' directly to user: ${receiverId}`);
+                } else if (receiverId) {
+                    console.log(`Recipient ${receiverId} is not online or doesn't have an active socket`);
+                }
             });
 
             // Handle group typing indicators
@@ -208,15 +256,92 @@ function initSocket(server) {
                 }
             });
 
+            // Handle direct chat messages (for real-time delivery)
+            socket.on('chatMessage', (data) => {
+                try {
+                    const { chatId, message, receiverId } = data;
+                    console.log(`Received chatMessage in room chat_${chatId}`, message);
+                    
+                    // Broadcast to everyone in the chat room except sender
+                    socket.to(`chat_${chatId}`).emit('newMessage', {
+                        chatId: chatId,
+                        message: message
+                    });
+                    
+                    // Also send directly to recipient for extra reliability
+                    if (receiverId && userSockets.has(receiverId)) {
+                        console.log(`Sending direct message to recipient ${receiverId}`);
+                        io.to(userSockets.get(receiverId)).emit('newMessage', {
+                            chatId: chatId,
+                            message: message
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error handling chat message:', error);
+                }
+            });
+
+            // Add handler for checking online status of other users
+            socket.on('checkOnlineStatus', async (data) => {
+                try {
+                    const { userId } = data;
+                    if (userId) {
+                        console.log(`Checking online status for user: ${userId}`);
+                        
+                        // Check if user has an active socket connection first
+                        const socketOnline = userSockets.has(userId.toString());
+                        
+                        // Only query database if socket check fails
+                        let dbOnline = false;
+                        if (!socketOnline) {
+                            const user = await User.findById(userId).select('isOnline lastActive');
+                            dbOnline = user && user.isOnline;
+                        }
+                        
+                        // Prioritize socket connection over database value
+                        // A user is considered online if they have an active socket
+                        const isOnline = socketOnline;
+                        
+                        console.log(`Online status check for ${userId}: socketOnline=${socketOnline}, dbOnline=${dbOnline}, final=${isOnline}`);
+                        
+                        // Send status back only to the requesting socket
+                        socket.emit('userOnlineStatus', {
+                            userId: userId,
+                            isOnline: isOnline
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error checking online status:', error);
+                    // Send a default response even on error
+                    socket.emit('userOnlineStatus', {
+                        userId: userId,
+                        isOnline: false,
+                        error: true
+                    });
+                }
+            });
+
             socket.on('disconnect', async () => {
                 if (userId) {
+                    // Remove from active socket tracking
                     userSockets.delete(userId);
-                    try {
-                        await User.findByIdAndUpdate(userId, { isOnline: false });
-                        socket.broadcast.emit('userOffline', userId);
-                    } catch (error) {
-                        console.error('Error updating user offline status:', error);
-                    }
+                    
+                    // Wait a brief period before marking user as offline
+                    // This helps prevent flickering if user is just refreshing the page
+                    setTimeout(async () => {
+                        // Check if the user has reconnected in the meantime
+                        if (!userSockets.has(userId)) {
+                            try {
+                                await User.findByIdAndUpdate(userId, { isOnline: false });
+                                
+                                // Broadcast offline status with consistent object format
+                                socket.broadcast.emit('userOffline', { userId: userId });
+                                console.log(`User ${userId} marked as offline after disconnect`);
+                            } catch (error) {
+                                console.error('Error updating user offline status:', error);
+                            }
+                        }
+                    }, 5000); // Wait 5 seconds before marking as offline
                 }
             });
         } catch (error) {

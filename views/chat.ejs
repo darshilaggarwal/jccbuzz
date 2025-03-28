@@ -10,11 +10,11 @@
             <a href="/user/<%= otherUser.username %>" class="flex items-center hover:opacity-80">
                 <div class="relative">
                     <div class="<%= otherUser.hasActiveStory ? 'p-[1px] bg-gradient-to-r from-blue-500 to-purple-600 rounded-full' : '' %>">
-                        <img src="<%= otherUser.profileImage %>" 
-                             alt="Profile" 
-                             class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700">
+                    <img src="<%= otherUser.profileImage %>" 
+                         alt="Profile" 
+                         class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700">
                     </div>
-                    <div class="absolute bottom-0 right-0 w-3 h-3 <%= otherUser.isOnline ? 'bg-green-500' : 'bg-gray-400' %> rounded-full border-2 border-white dark:border-gray-700"></div>
+                    <div class="absolute bottom-0 right-0 w-3 h-3 <%= otherUser.isOnline ? 'bg-green-500' : 'bg-gray-400' %> rounded-full border-2 border-white dark:border-gray-700 online-status-dot" data-user-id="<%= otherUser._id %>"></div>
                 </div>
                 <div class="ml-3">
                     <h5 class="font-semibold text-gray-800 dark:text-white"><%= otherUser.name %></h5>
@@ -37,26 +37,125 @@
         <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages">
             <% chat.messages.forEach(message => { %>
                 <div class="flex <%= message.sender._id.toString() === user._id.toString() ? 'justify-end' : 'justify-start' %> group mb-6">
-                    <div class="relative max-w-[70%] <%= message.sender._id.toString() === user._id.toString() ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3 <%= message.sender._id.toString() === user._id.toString() ? 'shadow-blue-500/20 shadow-md' : '' %>" data-message-id="<%= message._id %>">
-                        <% if (message.isStoryReply) { %>
-                            <!-- Story reply text for server-side rendering -->
-                            <div class="story-reply mb-1 text-sm font-semibold <%= message.sender._id.toString() === user._id.toString() ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300' %>">
-                                <%= message.sender._id.toString() === user._id.toString() ? 'Replied to their story' : 'Replied to your story' %>
+                    <% const isSender = message.sender._id.toString() === user._id.toString(); %>
+                    
+                    <% if (message.isPostShare && message.sharedPostPreview) { %>
+                        <!-- Shared Post Message -->
+                        <div class="relative max-w-[70%] <%= isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3 <%= isSender ? 'shadow-blue-500/20 shadow-md' : '' %>" 
+                             data-message-id="<%= message._id %>" 
+                             data-shared-post-id="<%= message.sharedPostPreview.postId %>"
+                             style="cursor: pointer;">
+                            
+                            <p class="message-content mb-2"><%= message.content %></p>
+                            
+                            <!-- Post preview card -->
+                            <div class="shared-post-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
+                                <!-- Post header -->
+                                <div class="p-2 flex items-center border-b border-gray-100 dark:border-gray-700">
+                                    <div class="relative">
+                                        <img src="<%= message.sender.profileImage %>" alt="<%= message.sender.username %>" class="w-6 h-6 rounded-full object-cover">
+                                    </div>
+                                    <div class="ml-2">
+                                        <p class="text-xs font-medium text-gray-900 dark:text-white"><%= message.sharedPostPreview.title %></p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Post media -->
+                                <div class="aspect-square w-full bg-black overflow-hidden">
+                                    <img src="<%= message.sharedPostPreview.image %>" alt="Post" class="w-full h-full object-cover">
+                                </div>
+                                
+                                <!-- Post caption (truncated) -->
+                                <div class="px-2 py-2 text-xs text-gray-800 dark:text-gray-200">
+                                    <span class="font-semibold"><%= message.sharedPostPreview.title %></span> 
+                                    <% const content = message.sharedPostPreview.content; %>
+                                    <%= content && content.length > 50 ? content.substring(0, 50) + '...' : content || '' %>
+                                </div>
                             </div>
+                            
+                            <!-- Message Options Button - Show on hover -->
+                            <% if (isSender) { %>
+                                <button onclick="showMyMessageOptions('<%= message._id %>')" 
+                                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                                    <i class="fas fa-ellipsis-h text-xs text-white"></i>
+                                </button>
+                            <% } else { %>
+                                <button onclick="showReactionPickerForMessage('<%= message._id %>')" 
+                                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                                    <i class="fas fa-smile text-xs text-white"></i>
+                                </button>
+                            <% } %>
+                            
+                            <!-- Show Reaction if it exists -->
+                            <% if (message.reaction) { %>
+                                <div class="absolute -bottom-6 <%= isSender ? 'right-2' : 'left-2' %> reaction-bubble">
+                                    <span class="reaction"><%= message.reaction %></span>
+                                </div>
+                            <% } %>
+                            
+                            <div class="text-xs <%= isSender ? 'text-blue-100' : 'text-gray-500' %> mt-1">
+                                <%= new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                            </div>
+                        </div>
+                    <% } else if (message.isStoryReply) { %>
+                        <!-- Story Reply Message -->
+                        <div class="relative max-w-[70%] <%= isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3 <%= isSender ? 'shadow-blue-500/20 shadow-md' : '' %>" data-message-id="<%= message._id %>">
+                            <!-- Story reply text for server-side rendering -->
+                            <div class="story-reply mb-1 text-sm font-semibold <%= isSender ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300' %>">
+                                <%= isSender ? 'Replied to their story' : 'Replied to your story' %>
+                            </div>
+                            
                             <!-- Very small story photo below the text -->
                             <% if (message.mediaUrl) { %>
                                 <div class="w-12 h-12 mb-2 rounded-sm overflow-hidden bg-black relative">
                                     <img src="<%= message.mediaUrl %>" alt="Story" class="w-full h-full object-cover">
-                                    <% if (!message.sender._id.toString() === user._id.toString() && message.replyContext && message.replyContext.storyOwner && message.replyContext.storyOwner.toString() === user._id.toString()) { %>
+                                    <% if (!isSender && message.replyContext && message.replyContext.storyOwner && message.replyContext.storyOwner.toString() === user._id.toString()) { %>
                                         <button onclick="deleteStory('<%= message.storyId %>')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
                                             <i class="fas fa-trash text-xs"></i>
                                         </button>
                                     <% } %>
                                 </div>
                             <% } %>
+                            
+                            <!-- Message content -->
+                            <% if (message.content) { %>
+                                <div class="message-text <%= message.isEdited ? 'flex items-center gap-1' : '' %>">
+                                    <span class="message-content"><%= message.content %></span>
+                                    <% if (message.isEdited) { %>
+                                        <span class="text-xs opacity-75">(edited)</span>
+                                    <% } %>
+                                </div>
                         <% } %>
                         
-                        <% if (!message.isStoryReply && message.mediaType !== 'none' && message.mediaUrl) { %>
+                            <!-- Message Options Button -->
+                            <% if (isSender) { %>
+                                <button onclick="showMyMessageOptions('<%= message._id %>')" 
+                                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                                    <i class="fas fa-ellipsis-h text-xs text-white"></i>
+                                </button>
+                            <% } else { %>
+                                <button onclick="showReactionPickerForMessage('<%= message._id %>')" 
+                                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                                    <i class="fas fa-smile text-xs text-white"></i>
+                                </button>
+                            <% } %>
+                            
+                            <!-- Show Reaction if it exists -->
+                            <% if (message.reaction) { %>
+                                <div class="absolute -bottom-6 <%= isSender ? 'right-2' : 'left-2' %> reaction-bubble">
+                                    <span class="reaction"><%= message.reaction %></span>
+                                </div>
+                            <% } %>
+                            
+                            <!-- Timestamp -->
+                            <div class="text-xs <%= isSender ? 'text-blue-100' : 'text-gray-500' %> mt-1">
+                                <%= new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <!-- Regular Message -->
+                        <div class="relative max-w-[70%] <%= isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3 <%= isSender ? 'shadow-blue-500/20 shadow-md' : '' %>" data-message-id="<%= message._id %>">
+                            <% if (message.mediaType !== 'none' && message.mediaUrl) { %>
                             <% if (message.mediaType === 'image') { %>
                                 <img src="<%= message.mediaUrl %>" alt="Shared image" class="max-w-full rounded-lg mb-2">
                             <% } else if (message.mediaType === 'video') { %>
@@ -65,15 +164,15 @@
                                 <div class="audio-player w-full mb-2">
                                     <audio src="<%= message.mediaUrl %>" class="hidden"></audio>
                                     <div class="flex items-center gap-3">
-                                        <button class="play-btn text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'blue-500' %> rounded-full bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-700' : 'gray-200' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-800' : 'gray-700' %> w-8 h-8 flex items-center justify-center">
+                                            <button class="play-btn text-<%= isSender ? 'white' : 'blue-500' %> rounded-full bg-<%= isSender ? 'blue-700' : 'gray-200' %> dark:bg-<%= isSender ? 'blue-800' : 'gray-700' %> w-8 h-8 flex items-center justify-center">
                                             <i class="fas fa-play play-icon"></i>
                                             <i class="fas fa-pause pause-icon hidden"></i>
                                         </button>
                                         <div class="flex-1 relative">
-                                            <div class="waveform h-8 bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-400/30' : 'gray-300' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-600/30' : 'gray-600' %> rounded-full overflow-hidden">
-                                                <div class="progress-bar absolute top-0 left-0 h-full bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-500' : 'gray-400' %> dark:bg-<%= message.sender._id.toString() === user._id.toString() ? 'blue-700' : 'gray-500' %>" style="width: 0%;"></div>
+                                                <div class="waveform h-8 bg-<%= isSender ? 'blue-400/30' : 'gray-300' %> dark:bg-<%= isSender ? 'blue-600/30' : 'gray-600' %> rounded-full overflow-hidden">
+                                                    <div class="progress-bar absolute top-0 left-0 h-full bg-<%= isSender ? 'blue-500' : 'gray-400' %> dark:bg-<%= isSender ? 'blue-700' : 'gray-500' %>" style="width: 0%;"></div>
                                             </div>
-                                            <div class="flex justify-between text-xs text-<%= message.sender._id.toString() === user._id.toString() ? 'white' : 'gray-600' %> mt-1">
+                                                <div class="flex justify-between text-xs text-<%= isSender ? 'white' : 'gray-600' %> mt-1">
                                                 <span class="current-time">0:00</span>
                                                 <span class="audio-duration">0:00</span>
                                             </div>
@@ -92,8 +191,8 @@
                             </div>
                         <% } %>
 
-                        <!-- Message Options Button - Show on hover -->
-                        <% if (message.sender._id.toString() === user._id.toString()) { %>
+                            <!-- Message Options Button -->
+                            <% if (isSender) { %>
                             <button onclick="showMyMessageOptions('<%= message._id %>')" 
                                     class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
                                 <i class="fas fa-ellipsis-h text-xs text-white"></i>
@@ -107,15 +206,17 @@
                         
                         <!-- Show Reaction if it exists -->
                         <% if (message.reaction) { %>
-                            <div class="absolute -bottom-6 <%= message.sender._id.toString() === user._id.toString() ? 'right-2' : 'left-2' %> reaction-bubble">
+                                <div class="absolute -bottom-6 <%= isSender ? 'right-2' : 'left-2' %> reaction-bubble">
                                 <span class="reaction"><%= message.reaction %></span>
                             </div>
                         <% } %>
                         
-                        <div class="text-xs <%= message.sender._id.toString() === user._id.toString() ? 'text-blue-100' : 'text-gray-500' %> mt-1">
+                            <!-- Timestamp -->
+                            <div class="text-xs <%= isSender ? 'text-blue-100' : 'text-gray-500' %> mt-1">
                             <%= new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
                         </div>
                     </div>
+                    <% } %>
                 </div>
             <% }); %>
         </div>
@@ -264,6 +365,12 @@
     </div>
 </template>
 
+<!-- Add hidden audio for message notifications -->
+<audio id="messageSound" preload="auto" style="display: none;">
+    <source src="/sounds/message.mp3" type="audio/mpeg">
+    <source src="/sounds/message.ogg" type="audio/ogg">
+</audio>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
@@ -291,6 +398,44 @@ function scrollToBottom() {
 // Helper function to create message HTML
 function createMessageHTML(message) {
     const isSender = message.sender._id === userId;
+    
+    // Special handling for shared posts
+    if (message.isPostShare || message.sharedPostPreview) {
+        const post = message.sharedPostPreview || {};
+        return `
+            <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}" data-shared-post-id="${post.postId}">
+                <p class="message-text mb-2">${message.content}</p>
+                
+                <!-- Post preview card -->
+                <div class="shared-post-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
+                    <!-- Post header -->
+                    <div class="p-2 flex items-center border-b border-gray-100 dark:border-gray-700">
+                        <div class="relative">
+                            <img src="${message.sender.profileImage}" alt="${message.sender.username}" class="w-6 h-6 rounded-full object-cover">
+                        </div>
+                        <div class="ml-2">
+                            <p class="text-xs font-medium text-gray-900 dark:text-white">${post.title || ''}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Post media -->
+                    <div class="aspect-square w-full bg-black overflow-hidden">
+                        <img src="${post.image || ''}" alt="Post" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <!-- Post caption (truncated) -->
+                    <div class="px-2 py-2 text-xs text-gray-800 dark:text-gray-200">
+                        <span class="font-semibold">${post.title || ''}</span> 
+                        ${post.content && post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content || ''}
+                    </div>
+                </div>
+                
+                <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
+                    ${formatTime(message.createdAt || Date.now())}
+                </div>
+            </div>
+        `;
+    }
     
     // Special handling for story replies
     if (message.isStoryReply) {
@@ -342,71 +487,35 @@ function createMessageHTML(message) {
                 ` : ''}
                 
                 <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
-                    ${new Date(message.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    ${formatTime(message.createdAt || Date.now())}
                 </div>
             </div>
         `;
     }
     
-    // Regular messages (unchanged)
+    // Regular messages
     return `
         <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
             ${message.mediaType !== 'none' && message.mediaUrl ? `
                 ${message.mediaType === 'image' ? 
-                    `<img src="${message.mediaUrl}" alt="Shared image" class="max-w-full rounded-lg mb-2">` :
+                    `<img src="${message.mediaUrl}" alt="Image" class="rounded-lg mb-1 max-w-full">` : 
                     message.mediaType === 'video' ? 
-                    `<video src="${message.mediaUrl}" controls class="max-w-full rounded-lg mb-2"></video>` :
-                    message.mediaType === 'audio' ?
-                    `<div class="audio-player w-full mb-2">
-                        <audio src="${message.mediaUrl}" class="hidden"></audio>
-                        <div class="flex items-center gap-3">
-                            <button class="play-btn text-${isSender ? 'white' : 'blue-500'} rounded-full bg-${isSender ? 'blue-700' : 'gray-200'} dark:bg-${isSender ? 'blue-800' : 'gray-700'} w-8 h-8 flex items-center justify-center">
-                                <i class="fas fa-play play-icon"></i>
-                                <i class="fas fa-pause pause-icon hidden"></i>
+                    `<video src="${message.mediaUrl}" class="rounded-lg mb-1 max-w-full" controls></video>` :
+                    `<div class="audio-player mb-1 bg-black bg-opacity-10 p-2 rounded-lg">
+                        <div class="flex items-center">
+                            <button class="play-btn mr-2 bg-white text-blue-500 rounded-full w-8 h-8 flex items-center justify-center" onclick="toggleAudio(this, '${message.mediaUrl}')">
+                                <i class="fas fa-play"></i>
                             </button>
-                            <div class="flex-1 relative">
-                                <div class="waveform h-8 bg-${isSender ? 'blue-400/30' : 'gray-300'} dark:bg-${isSender ? 'blue-600/30' : 'gray-600'} rounded-full overflow-hidden">
-                                    <div class="progress-bar absolute top-0 left-0 h-full bg-${isSender ? 'blue-500' : 'gray-400'} dark:bg-${isSender ? 'blue-700' : 'gray-500'}" style="width: 0%;"></div>
+                            <div class="waveform flex-1 h-10 bg-gray-200 dark:bg-gray-600 rounded-md">
+                                <div class="progress-bar h-full w-0 bg-blue-500 rounded-md"></div>
                                 </div>
-                                <div class="flex justify-between text-xs text-${isSender ? 'white' : 'gray-600'} mt-1">
-                                    <span class="current-time">0:00</span>
-                                    <span class="audio-duration">0:00</span>
                                 </div>
-                            </div>
-                        </div>` :
-                    ''
+                    </div>`
                 }
             ` : ''}
-            
-            ${message.content ? `
-                <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
-                    <span class="message-content">${message.content}</span>
-                    ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
-                </div>
-            ` : ''}
-            
-            <!-- Different options buttons for own vs other's messages -->
-            ${isSender ? 
-                `<button onclick="showMyMessageOptions('${message._id}')" 
-                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
-                    <i class="fas fa-ellipsis-h text-xs text-white"></i>
-                </button>` 
-                : 
-                `<button onclick="showReactionPickerForMessage('${message._id}')" 
-                        class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
-                    <i class="fas fa-smile text-xs text-white"></i>
-                </button>`
-            }
-            
-            <!-- Show Reaction if it exists -->
-            ${message.reaction ? `
-                <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
-                    <span class="reaction">${message.reaction}</span>
-                </div>
-            ` : ''}
-            
-            <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
-                ${new Date(message.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            ${message.content ? `<p class="message-text">${message.content}</p>` : ''}
+            <div class="text-right mt-1">
+                <span class="text-xs opacity-70">${formatTime(message.createdAt)}</span>
             </div>
         </div>
     `;
@@ -414,13 +523,30 @@ function createMessageHTML(message) {
 
 // Modify the existing message rendering in the chat to show reactions
 function appendMessage(message, isSender) {
+    console.log('Appending message to UI:', message, isSender ? 'sender' : 'receiver');
+    
+    // Skip if we've already rendered this message
+    if (message._id && renderedMessageIds.has(message._id)) {
+        console.log('Skipping already rendered message in appendMessage:', message._id);
+        return;
+    }
+    
+    // Create message container
     const messageDiv = document.createElement('div');
     messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-6`;
     
-    const messageContent = createMessageHTML(message);
-    messageDiv.innerHTML = messageContent;
+    // Generate innerHTML using createMessageHTML
+    messageDiv.innerHTML = createMessageHTML(message);
     
-    // Set up audio player if this is an audio message
+    // Add to DOM
+    messagesContainer.appendChild(messageDiv);
+    
+    // Track that we've rendered this message
+    if (message._id) {
+        renderedMessageIds.add(message._id);
+    }
+    
+    // Initialize audio player if needed
     if (message.mediaType === 'audio') {
         const audioPlayer = messageDiv.querySelector('.audio-player');
         if (audioPlayer) {
@@ -428,56 +554,225 @@ function appendMessage(message, isSender) {
         }
     }
     
-    messagesContainer.appendChild(messageDiv);
+    // Scroll to new message
+    scrollToBottom();
 }
 
-// Authenticate with Socket.IO
+// Authenticate with Socket.IO and improve connection handling
 socket.auth = { userId: userId };
-socket.emit('authenticate', userId);
 
-// Listen for online/offline status
-socket.on('userOnline', (onlineUserId) => {
-    if (onlineUserId === receiverId) {
-        const statusDot = document.querySelector('.absolute.bottom-0.right-0');
+// Add connection management
+socket.on('connect', () => {
+    console.log('✅ Socket connected with ID:', socket.id);
+    
+    // Authenticate immediately after connection
+    socket.emit('authenticate', userId);
+    
+    // Join chat room
+    socket.emit('joinChat', chatId);
+    console.log('Joining chat room:', chatId);
+    
+    // Debug logging
+    console.log('User ID:', userId);
+    console.log('Chat ID:', chatId);
+    console.log('Receiver ID:', receiverId);
+});
+
+socket.on('disconnect', () => {
+  console.log('Socket disconnected');
+  // Try to reconnect automatically
+  setTimeout(() => {
+    if (socket.disconnected) {
+      socket.connect();
+    }
+  }, 1000);
+});
+
+socket.on('connect_error', (error) => {
+  console.error('Socket connection error:', error);
+});
+
+// Listen for online/offline status with improved selectors
+socket.on('userOnline', (data) => {
+    // Handle both object format and direct ID format
+    const onlineUserId = data.userId || data;
+    console.log('User online event received:', onlineUserId);
+    
+    if (onlineUserId === receiverId || onlineUserId.toString() === receiverId.toString()) {
+        // Use the more specific selector with the added class
+        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${receiverId}"]`);
         if (statusDot) {
+            console.log('Updating status dot to online for user:', receiverId);
             statusDot.classList.remove('bg-gray-400');
             statusDot.classList.add('bg-green-500');
+        } else {
+            console.warn('Status dot element not found for online status update');
         }
     }
 });
 
-socket.on('userOffline', (offlineUserId) => {
-    if (offlineUserId === receiverId) {
-        const statusDot = document.querySelector('.absolute.bottom-0.right-0');
+socket.on('userOffline', (data) => {
+    // Handle both object format and direct ID format
+    const offlineUserId = data.userId || data;
+    console.log('User offline event received:', offlineUserId);
+    
+    if (offlineUserId === receiverId || offlineUserId.toString() === receiverId.toString()) {
+        // Use the more specific selector with the added class
+        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${receiverId}"]`);
         if (statusDot) {
+            console.log('Updating status dot to offline for user:', receiverId);
             statusDot.classList.remove('bg-green-500');
             statusDot.classList.add('bg-gray-400');
+        } else {
+            console.warn('Status dot element not found for offline status update');
         }
     }
 });
 
-// Listen for new messages
+// Add message tracking to prevent duplicates
+const renderedMessageIds = new Set();
+
+// IMPROVE the newMessage handler to prevent duplicates
 socket.on('newMessage', (data) => {
-    if (data.chatId === chatId) {
-        appendMessage(data.message, false);
-        scrollToBottom();
+    console.log('💬 New message received:', data);
+    
+    try {
+        // Check if this message belongs to the current chat
+        const messageData = data.message || data;
+        const messageChatId = data.chatId || messageData.chat;
+        
+        if (messageChatId === chatId || messageChatId === chatId.toString()) {
+            console.log('Message belongs to current chat, rendering...');
+            
+            // Extract the message object based on different possible formats
+            const message = data.message || data;
+            
+            // Skip if we've already rendered this message
+            if (message._id && renderedMessageIds.has(message._id)) {
+                console.log('Skipping duplicate message:', message._id);
+                return;
+            }
+            
+            // Skip if this is our own message (we've already rendered it)
+            if (message.sender && message.sender._id === userId) {
+                console.log('Skipping our own message (already rendered)');
+                // Still mark it as rendered
+                if (message._id) {
+                    renderedMessageIds.add(message._id);
+                }
+                return;
+            }
+            
+            // Create and append the message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex justify-start group mb-6`;  // Incoming messages are left-aligned
+            messageDiv.innerHTML = createMessageHTML(message);
+            messagesContainer.appendChild(messageDiv);
+            
+            // Mark message as rendered
+            if (message._id) {
+                renderedMessageIds.add(message._id);
+            }
+            
+            // Play notification sound if available
+            const notificationSound = document.getElementById('messageSound');
+            if (notificationSound) {
+                notificationSound.play().catch(e => console.log('Could not play notification sound', e));
+            }
+            
+            // Mark as read if the page is visible
+            if (document.visibilityState !== 'hidden') {
+                socket.emit('markAsRead', { messageId: message._id });
+            }
+            
+            // Scroll to bottom
+            scrollToBottom();
+        } else {
+            console.log('Message not for this chat, ignoring');
+        }
+    } catch (error) {
+        console.error('Error processing new message:', error);
     }
 });
 
-// Listen for typing status
+// Listen for typing status with improved reliability
 socket.on('userTyping', (data) => {
-    if (data.chatId === chatId && data.userId === receiverId) {
+    console.log('User typing event received:', data);
+    console.log('Current chat ID:', chatId);
+    console.log('Current receiver ID:', receiverId);
+    
+    if ((data.chatId === chatId || data.chat === chatId) && data.userId === receiverId) {
+        console.log('Showing typing indicator!');
+        // Show typing indicator
+        typingStatus.textContent = "typing...";
         typingStatus.classList.remove('hidden');
+        
+        // Clear any previous timeout
         clearTimeout(typingTimeout);
+        
+        // Hide after delay
         typingTimeout = setTimeout(() => {
             typingStatus.classList.add('hidden');
+            typingStatus.textContent = ""; // Clear text when hiding
         }, 3000);
+    } else {
+        console.log('Not showing typing indicator - IDs do not match');
     }
 });
 
-// Handle message input
+// Listen for voice recording status
+socket.on('userRecordingVoice', (data) => {
+    console.log('User recording voice message event received:', data);
+    console.log('Current chat ID:', chatId);
+    console.log('Current receiver ID:', receiverId);
+    
+    if ((data.chatId === chatId || data.chat === chatId) && data.userId === receiverId) {
+        if (data.isRecording) {
+            console.log('Showing recording indicator!');
+            // Show recording indicator with proper styling
+            typingStatus.textContent = "recording voice message...";
+            typingStatus.classList.remove('hidden');
+            
+            // Don't hide until recording stops
+            clearTimeout(typingTimeout);
+        } else {
+            console.log('Hiding recording indicator');
+            // Hide indicator after delay when recording stops
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                typingStatus.classList.add('hidden');
+            }, 1000);
+        }
+    } else {
+        console.log('Not showing recording indicator - IDs do not match');
+    }
+});
+
+// Make sure typing indicator is actually hidden when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple reset on page load - set empty text and hide
+    typingStatus.textContent = "";
+    typingStatus.classList.add('hidden');
+});
+
+// Handle message input with debounce for typing indicator
+let typingDebounce;
 messageInput.addEventListener('input', () => {
-    socket.emit('typing', { receiverId, chatId });
+    // Clear previous timeout
+    clearTimeout(typingDebounce);
+    
+    // Emit typing event
+    console.log('Emitting typing event with data:', { receiverId, chatId, userId });
+    socket.emit('typing', { 
+        receiverId, 
+        chatId,
+        userId // Include our own ID
+    });
+    
+    // Set debounce timer
+    typingDebounce = setTimeout(() => {
+        // Do nothing, just debounce the events
+    }, 1000);
 });
 
 // Handle message submission
@@ -488,6 +783,7 @@ messageForm.addEventListener('submit', async (e) => {
     if (!content && !selectedMedia) return;
     
     if (selectedMedia) {
+        // Handle media upload (existing code)
         const formData = new FormData();
         formData.append('media', selectedMedia);
         if (content) formData.append('content', content);
@@ -499,8 +795,17 @@ messageForm.addEventListener('submit', async (e) => {
                 body: formData
             });
             const data = await response.json();
+            
+            // Immediately add message to the UI
             appendMessage(data, true);
             scrollToBottom();
+            
+            // Also emit message via socket for real-time delivery
+            socket.emit('chatMessage', {
+                chatId: chatId,
+                message: data,
+                receiverId: receiverId
+            });
         } catch (error) {
             console.error('Error sending media message:', error);
         }
@@ -509,6 +814,7 @@ messageForm.addEventListener('submit', async (e) => {
         mediaPreview.classList.add('hidden');
         mediaInput.value = '';
     } else {
+        // Text message submission
         try {
             const response = await fetch(`/chat/${chatId}/message`, {
                 method: 'POST',
@@ -522,8 +828,17 @@ messageForm.addEventListener('submit', async (e) => {
             });
             
             const data = await response.json();
+            
+            // Immediately add message to the UI
             appendMessage(data, true);
             scrollToBottom();
+            
+            // Also emit message via socket for real-time delivery
+            socket.emit('chatMessage', {
+                chatId: chatId,
+                message: data,
+                receiverId: receiverId
+            });
         } catch (error) {
             console.error('Error sending message:', error);
         }
@@ -1184,6 +1499,77 @@ document.head.insertAdjacentHTML('beforeend', `
     max-height: 200px !important; /* Limit image/video height */
     object-fit: contain !important; /* Maintain aspect ratio */
 }
+
+/* Shared post card styling */
+.shared-post-card {
+    max-width: 250px;
+    transition: transform 0.2s ease;
+}
+
+.shared-post-card:hover {
+    transform: scale(1.02);
+}
+
+/* Add style for typing & recording indicator */
+#typingStatus {
+    font-style: italic;
+    background-image: linear-gradient(90deg, #3B82F6, #8B5CF6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    display: inline-flex;
+    align-items: center;
+}
+
+#typingStatus.recording::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: #EF4444;
+    border-radius: 50%;
+    margin-right: 4px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+#recordingVisualizer {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#recordingVisualizer canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.audio-player .waveform {
+    position: relative;
+    overflow: hidden;
+}
+
+.audio-player .waveform::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+    animation: wave 2s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.audio-player.playing .waveform::before {
+    opacity: 1;
+}
 </style>
 `);
 
@@ -1210,6 +1596,14 @@ voiceButton.addEventListener('click', async () => {
         if (recordingStream) {
             // Already recording, stop it
             stopRecording();
+            // Emit recording stopped event
+            console.log('Emitting recording stopped event');
+            socket.emit('recordingVoice', {
+                receiverId,
+                chatId,
+                userId,
+                isRecording: false
+            });
             return;
         }
         
@@ -1220,6 +1614,15 @@ voiceButton.addEventListener('click', async () => {
         messageInput.classList.add('hidden');
         recordingIndicator.classList.remove('hidden');
         voiceControls.classList.remove('hidden');
+        
+        // Emit recording started event
+        console.log('Emitting recording started event');
+        socket.emit('recordingVoice', {
+            receiverId,
+            chatId,
+            userId,
+            isRecording: true
+        });
         
         // Set up audio context for visualization
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -1258,9 +1661,87 @@ voiceButton.addEventListener('click', async () => {
     }
 });
 
+// Stop recording and send message
+function stopRecording() {
+    if (!recordingStream) return;
+    
+    // Stop recording
+    mediaRecorder.stop();
+    recordingStream.getTracks().forEach(track => track.stop());
+    
+    // Clear timer
+    clearInterval(recordingTimer);
+    
+    // Reset UI
+    messageInput.classList.remove('hidden');
+    recordingIndicator.classList.add('hidden');
+    voiceControls.classList.add('hidden');
+    
+    // Clean up
+    recordingStream = null;
+    recordingAnalyser = null;
+}
+
+// Stop recording and discard audio
+function stopRecordingAndDiscard() {
+    if (!recordingStream) return;
+    
+    try {
+        // Make sure to terminate the media recorder properly
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            // Need to use a dummy handler to prevent the normal stop handler from running
+            const originalStopHandler = mediaRecorder.onstop;
+            mediaRecorder.onstop = null; // Remove the handler temporarily
+            
+            // Stop recording without triggering send
+            mediaRecorder.stop();
+            
+            // Restore original handler if needed
+            setTimeout(() => {
+                mediaRecorder.onstop = originalStopHandler;
+            }, 100);
+        }
+        
+        // Stop all tracks in the stream
+        if (recordingStream && recordingStream.getTracks) {
+            recordingStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Clear timer
+        if (recordingTimer) {
+            clearInterval(recordingTimer);
+        }
+        
+        // Reset UI
+        messageInput.classList.remove('hidden');
+        recordingIndicator.classList.add('hidden');
+        voiceControls.classList.add('hidden');
+        
+        // Clean up
+        recordingStream = null;
+        recordingAnalyser = null;
+        audioChunks = [];
+        
+        console.log('Voice recording successfully cancelled');
+        showToast('Recording cancelled');
+    } catch (error) {
+        console.error('Error cancelling recording:', error);
+    }
+}
+
 // Cancel recording button
 cancelRecording.addEventListener('click', () => {
+    console.log('Cancel recording button clicked');
     if (recordingStream) {
+        // Emit recording stopped event first
+        socket.emit('recordingVoice', {
+            receiverId,
+            chatId,
+            userId,
+            isRecording: false
+        });
+        
+        // Then discard the recording
         stopRecordingAndDiscard();
     }
 });
@@ -1269,6 +1750,13 @@ cancelRecording.addEventListener('click', () => {
 sendRecording.addEventListener('click', () => {
     if (recordingStream) {
         stopRecording();
+        // Emit recording stopped event
+        socket.emit('recordingVoice', {
+            receiverId,
+            chatId,
+            userId,
+            isRecording: false
+        });
     }
 });
 
@@ -1433,49 +1921,6 @@ function visualize() {
     draw();
 }
 
-// Stop recording and send message
-function stopRecording() {
-    if (!recordingStream) return;
-    
-    // Stop recording
-    mediaRecorder.stop();
-    recordingStream.getTracks().forEach(track => track.stop());
-    
-    // Clear timer
-    clearInterval(recordingTimer);
-    
-    // Reset UI
-    messageInput.classList.remove('hidden');
-    recordingIndicator.classList.add('hidden');
-    voiceControls.classList.add('hidden');
-    
-    // Clean up
-    recordingStream = null;
-    recordingAnalyser = null;
-}
-
-// Stop recording and discard audio
-function stopRecordingAndDiscard() {
-    if (!recordingStream) return;
-    
-    // Stop media recorder without saving
-    mediaRecorder.stop();
-    recordingStream.getTracks().forEach(track => track.stop());
-    
-    // Clear timer
-    clearInterval(recordingTimer);
-    
-    // Reset UI
-    messageInput.classList.remove('hidden');
-    recordingIndicator.classList.add('hidden');
-    voiceControls.classList.add('hidden');
-    
-    // Clean up
-    recordingStream = null;
-    recordingAnalyser = null;
-    audioChunks = [];
-}
-
 // Send voice message to server
 async function sendVoiceMessage(audioBlob) {
     const formData = new FormData();
@@ -1491,13 +1936,29 @@ async function sendVoiceMessage(audioBlob) {
         const data = await response.json();
         
         if (response.ok) {
+            // Append message locally
             appendMessage(data, true);
             scrollToBottom();
+            
+            // Emit message for real-time delivery
+            socket.emit('chatMessage', {
+                chatId,
+                message: data,
+                receiverId
+            });
+            
+            // Play sent sound
+            const sentSound = document.getElementById('messageSound');
+            if (sentSound) {
+                sentSound.play().catch(e => console.log('Could not play sent sound', e));
+            }
         } else {
             console.error('Error sending voice message:', data.error);
+            showToast('Failed to send voice message. Please try again.');
         }
     } catch (error) {
         console.error('Error sending voice message:', error);
+        showToast('Network error. Please check your connection and try again.');
     }
 }
 
@@ -1891,6 +2352,351 @@ document.querySelectorAll('.audio-player').forEach(player => {
         const progressBar = waveform.querySelector('.progress-bar');
         if (progressBar) {
             progressBar.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-purple-600');
+        }
+    }
+});
+
+// Add this to the JavaScript section
+function sharePost(postId) {
+    const recipient = currentChatUser._id;
+    
+    // Show loading toast
+    showToast('Sharing post...');
+    
+    // Make API call to share post
+    fetch('/api/posts/share', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            postId: postId,
+            recipientId: recipient
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Post shared successfully');
+            // Append the new message to the chat
+            appendNewMessage(data.message);
+        } else {
+            showToast('Error: ' + (data.error || 'Failed to share post'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sharing post:', error);
+        showToast('Error sharing post');
+    });
+}
+
+function appendNewMessage(message) {
+    const messagesContainer = document.getElementById('messages');
+    const messageHTML = createMessageHTML(message);
+    
+    // Create a temporary div to hold the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = messageHTML;
+    
+    // Append the message
+    messagesContainer.appendChild(tempDiv.firstElementChild);
+    
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Add formatTime function
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+// Add function to handle messages from the server
+socket.on('message', function(data) {
+    if (data.chatId === chatId) {
+        // Check if this is a new message
+        const existingMessage = document.querySelector(`[data-message-id="${data.message._id}"]`);
+        if (!existingMessage) {
+            // New message - append it to chat
+            appendNewMessage(data.message);
+            
+            // Mark message as read
+            markMessageAsRead(data.message._id);
+            
+            // If message has shared post, handle it specially
+            if (data.message.isSharedPost) {
+                // Add any special handling for shared posts
+                console.log('Received shared post:', data.message.sharedPost);
+            }
+        }
+    }
+});
+
+// Add function to format time for messages
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Update message container to properly display shared posts
+$(document).ready(function() {
+    // Find existing messages that might be shared posts and update them
+    $('.flex.justify-start, .flex.justify-end').each(function() {
+        const messageEl = $(this).find('[data-message-id]');
+        if (messageEl.length) {
+            const messageId = messageEl.data('message-id');
+            // Check if this is a shared post by looking for indicators
+            if (messageEl.find('.message-content').text().includes('Shared a post')) {
+                // This might be a shared post, attach click handler to view the post
+                messageEl.css('cursor', 'pointer');
+                messageEl.on('click', function(e) {
+                    // Don't trigger if clicking on buttons
+                    if ($(e.target).closest('button').length === 0) {
+                        // Extract post ID if available in a data attribute
+                        const postId = $(this).data('shared-post-id');
+                        if (postId) {
+                            window.location.href = `/post/${postId}`;
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+// Add styles for shared post cards
+document.addEventListener('DOMContentLoaded', function() {
+    // Add styles for shared post cards
+    const sharedPostStyles = document.createElement('style');
+    sharedPostStyles.textContent = `
+        .shared-post-card {
+            width: 100%;
+            max-width: 240px;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .shared-post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    `;
+    document.head.appendChild(sharedPostStyles);
+    
+    // Find all shared post cards and add click handler
+    document.querySelectorAll('[data-shared-post-id]').forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            // Don't trigger if clicking on buttons
+            if (!e.target.closest('button')) {
+                const postId = this.getAttribute('data-shared-post-id');
+                if (postId) {
+                    window.location.href = `/post/${postId}`;
+                }
+            }
+        });
+    });
+});
+
+// Make sure we join the chat room and initialize rendered message IDs
+document.addEventListener('DOMContentLoaded', function() {
+    // Track existing messages to prevent duplicates
+    document.querySelectorAll('[data-message-id]').forEach(element => {
+        const messageId = element.getAttribute('data-message-id');
+        if (messageId) {
+            renderedMessageIds.add(messageId);
+            console.log('Tracking existing message:', messageId);
+        }
+    });
+    
+    // Join the chat room
+    socket.emit('joinChat', chatId);
+    console.log('Joining chat room:', chatId);
+    
+    // Mark all existing messages as read if page is visible
+    if (document.visibilityState !== 'hidden') {
+        const unreadMessages = document.querySelectorAll('[data-message-id]');
+        unreadMessages.forEach(element => {
+            const messageId = element.dataset.messageId;
+            if (messageId) {
+                socket.emit('markAsRead', { messageId });
+            }
+        });
+    }
+    
+    // Add page visibility change listener to update message read status
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState !== 'hidden') {
+            const unreadMessages = document.querySelectorAll('[data-message-id]');
+            unreadMessages.forEach(element => {
+                const messageId = element.dataset.messageId;
+                if (messageId) {
+                    socket.emit('markAsRead', { messageId });
+                }
+            });
+        }
+    });
+});
+
+// Add explicit debug logging for all socket events
+socket.onAny((event, ...args) => {
+    console.log(`🔔 Socket event received: ${event}`, args);
+});
+
+// Add function to initialize audio players
+function initAudioPlayer(audioPlayerElement) {
+    if (!audioPlayerElement) return;
+    
+    const audio = audioPlayerElement.querySelector('audio');
+    const playBtn = audioPlayerElement.querySelector('.play-btn');
+    const playIcon = audioPlayerElement.querySelector('.play-icon');
+    const pauseIcon = audioPlayerElement.querySelector('.pause-icon');
+    const progressBar = audioPlayerElement.querySelector('.progress-bar');
+    const currentTimeEl = audioPlayerElement.querySelector('.current-time');
+    const durationEl = audioPlayerElement.querySelector('.duration');
+    
+    if (!audio || !playBtn) return;
+    
+    // Set up audio event listeners
+    audio.addEventListener('loadedmetadata', () => {
+        const duration = Math.floor(audio.duration);
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        if (durationEl) {
+            durationEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+    });
+    
+    audio.addEventListener('timeupdate', () => {
+        if (progressBar) {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+        
+        if (currentTimeEl) {
+            const current = Math.floor(audio.currentTime);
+            const minutes = Math.floor(current / 60);
+            const seconds = current % 60;
+            currentTimeEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+    });
+    
+    audio.addEventListener('ended', () => {
+        if (playIcon) playIcon.classList.remove('hidden');
+        if (pauseIcon) pauseIcon.classList.add('hidden');
+    });
+    
+    // Play/pause button
+    if (playBtn) {
+        playBtn.addEventListener('click', () => {
+            if (audio.paused) {
+                // Stop all other playing audio elements
+                document.querySelectorAll('audio').forEach(a => {
+                    if (a !== audio) a.pause();
+                });
+                
+                audio.play();
+                if (playIcon) playIcon.classList.add('hidden');
+                if (pauseIcon) pauseIcon.classList.remove('hidden');
+            } else {
+                audio.pause();
+                if (playIcon) playIcon.classList.remove('hidden');
+                if (pauseIcon) pauseIcon.classList.add('hidden');
+            }
+        });
+    }
+}
+
+// Update appendMessage function to initialize audio players
+function appendMessage(message, isSender) {
+    console.log('Appending message to UI:', message, isSender ? 'sender' : 'receiver');
+    
+    // Create message container
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-6`;
+    
+    // Generate innerHTML using createMessageHTML
+    messageDiv.innerHTML = createMessageHTML(message);
+    
+    // Add to DOM
+    messagesContainer.appendChild(messageDiv);
+    
+    // Initialize audio player if needed
+    if (message.mediaType === 'audio') {
+        const audioPlayer = messageDiv.querySelector('.audio-player');
+        if (audioPlayer) {
+            initAudioPlayer(audioPlayer);
+        }
+    }
+    
+    // Scroll to new message
+    scrollToBottom();
+}
+
+// Add code to check and update online status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Track connection state
+    let socketReady = false;
+    let retryCount = 0;
+    const MAX_RETRIES = 5;
+    
+    // Listen for socket connection event
+    socket.on('connect', function() {
+        console.log('Socket connected, now checking online status');
+        socketReady = true;
+        checkOnlineStatus();
+    });
+    
+    // Function to check online status with retry logic
+    function checkOnlineStatus() {
+        if (socketReady) {
+            // Request current online status for the chat recipient
+            socket.emit('checkOnlineStatus', { userId: receiverId });
+            console.log('Requesting online status for user:', receiverId);
+            
+            // Also poll for status updates periodically
+            setInterval(() => {
+                socket.emit('checkOnlineStatus', { userId: receiverId });
+            }, 30000); // Check every 30 seconds
+        } else if (retryCount < MAX_RETRIES) {
+            // Socket not ready yet, retry after delay
+            retryCount++;
+            console.log(`Socket not ready, retrying in 1 second (attempt ${retryCount}/${MAX_RETRIES})`);
+            setTimeout(checkOnlineStatus, 1000);
+        } else {
+            console.warn('Max retries reached for online status check');
+        }
+    }
+    
+    // Start checking after a small delay
+    setTimeout(checkOnlineStatus, 500);
+});
+
+// Listen for direct online status responses
+socket.on('userOnlineStatus', (data) => {
+    console.log('Received direct online status:', data);
+    
+    if (data.userId === receiverId || data.userId.toString() === receiverId.toString()) {
+        // Use the more specific selector with the added class
+        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${receiverId}"]`);
+        if (statusDot) {
+            console.log(`Setting status dot to ${data.isOnline ? 'online' : 'offline'} for user:`, receiverId);
+            
+            // Add a small timeout to prevent quick flashes
+            setTimeout(() => {
+                // First remove both classes to ensure clean state
+                statusDot.classList.remove('bg-green-500', 'bg-gray-400');
+                
+                // Then add the appropriate class
+                if (data.isOnline) {
+                    statusDot.classList.add('bg-green-500');
+                } else {
+                    statusDot.classList.add('bg-gray-400');
+                }
+            }, 100);
+        } else {
+            console.warn('Status dot element not found for status update');
         }
     }
 });
