@@ -435,39 +435,52 @@
 
 
 
-    <header class="bg-white shadow fixed w-full z-50 py-1">
+    <header class="bg-gradient-to-r from-indigo-900 via-purple-800 to-indigo-900 fixed w-full z-50 py-1 shadow-lg transition-all duration-300">
         <div class="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-            <div class="flex justify-between items-center h-20">
+            <div class="flex justify-between items-center h-16">
                 
-                <!-- Left: JCCbuzz Logo (only on landing page) -->
-                <div class="flex-shrink-0">
-                    <a href="/" class="flex items-center">
-                        <img class="h-40 w-auto object-contain mt-3" src="/placeholder/JccBUZZ_logo-removebg-preview.png" alt="JCCbuzz Logo">
+                <!-- Left: JCCbuzz Logo with glow effect -->
+                <div class="flex-shrink-0 relative">
+                    <a href="/" class="flex items-center relative">
+                        <h1 class="text-2xl font-bold relative z-10 my-1 tracking-tight text-white">
+                            JCCbuzz
+                            <!-- <span class="text-yellow-300 ml-0.5" style="text-shadow: 0 0 5px rgba(253,224,71,0.8);">✨</span> -->
+                        </h1>
                     </a>
                 </div>
     
-                <!-- Right: Navbar Items -->
-                <nav class="hidden md:flex md:items-center md:space-x-10">
-                    <a href="#features" class="nav-link text-lg font-semibold text-gray-800 transition-colors duration-300">
+                <!-- Right: Navbar Items with improved styling -->
+                <nav class="hidden md:flex md:items-center md:space-x-8">
+                    <a href="#features" class="nav-link text-base font-medium text-white hover:text-pink-200 transition-colors duration-300 relative group">
                         Features
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 transition-all duration-300 group-hover:w-full"></span>
                     </a>
-                    <a href="#how-it-works" class="nav-link text-lg font-semibold text-gray-800 transition-colors duration-300">
+                    <a href="#how-it-works" class="nav-link text-base font-medium text-white hover:text-pink-200 transition-colors duration-300 relative group">
                         How It Works
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 transition-all duration-300 group-hover:w-full"></span>
                     </a>
-                    <a href="#testimonials" class="nav-link text-lg font-semibold text-gray-800 transition-colors duration-300">
+                    <a href="#testimonials" class="nav-link text-base font-medium text-white hover:text-pink-200 transition-colors duration-300 relative group">
                         Testimonials
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 transition-all duration-300 group-hover:w-full"></span>
                     </a>
-                    <a href="#contact" class="nav-link text-lg font-semibold text-gray-800 transition-colors duration-300">
+                    <a href="#contact" class="nav-link text-base font-medium text-white hover:text-pink-200 transition-colors duration-300 relative group">
                         Contact Us
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 transition-all duration-300 group-hover:w-full"></span>
                     </a>
-                    <a href="/register" class="btn-primary px-4 py-2 border border-transparent text-base font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 shadow-sm">
+                    <a href="/register" class="btn-primary ml-4 px-5 py-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium text-sm inline-flex items-center justify-center shadow-lg shadow-purple-500/30 transform hover:scale-105 transition-all duration-300 relative overflow-hidden group">
+                        <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -translate-x-full group-hover:animate-[shimmer_1s_forwards]"></span>
+                        <span class="relative flex items-center">
                         Sign Up
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
                     </a>
                 </nav>
     
                 <!-- Mobile Menu Button -->
                 <div class="-mr-2 flex items-center md:hidden">
-                    <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" aria-expanded="false">
+                    <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-pink-200 hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-pink-400 transition-colors duration-300" aria-expanded="false">
                         <span class="sr-only">Open main menu</span>
                         <svg class="block h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -483,21 +496,21 @@
 
     <!-- Mobile menu, show/hide based on menu state -->
     <div id="mobile-menu" class="hidden md:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <a href="#features" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-indigo-50 hover:border-indigo-500 hover:text-indigo-700 transition-colors duration-300">
+        <div class="pt-2 pb-3 space-y-1 bg-gradient-to-b from-indigo-900 to-purple-900 px-2">
+            <a href="#features" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-white hover:bg-purple-800 hover:border-pink-400 hover:text-pink-200 transition-colors duration-300">
                 Features
             </a>
-            <a href="#how-it-works" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-indigo-50 hover:border-indigo-500 hover:text-indigo-700 transition-colors duration-300">
+            <a href="#how-it-works" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-white hover:bg-purple-800 hover:border-pink-400 hover:text-pink-200 transition-colors duration-300">
                 How It Works
             </a>
-            <a href="#testimonials" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-indigo-50 hover:border-indigo-500 hover:text-indigo-700 transition-colors duration-300">
+            <a href="#testimonials" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-white hover:bg-purple-800 hover:border-pink-400 hover:text-pink-200 transition-colors duration-300">
                 Testimonials
             </a>
-            <a href="#contact" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-indigo-500 text-base font-medium text-indigo-700 bg-indigo-50 hover:text-indigo-800 transition-colors duration-300">
+            <a href="#contact" class="mobile-nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-white hover:bg-purple-800 hover:border-pink-400 hover:text-pink-200 transition-colors duration-300">
                 Contact Us
             </a>
-            <a href="/register" class="btn-primary block text-center mx-3 mt-4 px-5 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 shadow-md">
-                Register
+            <a href="/register" class="btn-primary block text-center mx-3 mt-4 mb-2 px-5 py-2.5 border border-transparent text-base font-medium rounded-full text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all duration-300 shadow-md">
+                Register Now
             </a>
         </div>
     </div>
@@ -532,10 +545,10 @@
                             <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -translate-x-full group-hover:animate-[shimmer_1s_forwards]"></span>
                             
                             <span class="relative flex items-center">
-                                Get Started
+                            Get Started
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
                             </span>
                         </a>
                         <!-- <a href="#how-it-works" class="relative px-8 py-3 rounded-full border-2 border-white/80 text-white backdrop-blur-sm hover:bg-white/10 transition-all font-medium text-base inline-flex items-center justify-center transform hover:scale-105 duration-300">
@@ -609,8 +622,8 @@
                                                         <div class="w-3 h-3 bg-white opacity-80 rounded-full"></div>
                                                         <div class="w-5 h-3 bg-white opacity-80 rounded-sm"></div>
                                                     </div>
-                                                </div>
-                                                
+                        </div>
+                        
                                                 <!-- App Header - More vibrant with sparkle effects -->
                                                 <div class="h-[8%] bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 flex items-center px-4 shadow-md relative overflow-hidden">
                                                     <!-- Sparkle effects -->
@@ -621,7 +634,7 @@
                                                         <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-white">JCC</span>
                                                         <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-yellow-200">buzz</span>
                                                         <span class="ml-1 text-yellow-200">✨</span>
-                                                    </div>
+                        </div>
                                                     <div class="ml-auto flex space-x-3">
                                                         <div class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
                                                             <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -866,13 +879,13 @@
                         <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -translate-x-full group-hover:animate-[shimmer_1s_forwards]"></span>
                         
                         <span class="relative flex items-center">
-                            Get Started
+                    Get Started
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                         </span>
-                    </a>
-                </div>
+                </a>
+            </div>
             </div>
             
             <!-- Mobile 3D Phone -->
