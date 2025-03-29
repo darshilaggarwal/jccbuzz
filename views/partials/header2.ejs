@@ -379,11 +379,6 @@
                         <!-- Profile Icon -->
                         <a href="/profile" class="text-gray-600 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text dark:text-gray-300 dark:hover:text-transparent p-2 transition-colors rounded-full relative navbar-icon" title="Profile">
                             <i class="fas fa-user text-xl"></i>
-                            <% if (locals.followRequestsCount && locals.followRequestsCount > 0) { %>
-                                <span class="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center px-1.5 min-w-[20px] h-5">
-                                    <%= locals.followRequestsCount %>
-                                </span>
-                            <% } %>
                         </a>
                         
                         <!-- Notifications Icon -->
@@ -465,20 +460,6 @@
                                 <a href="/edit-profile" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text transition-colors">
                                     <i class="fas fa-user-edit mr-2"></i> Edit Profile
                                 </a>
-                                <a href="/follow-requests" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text transition-colors">
-                                    <i class="fas fa-user-check mr-2"></i> Follow Requests
-                                    <% if (locals.user && locals.user.followRequests && locals.user.followRequests.length > 0) { %>
-                                        <span class="inline-flex items-center justify-center ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white">
-                                            <%= locals.user.followRequests.length %>
-                                        </span>
-                                    <% } %>
-                                </a>
-                                <!-- <button onclick="toggleDarkMode()" class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors">
-                                    <i class="fas fa-moon mr-2 dark:hidden"></i>
-                                    <i class="fas fa-sun mr-2 hidden dark:block"></i>
-                                    <span class="dark:hidden">Dark Mode</span>
-                                    <span class="hidden dark:block">Light Mode</span>
-                                </button> -->
                                 <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
                                 <a href="/logout" class="block px-4 py-2 text-red-600 dark:text-red-400 hover:text-transparent hover:bg-gradient-to-r hover:from-red-600 hover:to-pink-600 hover:bg-clip-text transition-colors">
                                     <i class="fas fa-sign-out-alt mr-2"></i> Logout
@@ -520,15 +501,6 @@
                             <a href="/events" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text dark:text-gray-300 dark:hover:text-transparent rounded-lg">
                                 <i class="fas fa-calendar-alt text-xl mb-1"></i>
                                 <span class="text-xs">Events</span>
-                            </a>
-                            <a href="/follow-requests" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text dark:text-gray-300 dark:hover:text-transparent rounded-lg">
-                                <i class="fas fa-user-check text-xl mb-1"></i>
-                                <span class="text-xs">Requests</span>
-                                <% if (locals.user && locals.user.followRequests && locals.user.followRequests.length > 0) { %>
-                                    <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-xs rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white">
-                                        <%= locals.user.followRequests.length %>
-                                    </span>
-                                <% } %>
                             </a>
                             <a href="/edit-profile" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 hover:bg-clip-text dark:text-gray-300 dark:hover:text-transparent rounded-lg">
                                 <i class="fas fa-cog text-xl mb-1"></i>

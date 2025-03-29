@@ -32,7 +32,9 @@ const socketModule = require('./socket/socket');
 
 // Create HTTP server and Socket.io instance
 const server = http.createServer(app);
-const io = socketModule.initSocket(server);
+
+// Initialize to undefined, will be set after server starts
+global.io = undefined;
 
 // Make io available globally for notification real-time updates
 global.io = io;
@@ -1364,14 +1366,13 @@ app.get("/edit-profile", isLoggedIn, async (req, res) => {
 // Update profile
 app.post("/update-profile", isLoggedIn, async (req, res) => {
     try {
-        const { name, username, bio, isPrivate } = req.body;
+        const { name, username, bio } = req.body;
         const user = await userModel.findOne({ email: req.user.email });
         
         user.name = name;
         user.username = username;
         user.bio = bio;
-        // Handle privacy settings (checkbox will be undefined if unchecked)
-        user.isPrivate = isPrivate === 'on';
+        // Removed isPrivate handling
         
         await user.save();
         res.redirect("/profile");
@@ -1875,106 +1876,120 @@ app.delete("/story/delete", isLoggedIn, async (req, res) => {
 // Add this after all your middleware setup
 const connectedUsers = new Map(); // Store online users
 
-io.on('connection', (socket) => {
-    let currentUserId = null;
-
-    socket.on('authenticate', async (userData) => {
-        // Extract userId - it could be a string or an object with userId property
-        const userId = typeof userData === 'object' && userData.userId ? userData.userId : userData;
-        
-        currentUserId = userId;
-        socket.userId = userId;
-        connectedUsers.set(userId, socket.id);
-        
-        try {
-            await userModel.findByIdAndUpdate(userId, { isOnline: true });
-            io.emit('userOnline', userId);
-        } catch (error) {
-            console.error('Error updating online status:', error);
-        }
-    });
-
-    socket.on('typing', (data) => {
-        const receiverSocketId = connectedUsers.get(data.receiverId);
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit('userTyping', {
-                chatId: data.chatId,
-                userId: socket.userId
-            });
-        }
-    });
-
-    socket.on('messageDeleted', (data) => {
-        const receiverSocketId = connectedUsers.get(data.receiverId);
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit('messageDeleted', {
-                chatId: data.chatId,
-                messageId: data.messageId
-            });
-        }
-    });
-
-    socket.on('messageReacted', (data) => {
-        const receiverSocketId = connectedUsers.get(data.receiverId);
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit('messageReacted', {
-                chatId: data.chatId,
-                messageId: data.messageId,
-                reaction: data.reaction
-            });
-        }
-    });
-
-    socket.on('disconnect', async () => {
-        if (currentUserId) {
-            connectedUsers.delete(currentUserId);
-            try {
-                await userModel.findByIdAndUpdate(currentUserId, { isOnline: false });
-                io.emit('userOffline', currentUserId);
-            } catch (error) {
-                console.error('Error updating offline status:', error);
-            }
-        }
-    });
-
-    // Voice Call Signaling
-    // When a user initiates a call
-    socket.on('callUser', (data) => {
-        const { userToCall, signalData, from, fromName } = data;
-        io.to(userSocketIdMap[userToCall]).emit('incomingCall', {
-            signal: signalData,
-            from,
-            fromName
-        });
-    });
-
-    // When a user accepts a call
-    socket.on('answerCall', (data) => {
-        const { signal, to } = data;
-        io.to(userSocketIdMap[to]).emit('callAccepted', signal);
-    });
-
-    // When a user rejects a call
-    socket.on('rejectCall', (data) => {
-        const { from, to } = data;
-        io.to(userSocketIdMap[from]).emit('callRejected', { from: to });
-    });
-
-    // When a user ends a call
-    socket.on('endCall', (data) => {
-        const { to } = data;
-        io.to(userSocketIdMap[to]).emit('callEnded');
-    });
-
-    // When user is unavailable for call
-    socket.on('userBusy', (data) => {
-        const { from } = data;
-        io.to(userSocketIdMap[from]).emit('userBusy');
-    });
-});
-
 // Change app.listen to server.listen
-server.listen(3000);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    
+    // Initialize Socket.IO after server is listening
+    global.io = socketModule.initSocket(server);
+    
+    // Add the socket connection handler here after initialization
+    if (global.io) {
+        // Additional socket handlers for functionality not in socket/socket.js
+        global.io.on('connection', (socket) => {
+            let currentUserId = null;
+
+            socket.on('authenticate', async (userData) => {
+                // Extract userId - it could be a string or an object with userId property
+                const userId = typeof userData === 'object' && userData.userId ? userData.userId : userData;
+                
+                currentUserId = userId;
+                socket.userId = userId;
+                connectedUsers.set(userId, socket.id);
+                
+                try {
+                    await userModel.findByIdAndUpdate(userId, { isOnline: true });
+                    global.io.emit('userOnline', userId);
+                } catch (error) {
+                    console.error('Error updating online status:', error);
+                }
+            });
+
+            socket.on('typing', (data) => {
+                const receiverSocketId = connectedUsers.get(data.receiverId);
+                if (receiverSocketId) {
+                    global.io.to(receiverSocketId).emit('userTyping', {
+                        chatId: data.chatId,
+                        userId: socket.userId
+                    });
+                }
+            });
+
+            socket.on('messageDeleted', (data) => {
+                const receiverSocketId = connectedUsers.get(data.receiverId);
+                if (receiverSocketId) {
+                    global.io.to(receiverSocketId).emit('messageDeleted', {
+                        chatId: data.chatId,
+                        messageId: data.messageId
+                    });
+                }
+            });
+
+            socket.on('messageReacted', (data) => {
+                const receiverSocketId = connectedUsers.get(data.receiverId);
+                if (receiverSocketId) {
+                    global.io.to(receiverSocketId).emit('messageReacted', {
+                        chatId: data.chatId,
+                        messageId: data.messageId,
+                        reaction: data.reaction
+                    });
+                }
+            });
+
+            socket.on('disconnect', async () => {
+                if (currentUserId) {
+                    connectedUsers.delete(currentUserId);
+                    try {
+                        await userModel.findByIdAndUpdate(currentUserId, { isOnline: false });
+                        global.io.emit('userOffline', currentUserId);
+                    } catch (error) {
+                        console.error('Error updating offline status:', error);
+                    }
+                }
+            });
+
+            // Voice Call Signaling
+            // When a user initiates a call
+            socket.on('callUser', (data) => {
+                const { userToCall, signalData, from, fromName } = data;
+                global.io.to(userSocketIdMap[userToCall]).emit('incomingCall', {
+                    signal: signalData,
+                    from,
+                    fromName
+                });
+            });
+
+            // When a user accepts a call
+            socket.on('answerCall', (data) => {
+                const { signal, to } = data;
+                global.io.to(userSocketIdMap[to]).emit('callAccepted', signal);
+            });
+
+            // When a user rejects a call
+            socket.on('rejectCall', (data) => {
+                const { from, to } = data;
+                global.io.to(userSocketIdMap[from]).emit('callRejected', { from: to });
+            });
+
+            // When a user ends a call
+            socket.on('endCall', (data) => {
+                const { to } = data;
+                global.io.to(userSocketIdMap[to]).emit('callEnded');
+            });
+
+            // When user is unavailable for call
+            socket.on('userBusy', (data) => {
+                const { from } = data;
+                global.io.to(userSocketIdMap[from]).emit('userBusy');
+            });
+        });
+    } else {
+        console.error("Failed to initialize Socket.IO");
+    }
+    
+    console.log('Socket.IO server initialized');
+});
 
 // Add a cleanup function to update hasActiveStory when stories expire
 async function updateUserStoryStatus(userId) {
@@ -2025,30 +2040,28 @@ app.use(fetchUnreadMessagesCount);
 
 // Middleware to fetch follow requests count
 async function fetchFollowRequestsCount(req, res, next) {
-    if (!req.user) {
-        return next();
-    }
-    
     try {
-        // Find the user by ID or email
-        let user;
-        if (req.user._id) {
-            user = await userModel.findById(req.user._id);
-        } else if (req.user.email) {
-            user = await userModel.findOne({ email: req.user.email });
+        if (req.isAuthenticated()) {
+            // Find user
+            let user;
+            if (req.user._id) {
+                user = await userModel.findById(req.user._id);
+            } else if (req.user.email) {
+                user = await userModel.findOne({ email: req.user.email });
+            }
+            
+            if (user && user.followRequests) {
+                res.locals.followRequestsCount = user.followRequests.length;
+            }
         }
-        
-        if (user && user.followRequests) {
-            res.locals.followRequestsCount = user.followRequests.length;
-        }
+        next();
     } catch (error) {
         console.error('Error fetching follow requests count:', error);
+        next();
     }
-    next();
 }
-
-// Apply this middleware after other middleware
-app.use(fetchFollowRequestsCount);
+// Disabled follow requests feature
+// app.use(fetchFollowRequestsCount);
 
 // Send regular text message
 app.post("/chat/:chatId/message", isLoggedIn, async (req, res) => {
@@ -3104,57 +3117,21 @@ app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
                 $pull: { followers: user._id }
             });
         } else {
-            // Check if account is private
-            if (userToFollow.isPrivate) {
-                // Check if the request already exists
-                const alreadyRequested = userToFollow.followRequests && 
-                    userToFollow.followRequests.some(req => 
-                        req.user && req.user.toString() === user._id.toString()
-                    );
-                
-                if (!alreadyRequested) {
-                    // Add follow request
-                    await userModel.findByIdAndUpdate(userToFollow._id, {
-                        $push: { 
-                            followRequests: {
-                                user: user._id,
-                                createdAt: new Date()
-                            }
-                        }
-                    });
-                    
-                    // Create notification for follow request
-                    const { createFollowRequestNotification } = require('./utils/notifications');
-                    await createFollowRequestNotification({
-                        recipientId: userToFollow._id,
-                        senderId: user._id,
-                        senderName: user.name || user.username || 'Someone'
-                    });
-                }
-                
-                return res.json({
-                    success: true,
-                    isFollowing: false,
-                    followRequested: true,
-                    followersCount: userToFollow.followers.length
-                });
-            } else {
-                // Public account - follow directly
-                await userModel.findByIdAndUpdate(user._id, {
-                    $addToSet: { following: userToFollow._id }
-                });
-                await userModel.findByIdAndUpdate(userToFollow._id, {
-                    $addToSet: { followers: user._id }
-                });
-                
-                // Create notification for new follower
-                const { createFollowNotification } = require('./utils/notifications');
-                await createFollowNotification({
-                    recipientId: userToFollow._id,
-                    senderId: user._id,
-                    senderName: user.name || user.username || 'Someone'
-                });
-            }
+            // Always directly follow (no private account checks)
+            await userModel.findByIdAndUpdate(user._id, {
+                $addToSet: { following: userToFollow._id }
+            });
+            await userModel.findByIdAndUpdate(userToFollow._id, {
+                $addToSet: { followers: user._id }
+            });
+            
+            // Create notification for new follower
+            const { createFollowNotification } = require('./utils/notifications');
+            await createFollowNotification({
+                recipientId: userToFollow._id,
+                senderId: user._id,
+                senderName: user.name || user.username || 'Someone'
+            });
         }
 
         // Get updated follower count
@@ -3479,23 +3456,8 @@ app.get("/api/debug/generate-test-notifications", isLoggedIn, async (req, res) =
 
 // Follow Requests Page
 app.get("/follow-requests", isLoggedIn, async (req, res) => {
-    try {
-        // Get the current user with fully populated follow requests
-        const user = await userModel.findOne({ email: req.user.email })
-            .populate({
-                path: 'followRequests.user',
-                select: 'name username profileImage'
-            });
-        
-        if (!user) {
-            return res.redirect("/login");
-        }
-        
-        res.render("followRequests", { user });
-    } catch (error) {
-        console.error('Error fetching follow requests:', error);
-        res.status(500).send("Error fetching follow requests");
-    }
+    // Redirect to profile page - follow requests feature is disabled
+    res.redirect("/profile");
 });
 
 // Accept follow request
@@ -3793,7 +3755,7 @@ app.get("/api/follow-status/:userId", isLoggedIn, async (req, res) => {
         res.json({
             following: isFollowing,
             followRequested: hasPendingRequest,
-            canViewPosts: !profileUser.isPrivate || isFollowing
+            canViewPosts: true
         });
     } catch (error) {
         console.error("Error checking follow status:", error);
@@ -4374,40 +4336,7 @@ app.post('/follow/:username', isLoggedIn, async (req, res) => {
             return res.status(400).json({ message: 'You are already following this user' });
         }
         
-        // For private accounts, send a follow request
-        if (userToFollow.isPrivate) {
-            // Check if request already exists
-            if (userToFollow.followRequests && userToFollow.followRequests.includes(currentUser._id)) {
-                return res.status(400).json({ message: 'Follow request already sent' });
-            }
-            
-            // Add to follow requests array
-            if (!userToFollow.followRequests) {
-                userToFollow.followRequests = [];
-            }
-            userToFollow.followRequests.push(currentUser._id);
-            await userToFollow.save();
-            
-            // Send notification
-            try {
-                const {
-                    createFollowRequestNotification
-                } = require('./utils/notifications');
-                
-                await createFollowRequestNotification({
-                    recipientId: userToFollow._id,
-                    senderId: currentUser._id,
-                    senderName: currentUser.name || 'Someone'
-                });
-            } catch (notifError) {
-                console.error('Error creating follow request notification:', notifError);
-                // Continue even if notification fails
-            }
-            
-            return res.json({ message: 'Follow request sent' });
-        }
-        
-        // For public accounts, add directly to following/followers
+        // Always directly add to following/followers (no private account checks)
         currentUser.following.push(userToFollow._id);
         await currentUser.save();
         
@@ -4434,6 +4363,105 @@ app.post('/follow/:username', isLoggedIn, async (req, res) => {
     } catch (error) {
         console.error('Error following user:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// API endpoint for following/unfollowing a user
+app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
+    try {
+        const { username } = req.params;
+        const { action } = req.body; // 'follow' or 'unfollow'
+        
+        // Get current user
+        let currentUser = await userModel.findOne({ email: req.user.email });
+        if (!currentUser) {
+            return res.status(404).json({ error: "Current user not found" });
+        }
+        
+        // Get target user
+        const targetUser = await userModel.findOne({ username });
+        if (!targetUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        // Prevent self-follow
+        if (currentUser._id.toString() === targetUser._id.toString()) {
+            return res.status(400).json({ error: "You cannot follow yourself" });
+        }
+        
+        if (action === 'follow') {
+            // Always directly follow the user (no private account checks)
+            
+            // Check if already following
+            if (currentUser.following.includes(targetUser._id)) {
+                return res.status(400).json({ error: "Already following this user" });
+            }
+            
+            // Add to current user's following
+            currentUser.following.push(targetUser._id);
+            await currentUser.save();
+            
+            // Add to target user's followers
+            targetUser.followers.push(currentUser._id);
+            await targetUser.save();
+            
+            // Create notification for the followed user
+            await createNotification(
+                targetUser._id,
+                currentUser._id,
+                'follow'
+            );
+            
+            return res.json({ 
+                success: true, 
+                following: true,
+                message: `You are now following ${targetUser.username}`
+            });
+        } else if (action === 'unfollow') {
+            // Remove from current user's following
+            currentUser.following = currentUser.following.filter(
+                id => id.toString() !== targetUser._id.toString()
+            );
+            await currentUser.save();
+            
+            // Remove from target user's followers
+            targetUser.followers = targetUser.followers.filter(
+                id => id.toString() !== currentUser._id.toString()
+            );
+            await targetUser.save();
+            
+            return res.json({ 
+                success: true,
+                following: false,
+                message: `You have unfollowed ${targetUser.username}`
+            });
+        } else {
+            return res.status(400).json({ error: "Invalid action" });
+        }
+    } catch (error) {
+        console.error('Error in follow/unfollow:', error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// Handle profile update
+app.post("/edit-profile", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        // Extract updated fields from the request (ignore isPrivate)
+        const { name, username, bio } = req.body;
+        
+        // Update user fields
+        user.name = name || user.name;
+        user.username = username || user.username;
+        user.bio = bio || user.bio;
+        // Don't update isPrivate anymore - remove that functionality
+        
+        await user.save();
+        res.redirect("/edit-profile");
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).send('Error updating profile: ' + error.message);
     }
 });
 

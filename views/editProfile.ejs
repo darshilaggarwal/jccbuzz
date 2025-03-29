@@ -353,51 +353,6 @@ body {
                     </svg>
                     Privacy
                 </div>
-                
-                <!-- Private Account Toggle -->
-                <div class="px-6 py-4 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 settings-item">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mr-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">Private Account</div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">Only approved followers can see your content</div>
-                                </div>
-                            </div>
-                        </div>
-                        <label class="inline-flex items-center cursor-pointer toggle-label">
-                            <input type="checkbox" name="isPrivate" id="isPrivate" class="sr-only peer" <%= user.isPrivate ? 'checked' : '' %>>
-                            <div class="relative w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-purple-600 toggle-bg"></div>
-                        </label>
-                    </div>
-                </div>
-                
-                <% if (user.isPrivate && user.followRequests && user.followRequests.length > 0) { %>
-                <!-- Follow Requests -->
-                <div class="px-6 py-4 bg-white dark:bg-black border-t border-b border-gray-200 dark:border-gray-800 settings-item">
-                    <a href="/follow-requests" class="flex justify-between items-center text-sm hover:bg-gray-50 hover:dark:bg-gray-900 p-2 rounded-lg transition group">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white mr-3 group-hover:scale-105 transition-transform">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                            </div>
-                            <div class="font-medium text-gray-900 dark:text-white">Follow Requests</div>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="flex items-center justify-center h-6 min-w-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-medium rounded-full px-2 mr-2 shadow-sm group-hover:scale-110 transition-transform"><%= user.followRequests.length %></span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </a>
-                </div>
-                <% } %>
             </div>
         </div>
         

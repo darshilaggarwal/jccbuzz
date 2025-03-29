@@ -11,24 +11,61 @@ const userSockets = new Map();
 function initSocket(server) {
     io = socketIO(server, {
         cors: {
-            origin: '*',
-            methods: ['GET', 'POST']
-        }
+            origin: "*", // Replace with specific origin in production
+            methods: ["GET", "POST"],
+            credentials: true,
+            allowedHeaders: ["Content-Type", "Authorization"]
+        },
+        transports: ['websocket', 'polling'], // Support fallback to polling
+        path: '/socket.io', // Explicitly set path
+        pingTimeout: 60000, // Increase timeout to handle slow connections
+        pingInterval: 25000, // Keep connections alive
+        upgradeTimeout: 30000, // Longer timeout for WebSocket upgrade
+        allowUpgrades: true,
+        cookie: false // Disable Socket.IO cookies to avoid issues
+    });
+
+    // Add connection event debug logging
+    io.engine.on("connection_error", (err) => {
+        console.log("Connection error:", err.req, err.code, err.message, err.context);
     });
 
     io.on('connection', async (socket) => {
         try {
+            console.log('New socket connection:', socket.id);
+            
+            // Get user ID with better error handling
             const userIdData = socket.handshake.auth.userId;
             // Extract the actual ID, whether it comes as string or object
             const userId = typeof userIdData === 'object' && userIdData.userId ? userIdData.userId : userIdData;
             
-            if (userId) {
+            if (!userId) {
+                console.log('Socket connected without userId, waiting for authenticate event');
+                
+                // Handle authentication via event if not provided in handshake
+                socket.on('authenticate', async (authUserId) => {
+                    console.log('Socket authenticated via event:', socket.id, 'for user:', authUserId);
+                    if (authUserId) {
+                        socket.userId = authUserId;
+                        userSockets.set(authUserId, socket.id);
+                        try {
+                            await User.findByIdAndUpdate(authUserId, { isOnline: true });
+                            socket.broadcast.emit('userOnline', { userId: authUserId });
+                            socket.join(`user:${authUserId}`);
+                            console.log(`User ${authUserId} authenticated and joined notification room`);
+                        } catch (error) {
+                            console.error('Error updating user online status:', error);
+                        }
+                    }
+                });
+            } else {
+                console.log('Socket authenticated via handshake:', socket.id, 'for user:', userId);
+                socket.userId = userId;
                 userSockets.set(userId, socket.id);
                 try {
                     await User.findByIdAndUpdate(userId, { isOnline: true });
                     
                     // Broadcast to all clients about this user's online status
-                    // Use a consistent object format with userId property
                     socket.broadcast.emit('userOnline', { userId: userId });
                     
                     // Automatically join user's own notification room

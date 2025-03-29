@@ -33,6 +33,11 @@
             </button>
         </div>
 
+        <!-- Add this right after the chat header -->
+        <div id="connection-status" class="bg-red-500 text-white text-center py-1 px-4 text-sm hidden">
+            Connecting to chat server...
+        </div>
+
         <!-- Messages Container -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages">
             <% chat.messages.forEach(message => { %>
@@ -373,7 +378,20 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket = io();
+// Improved Socket.IO connection setup
+const socketOptions = {
+    transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
+    reconnection: true,               // Enable reconnection
+    reconnectionAttempts: 5,          // Number of reconnection attempts
+    reconnectionDelay: 1000,          // Initial delay before reconnection (1 second)
+    reconnectionDelayMax: 5000,       // Maximum delay between reconnections (5 seconds)
+    timeout: 20000,                   // Connection timeout
+    autoConnect: true,                // Connect automatically
+    path: '/socket.io'                // Socket.IO path (must match server)
+};
+
+// Create socket with options
+const socket = io(window.location.origin, socketOptions);
 const userId = '<%= user._id %>';
 const chatId = '<%= chat._id %>';
 const receiverId = '<%= otherUser._id %>';
@@ -565,17 +583,51 @@ socket.auth = { userId: userId };
 socket.on('connect', () => {
     console.log('✅ Socket connected with ID:', socket.id);
     
-    // Authenticate immediately after connection
-socket.emit('authenticate', userId);
-
-    // Join chat room
-    socket.emit('joinChat', chatId);
-    console.log('Joining chat room:', chatId);
+    // Set auth data
+    socket.auth = { userId };
     
-    // Debug logging
-    console.log('User ID:', userId);
-    console.log('Chat ID:', chatId);
-    console.log('Receiver ID:', receiverId);
+    // Authenticate after connection
+    socket.emit('authenticate', userId);
+    
+    // Join relevant chat room
+    socket.emit('joinChat', chatId);
+    
+    // Inform UI that connection is established
+    document.getElementById('connection-status')?.classList.add('hidden');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('❌ Socket connection error:', error.message);
+    
+    // Show connection error in UI if element exists
+    const statusEl = document.getElementById('connection-status');
+    if (statusEl) {
+        statusEl.textContent = 'Connection error. Trying to reconnect...';
+        statusEl.classList.remove('hidden');
+    }
+});
+
+socket.on('disconnect', (reason) => {
+    console.log('Socket disconnected, reason:', reason);
+    
+    // Show disconnection in UI if element exists
+    const statusEl = document.getElementById('connection-status');
+    if (statusEl) {
+        statusEl.textContent = 'Disconnected. Reconnecting...';
+        statusEl.classList.remove('hidden');
+    }
+});
+
+socket.on('reconnect', (attemptNumber) => {
+    console.log('Socket reconnected after', attemptNumber, 'attempts');
+    
+    // Re-authenticate and join rooms after reconnection
+    socket.auth = { userId };
+    socket.emit('authenticate', userId);
+    socket.emit('joinChat', chatId);
+    
+    // Hide connection error message
+    document.getElementById('connection-status')?.classList.add('hidden');
 });
 
 socket.on('disconnect', () => {
