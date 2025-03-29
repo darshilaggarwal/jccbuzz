@@ -115,10 +115,7 @@ console.log('Current user ID set at page load:', window.currentUserId);
                                 <i class="fas fa-comment mr-2"></i> Message
                             </a>
                         <% } else { %>
-                            <a href="/edit-profile" 
-                              class="w-full sm:w-auto inline-flex items-center justify-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-md text-sm">
-                                <i class="fas fa-edit mr-2"></i> Edit Profile
-                            </a>
+                            
                         <% } %>
                     </div>
                 </div>
@@ -176,27 +173,15 @@ console.log('Current user ID set at page load:', window.currentUserId);
         }
         
         // Check if user should be allowed to see posts
-        const canViewPosts = isOwnProfile || 
-                           !profileUser.isPrivate || 
-                           (user && user.following && idArrayIncludes(user.following, profileUser._id));
+        const canViewPosts = true; // Always allow viewing posts, privacy mode disabled
         %>
         
         <!-- Hidden field to store profile data for JS -->
         <input type="hidden" id="profileUserId" value="<%= profileUser._id %>">
-        <input type="hidden" id="isProfilePrivate" value="<%= profileUser.isPrivate %>">
         <input type="hidden" id="canViewPosts" value="<%= canViewPosts %>">
         
         <div id="postsContainer">
-        <% if (profileUser.isPrivate && !canViewPosts) { %>
-            <!-- Private account notice -->
-            <div class="flex flex-col items-center justify-center py-12 text-center">
-                <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">This account is private</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Follow this account to see their photos and videos.</p>
-            </div>
-        <% } else if (profileUser.posts.length === 0) { %>
+        <% if (profileUser.posts.length === 0) { %>
             <div class="flex flex-col items-center justify-center py-12 text-center">
                 <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
                     <i class="fas fa-camera"></i>

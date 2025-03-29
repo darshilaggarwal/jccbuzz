@@ -242,18 +242,6 @@ body {
                 <% if (user.bio) { %>
                 <p class="text-gray-700 dark:text-gray-300 text-sm mb-2"><%= user.bio %></p>
                 <% } %>
-                
-                <% if (user.followRequests && user.followRequests.length > 0) { %>
-                    <div class="mt-1">
-                        <a href="/follow-requests" class="inline-flex items-center px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                            <i class="fas fa-user-check mr-2"></i>
-                            Follow Requests 
-                            <span class="inline-flex items-center justify-center ml-2 w-4 h-4 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                                <%= user.followRequests.length %>
-                            </span>
-                        </a>
-                    </div>
-                <% } %>
             </div>
         </div>
     </div>
