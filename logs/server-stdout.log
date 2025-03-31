@@ -1,0 +1,8 @@
+[2025-03-31T10:09:08.197Z] Initializing email transporter
+[2025-03-31T10:09:08.202Z] Setting up SMTP for domain: gmail.com
+Using Gmail configuration
+[2025-03-31T10:09:08.481Z] Server running on port 3000
+[2025-03-31T10:09:08.482Z] Socket.IO server initialized
+[2025-03-31T10:09:08.483Z] Connected to MongoDB
+[2025-03-31T10:09:08.525Z] MongoDB connected successfully
+[2025-03-31T10:09:09.597Z] Email server is ready to send messages

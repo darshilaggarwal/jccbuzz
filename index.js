@@ -16,7 +16,7 @@ const StudentVerification = require('./models/studentVerification');
 const LoginVerification = require('./models/loginVerification');
 const Event = require('./models/Event');
 const { sendOTPEmail } = require('./utils/emailSender');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
@@ -42,10 +42,10 @@ global.io = io;
 // Add this near the top of the file where other environment variables are setup
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
 
-// MongoDB connection - commented out to avoid duplicate connections
-// mongoose.connect('mongodb://localhost:27017/jccbuzz')
-//     .then(() => console.log('Connected to MongoDB'))
-//     .catch(err => console.error('MongoDB connection error:', err));
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('Connected to MongoDB Atlas'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 app.set("view engine", "ejs");
 app.use(express.json());
@@ -1888,106 +1888,106 @@ server.listen(PORT, () => {
     if (global.io) {
         // Additional socket handlers for functionality not in socket/socket.js
         global.io.on('connection', (socket) => {
-            let currentUserId = null;
+    let currentUserId = null;
 
-            socket.on('authenticate', async (userData) => {
-                // Extract userId - it could be a string or an object with userId property
-                const userId = typeof userData === 'object' && userData.userId ? userData.userId : userData;
-                
-                currentUserId = userId;
-                socket.userId = userId;
-                connectedUsers.set(userId, socket.id);
-                
-                try {
-                    await userModel.findByIdAndUpdate(userId, { isOnline: true });
+    socket.on('authenticate', async (userData) => {
+        // Extract userId - it could be a string or an object with userId property
+        const userId = typeof userData === 'object' && userData.userId ? userData.userId : userData;
+        
+        currentUserId = userId;
+        socket.userId = userId;
+        connectedUsers.set(userId, socket.id);
+        
+        try {
+            await userModel.findByIdAndUpdate(userId, { isOnline: true });
                     global.io.emit('userOnline', userId);
-                } catch (error) {
-                    console.error('Error updating online status:', error);
-                }
-            });
+        } catch (error) {
+            console.error('Error updating online status:', error);
+        }
+    });
 
-            socket.on('typing', (data) => {
-                const receiverSocketId = connectedUsers.get(data.receiverId);
-                if (receiverSocketId) {
+    socket.on('typing', (data) => {
+        const receiverSocketId = connectedUsers.get(data.receiverId);
+        if (receiverSocketId) {
                     global.io.to(receiverSocketId).emit('userTyping', {
-                        chatId: data.chatId,
-                        userId: socket.userId
-                    });
-                }
+                chatId: data.chatId,
+                userId: socket.userId
             });
+        }
+    });
 
-            socket.on('messageDeleted', (data) => {
-                const receiverSocketId = connectedUsers.get(data.receiverId);
-                if (receiverSocketId) {
+    socket.on('messageDeleted', (data) => {
+        const receiverSocketId = connectedUsers.get(data.receiverId);
+        if (receiverSocketId) {
                     global.io.to(receiverSocketId).emit('messageDeleted', {
-                        chatId: data.chatId,
-                        messageId: data.messageId
-                    });
-                }
+                chatId: data.chatId,
+                messageId: data.messageId
             });
+        }
+    });
 
-            socket.on('messageReacted', (data) => {
-                const receiverSocketId = connectedUsers.get(data.receiverId);
-                if (receiverSocketId) {
+    socket.on('messageReacted', (data) => {
+        const receiverSocketId = connectedUsers.get(data.receiverId);
+        if (receiverSocketId) {
                     global.io.to(receiverSocketId).emit('messageReacted', {
-                        chatId: data.chatId,
-                        messageId: data.messageId,
-                        reaction: data.reaction
-                    });
-                }
+                chatId: data.chatId,
+                messageId: data.messageId,
+                reaction: data.reaction
             });
+        }
+    });
 
-            socket.on('disconnect', async () => {
-                if (currentUserId) {
-                    connectedUsers.delete(currentUserId);
-                    try {
-                        await userModel.findByIdAndUpdate(currentUserId, { isOnline: false });
+    socket.on('disconnect', async () => {
+        if (currentUserId) {
+            connectedUsers.delete(currentUserId);
+            try {
+                await userModel.findByIdAndUpdate(currentUserId, { isOnline: false });
                         global.io.emit('userOffline', currentUserId);
-                    } catch (error) {
-                        console.error('Error updating offline status:', error);
-                    }
-                }
-            });
+            } catch (error) {
+                console.error('Error updating offline status:', error);
+            }
+        }
+    });
 
-            // Voice Call Signaling
-            // When a user initiates a call
-            socket.on('callUser', (data) => {
-                const { userToCall, signalData, from, fromName } = data;
+    // Voice Call Signaling
+    // When a user initiates a call
+    socket.on('callUser', (data) => {
+        const { userToCall, signalData, from, fromName } = data;
                 global.io.to(userSocketIdMap[userToCall]).emit('incomingCall', {
-                    signal: signalData,
-                    from,
-                    fromName
-                });
-            });
-
-            // When a user accepts a call
-            socket.on('answerCall', (data) => {
-                const { signal, to } = data;
-                global.io.to(userSocketIdMap[to]).emit('callAccepted', signal);
-            });
-
-            // When a user rejects a call
-            socket.on('rejectCall', (data) => {
-                const { from, to } = data;
-                global.io.to(userSocketIdMap[from]).emit('callRejected', { from: to });
-            });
-
-            // When a user ends a call
-            socket.on('endCall', (data) => {
-                const { to } = data;
-                global.io.to(userSocketIdMap[to]).emit('callEnded');
-            });
-
-            // When user is unavailable for call
-            socket.on('userBusy', (data) => {
-                const { from } = data;
-                global.io.to(userSocketIdMap[from]).emit('userBusy');
-            });
+            signal: signalData,
+            from,
+            fromName
         });
+    });
+
+    // When a user accepts a call
+    socket.on('answerCall', (data) => {
+        const { signal, to } = data;
+                global.io.to(userSocketIdMap[to]).emit('callAccepted', signal);
+    });
+
+    // When a user rejects a call
+    socket.on('rejectCall', (data) => {
+        const { from, to } = data;
+                global.io.to(userSocketIdMap[from]).emit('callRejected', { from: to });
+    });
+
+    // When a user ends a call
+    socket.on('endCall', (data) => {
+        const { to } = data;
+                global.io.to(userSocketIdMap[to]).emit('callEnded');
+    });
+
+    // When user is unavailable for call
+    socket.on('userBusy', (data) => {
+        const { from } = data;
+                global.io.to(userSocketIdMap[from]).emit('userBusy');
+    });
+});
     } else {
         console.error("Failed to initialize Socket.IO");
     }
-    
+
     console.log('Socket.IO server initialized');
 });
 
@@ -2043,22 +2043,22 @@ async function fetchFollowRequestsCount(req, res, next) {
     try {
         if (req.isAuthenticated()) {
             // Find user
-            let user;
-            if (req.user._id) {
-                user = await userModel.findById(req.user._id);
-            } else if (req.user.email) {
-                user = await userModel.findOne({ email: req.user.email });
-            }
-            
-            if (user && user.followRequests) {
-                res.locals.followRequestsCount = user.followRequests.length;
-            }
+        let user;
+        if (req.user._id) {
+            user = await userModel.findById(req.user._id);
+        } else if (req.user.email) {
+            user = await userModel.findOne({ email: req.user.email });
+        }
+        
+        if (user && user.followRequests) {
+            res.locals.followRequestsCount = user.followRequests.length;
+        }
         }
         next();
     } catch (error) {
         console.error('Error fetching follow requests count:', error);
-        next();
-    }
+    next();
+}
 }
 // Disabled follow requests feature
 // app.use(fetchFollowRequestsCount);
@@ -3118,20 +3118,20 @@ app.post("/user/:username/follow", isLoggedIn, async (req, res) => {
             });
         } else {
             // Always directly follow (no private account checks)
-            await userModel.findByIdAndUpdate(user._id, {
-                $addToSet: { following: userToFollow._id }
-            });
-            await userModel.findByIdAndUpdate(userToFollow._id, {
-                $addToSet: { followers: user._id }
-            });
-            
-            // Create notification for new follower
-            const { createFollowNotification } = require('./utils/notifications');
-            await createFollowNotification({
-                recipientId: userToFollow._id,
-                senderId: user._id,
-                senderName: user.name || user.username || 'Someone'
-            });
+                await userModel.findByIdAndUpdate(user._id, {
+                    $addToSet: { following: userToFollow._id }
+                });
+                await userModel.findByIdAndUpdate(userToFollow._id, {
+                    $addToSet: { followers: user._id }
+                });
+                
+                // Create notification for new follower
+                const { createFollowNotification } = require('./utils/notifications');
+                await createFollowNotification({
+                    recipientId: userToFollow._id,
+                    senderId: user._id,
+                    senderName: user.name || user.username || 'Someone'
+                });
         }
 
         // Get updated follower count

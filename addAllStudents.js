@@ -1,15 +1,16 @@
-// Import required modules
+// Script to add ALL students from both data/students.js and original list
 require('dotenv').config();
 const mongoose = require('mongoose');
-const StudentVerification = require('../models/studentVerification');
+const StudentVerification = require('./models/studentVerification');
+const dataStudents = require('./data/students.js');
 
 // Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Original student data - preserving the actual student information
-const newStudents = [
+// Original student data from the project (first batch)
+const originalStudents = [
     {"enrollment_number": "021322001", "name": "Abhijith Prabhakar", "contact": "9891155892", "email": "abhijithprabhakar123@gmail.com"},
     {"enrollment_number": "021322002", "name": "Aditya Kumar", "contact": "8384061990", "email": "22adityathakur@gmail.com"},
     {"enrollment_number": "021322003", "name": "Ankit kumar mittal", "contact": "7065873643", "email": "akm787614@gmail.com"},
@@ -37,67 +38,64 @@ const newStudents = [
     {"enrollment_number": "021323804", "name": "Manas ", "contact": "8287846225", "email": "kharemanas93@gmail.com"}
 ];
 
-// Adding the specific missing enrollment number that was needed
-const additionalStudents = [
-    // {"enrollment_number": "021323008", "name": "Sonia Bajaj", "contact": "9876543218", "email": "sonia.b21@example.com"}
-];
+// Combine both lists of students
+const allStudents = [...originalStudents, ...dataStudents];
 
-// Function to add student verification data
-async function addNewStudents() {
+// Function to add all students
+async function addAllStudents() {
   try {
-    console.log(`Adding ${newStudents.length + additionalStudents.length} student records...`);
+    console.log(`Adding/updating a total of ${allStudents.length} students...`);
     
     let addedCount = 0;
     let updatedCount = 0;
-    let skippedCount = 0;
     
-    // Process each student and create or update records
-    for (const student of [...newStudents, ...additionalStudents]) {
+    // Process each student from both lists
+    for (const student of allStudents) {
       // Check if student already exists
       const existingStudent = await StudentVerification.findOne({ 
           enrollment_number: student.enrollment_number 
       });
       
       if (existingStudent) {
-          // Update existing record
-          existingStudent.name = student.name;
-          existingStudent.email = student.email;
-          existingStudent.contact_number = student.contact;
-          existingStudent.is_verified = true; // Ensure all students are verified
-          await existingStudent.save();
-          updatedCount++;
-          console.log(`Updated student: ${student.enrollment_number} - ${student.name}`);
+        // Update existing record
+        existingStudent.name = student.name;
+        existingStudent.email = student.email;
+        existingStudent.contact_number = student.contact;
+        existingStudent.is_verified = true; // Ensure all students are verified
+        await existingStudent.save();
+        updatedCount++;
+        console.log(`Updated student: ${student.enrollment_number} - ${student.name}`);
       } else {
-          // Create new record
-          await StudentVerification.create({
-              enrollment_number: student.enrollment_number,
-              name: student.name,
-              email: student.email,
-              contact_number: student.contact,
-              is_verified: true // Set all students as verified
-          });
-          addedCount++;
-          console.log(`Added new student: ${student.enrollment_number} - ${student.name}`);
+        // Create new record
+        await StudentVerification.create({
+            enrollment_number: student.enrollment_number,
+            name: student.name,
+            email: student.email,
+            contact_number: student.contact,
+            is_verified: true // Set all students as verified
+        });
+        addedCount++;
+        console.log(`Added student: ${student.enrollment_number} - ${student.name}`);
       }
     }
-
+    
     console.log('-------------------------------------------');
     console.log(`Added: ${addedCount} new student records`);
     console.log(`Updated: ${updatedCount} existing student records`);
-    console.log(`Skipped: ${skippedCount} student records`);
     console.log('-------------------------------------------');
-    console.log('Operation completed successfully!');
     
-    // Verify total count after additions
-    const totalCount = await StudentVerification.countDocuments();
-    console.log(`Total students in database: ${totalCount}`);
+    // Verify final count 
+    const totalStudents = await StudentVerification.countDocuments();
+    console.log(`Total students in database now: ${totalStudents}`);
     
+    console.log('All students added successfully!');
   } catch (error) {
-    console.error('Error adding student data:', error);
+    console.error('Error adding students:', error);
   } finally {
     mongoose.disconnect();
+    console.log('Database connection closed');
   }
 }
 
 // Run the function
-addNewStudents(); 
+addAllStudents(); 

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: jccbuzz
+    env: node
+    buildCommand: pnpm install && node setup.js
+    startCommand: node index.js
+    envVars:
+      - key: NODE_VERSION
+        value: 18.19.0
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGODB_URI
+        sync: false # This will prompt you to enter it in the Render dashboard 

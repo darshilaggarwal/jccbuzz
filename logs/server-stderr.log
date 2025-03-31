@@ -1,0 +1,6 @@
+[2025-03-31T10:09:08.473Z] Default profile image not found in assets.
+[2025-03-31T10:09:08.474Z] Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+[2025-03-31T10:09:08.480Z] (node:23353) Warning: Accessing non-existent property 'sendRealTimeNotification' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
