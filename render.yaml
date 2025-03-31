@@ -3,7 +3,7 @@ services:
     name: jccbuzz
     env: node
     buildCommand: pnpm install && node setup.js
-    startCommand: node index.js
+    startCommand: node startForRender.js
     envVars:
       - key: NODE_VERSION
         value: 18.19.0
@@ -12,4 +12,4 @@ services:
       - key: PORT
         value: 3000
       - key: MONGODB_URI
-        sync: false # This will prompt you to enter it in the Render dashboard 
+        value: mongodb+srv://darshilaggarwal11:UbQoLdX99DmR21S1@cluster0.w9kvi8i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0 

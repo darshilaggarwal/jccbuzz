@@ -43,9 +43,21 @@ global.io = io;
 const JWT_SECRET = process.env.JWT_SECRET || "shhhh";
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB Atlas'))
-    .catch(err => console.error('MongoDB connection error:', err));
+const MONGODB_ATLAS_URI = "mongodb+srv://darshilaggarwal11:UbQoLdX99DmR21S1@cluster0.w9kvi8i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const MONGODB_LOCAL_URI = "mongodb://localhost:27017/pinspire";
+
+// Use Atlas in production, local in development
+const MONGODB_URI = process.env.NODE_ENV === 'production' 
+  ? MONGODB_ATLAS_URI 
+  : (process.env.MONGODB_URI || MONGODB_LOCAL_URI);
+
+console.log('MongoDB connection string (redacted):', 
+  MONGODB_URI.replace(/:([^:@]+)@/, ':****@'));
+console.log('Environment:', process.env.NODE_ENV);
+
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 app.set("view engine", "ejs");
 app.use(express.json());

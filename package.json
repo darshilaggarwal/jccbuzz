@@ -6,6 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "start-render": "node startForRender.js",
     "setup": "node setup.js"
   },
   "keywords": [],
