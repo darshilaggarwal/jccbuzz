@@ -860,41 +860,27 @@ async function deletePost(postId) {
 
 // Toast notification function 
 function showToast(message, type = 'info') {
-    // Remove existing toast if present
-    const existingToast = document.getElementById('toast');
-    if (existingToast) {
-        existingToast.remove();
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
     }
     
-    // Create new toast
-    const toast = document.createElement('div');
-    toast.id = 'toast';
+    toast.innerHTML = message;
+    toast.classList.add('show');
     
-    // Set appropriate background color based on type
-    let bgColor = 'bg-blue-500';
-    if (type === 'success') bgColor = 'bg-green-500';
-    if (type === 'error') bgColor = 'bg-red-500';
-    if (type === 'warning') bgColor = 'bg-yellow-500';
+    // Always use the blue-purple gradient theme
+    toast.style.background = 'linear-gradient(45deg, #3b82f6, #8b5cf6)';
     
-    toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-2 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-2 opacity-0`;
-    toast.textContent = message;
+    // Add common styles
+    toast.style.color = 'white';
+    toast.style.borderRadius = '8px';
+    toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    toast.style.padding = '12px 24px';
     
-    // Add to DOM
-    document.body.appendChild(toast);
-    
-    // Trigger animation
     setTimeout(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-    }, 10);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-        toast.classList.add('translate-y-2', 'opacity-0');
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, 300);
+        toast.classList.remove('show');
     }, 3000);
 }
 

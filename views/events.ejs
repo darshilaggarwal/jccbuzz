@@ -197,7 +197,7 @@
                     </div>
                     <div class="flex flex-wrap gap-2 md:gap-3">
                         <button 
-                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
+                            class="category-filter category-badge flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-white bg-gradient-to-r from-indigo-500 to-red-500 hover:from-indigo-600 hover:to-red-700 transition-all shadow-sm"
                             data-category="all"
                         >
                             <i class="fas fa-th-large text-xs"></i>
@@ -1361,47 +1361,43 @@
             
             // Toast function
             window.showToast = function(message, type = 'info') {
-                const toast = document.createElement('div');
+                let toast = document.getElementById('global-toast');
                 
-                // Set styles based on type
-                let bgColor, icon;
-                switch (type) {
-                    case 'success':
-                        bgColor = 'bg-green-500';
-                        icon = 'fas fa-check-circle';
-                        break;
-                    case 'error':
-                        bgColor = 'bg-red-500';
-                        icon = 'fas fa-exclamation-circle';
-                        break;
-                    case 'warning':
-                        bgColor = 'bg-yellow-500';
-                        icon = 'fas fa-exclamation-triangle';
-                        break;
-                    default:
-                        bgColor = 'bg-blue-500';
-                        icon = 'fas fa-info-circle';
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'global-toast';
+                    toast.className = 'fixed bottom-4 right-4 z-50 max-w-xs shadow-lg rounded-lg overflow-hidden transform transition-all duration-300 opacity-0 translate-y-2';
+                    document.body.appendChild(toast);
                 }
                 
-                toast.className = `${bgColor} text-white rounded-lg px-4 py-3 shadow-lg flex items-center gap-2 max-w-xs`;
-                toast.innerHTML = `
-                    <i class="${icon}"></i>
-                    <span class="flex-1">${message}</span>
-                    <button class="text-white hover:text-gray-200" onclick="this.parentElement.remove()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
+                // Always use the blue-purple gradient theme
+                toast.style.background = 'linear-gradient(45deg, #3b82f6, #8b5cf6)';
                 
-                // Add to container
-                toastContainer.appendChild(toast);
+                // Common styles
+                toast.style.color = 'white';
+                toast.style.borderRadius = '8px';
+                toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                toast.style.padding = '12px 16px';
                 
-                // Auto remove after 5 seconds
+                // Set message content
+                toast.innerHTML = `<div class="flex items-center">
+                    <span class="ml-2">${message}</span>
+                </div>`;
+                
+                // Animation
+                toast.classList.remove('opacity-0', 'translate-y-2');
+                toast.classList.add('opacity-100', 'translate-y-0');
+                
+                // Remove after delay
                 setTimeout(() => {
-                    toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                    setTimeout(() => toast.remove(), 300);
-                }, 5000);
-                
-                return toast;
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                    toast.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            document.body.removeChild(toast);
+                        }
+                    }, 300);
+                }, 3000);
             };
         }
 

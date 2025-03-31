@@ -1431,13 +1431,21 @@ function confirmShare() {
 }
 
 // Toast notification
-function showToast(message, type, showOnlyImportant) {
+function showToast(message, type = 'info', showOnlyImportant) {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
     
     toastMessage.textContent = message;
     toast.classList.remove('translate-y-full', 'opacity-0');
     toast.classList.add('translate-y-0', 'opacity-100');
+    
+    // Always use the blue-purple gradient theme
+    toast.style.background = 'linear-gradient(45deg, #3b82f6, #8b5cf6)';
+    
+    // Add common styles
+    toast.style.color = 'white';
+    toast.style.borderRadius = '8px';
+    toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
     
     // Hide after 3 seconds
     setTimeout(() => {
@@ -2196,9 +2204,9 @@ async function handlePostSubmit(e) {
             showToast(data.message || 'Post created successfully!');
             closeCreatePostModal();
             
-            // Reload the page after a short delay to let user see the toast
+            // Redirect to the profile page after a short delay
             setTimeout(() => {
-                window.location.reload();
+                window.location.href = `/profile`;
             }, 1000);
         } else {
             console.error('Error creating post:', response.status, response.statusText);

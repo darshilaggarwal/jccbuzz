@@ -587,8 +587,8 @@ socket.on('connect', () => {
     socket.auth = { userId };
     
     // Authenticate after connection
-    socket.emit('authenticate', userId);
-    
+socket.emit('authenticate', userId);
+
     // Join relevant chat room
     socket.emit('joinChat', chatId);
     
@@ -2217,37 +2217,27 @@ socket.on('receive message', (message) => {
 
 // Toast notification function
 function showToast(message, type = 'error') {
-    // Check if a toast container exists
-    let toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col items-end space-y-2';
-        document.body.appendChild(toastContainer);
-    }
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
     
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg shadow-lg max-w-xs transform transition-all duration-300 opacity-0 translate-y-2 ${type === 'success' ? 'bg-green-500' : type === 'info' ? 'bg-yellow-500' : 'bg-red-500'}`;
-    toast.innerHTML = message;
+    toastMessage.textContent = message;
     
-    // Add to container
-    toastContainer.appendChild(toast);
+    // Always use the blue-purple gradient theme
+    toast.style.background = 'linear-gradient(45deg, #3b82f6, #8b5cf6)';
+    
+    // Add common styles
+    toast.style.color = 'white';
+    toast.style.borderRadius = '8px';
+    toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
     
     // Show toast
-    setTimeout(() => {
-        toast.classList.remove('opacity-0', 'translate-y-2');
-        toast.classList.add('opacity-100', 'translate-y-0');
-    }, 10);
+    toast.classList.remove('opacity-0', 'translate-y-full');
+    toast.classList.add('opacity-100', 'translate-y-0');
     
-    // Auto-remove after 3 seconds
+    // Auto-hide after 3 seconds
     setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-2');
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toastContainer.removeChild(toast);
-            }
-        }, 300);
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-full');
     }, 3000);
 }
 

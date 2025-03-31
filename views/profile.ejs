@@ -1,6 +1,35 @@
 <%- include('partials/header2') %>
 
 <script>
+// Show toast notification
+function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    
+    // Set toast content and styling
+    toast.innerHTML = message;
+    toast.classList.add('show');
+    
+    // Always use the blue-purple gradient theme
+    toast.style.background = 'linear-gradient(45deg, #3b82f6, #8b5cf6)';
+    
+    // Add common styles
+    toast.style.color = 'white';
+    toast.style.borderRadius = '8px';
+    toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    toast.style.padding = '12px 24px';
+    
+    // Auto-hide the toast after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
 // Modal functions
 function openCreatePostModal() {
     const modal = document.getElementById('createPostModal');
@@ -10,8 +39,10 @@ function openCreatePostModal() {
 
 function closeCreatePostModal() {
     const modal = document.getElementById('createPostModal');
-    modal.classList.add('hidden');
-    document.body.style.overflow = '';
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
     
     // Reset form
     const form = document.getElementById('createPostForm');
@@ -19,19 +50,22 @@ function closeCreatePostModal() {
     
     // Clear image previews
     const previewContainer = document.getElementById('imagePreviewContainer');
-    if (previewContainer) {
+    if (previewContainer && previewContainer.querySelector('div')) {
         previewContainer.querySelector('div').innerHTML = '';
         previewContainer.classList.add('hidden');
     }
     
     // Show upload placeholder
-    document.getElementById('imageUploadPlaceholder').classList.remove('hidden');
+    const uploadPlaceholder = document.getElementById('imageUploadPlaceholder');
+    if (uploadPlaceholder) uploadPlaceholder.classList.remove('hidden');
     
     // Hide "add more" button
-    document.getElementById('addMoreImagesBtn').classList.add('hidden');
+    const addMoreBtn = document.getElementById('addMoreImagesBtn');
+    if (addMoreBtn) addMoreBtn.classList.add('hidden');
     
     // Reset character counters
-    document.getElementById('captionCharCount').textContent = '0/2200';
+    const charCount = document.getElementById('captionCharCount');
+    if (charCount) charCount.textContent = '0/2200';
     
     // Reset hidden title field
     const hiddenTitleField = document.getElementById('hiddenTitleField');
@@ -635,6 +669,13 @@ async function handlePostSubmit(e) {
         return;
     }
     
+    // Store original button text and disable the button
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="inline-block animate-pulse">Sharing...</span>';
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-70');
+    console.log('Submit button disabled to prevent duplicate submission');
+    
     // Check if there are images selected
     const imageInput = document.getElementById('imageInput');
     const files = imageInput.files;
@@ -646,13 +687,6 @@ async function handlePostSubmit(e) {
         showToast('Please add at least one image to your post', 'warning');
         return;
     }
-    
-    // Update submit button state
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<span class="inline-block animate-pulse">Sharing...</span>';
-    submitBtn.disabled = true;
-    submitBtn.classList.add('opacity-70');
-    console.log('Submit button disabled to prevent duplicate submission');
     
     // Create a new FormData instance
     const formData = new FormData();
@@ -711,13 +745,19 @@ async function handlePostSubmit(e) {
             const data = await response.json();
             console.log('Success response:', data);
             showToast(data.message || 'Post shared successfully!', 'success');
-            closeCreatePostModal();
             
-            // Reload the page after a short delay
-            console.log('Will reload page in 1.5 seconds');
+            // Force close the modal immediately
+            const modal = document.getElementById('createPostModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            console.log('Modal forcefully closed');
+            
+            // Redirect to profile page after a short delay
+            console.log('Will redirect to profile page in 1 second');
             setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+                console.log('Redirecting now...');
+                window.location.href = '/profile';
+            }, 1000);
         } else {
             console.error('Error response:', response.status);
             let errorMsg = 'Could not create post';
@@ -746,9 +786,12 @@ async function handlePostSubmit(e) {
     } finally {
         console.log('Resetting button state');
         // Reset button state
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-70');
+        const submitBtn = document.getElementById('submitPostBtn');
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText || 'Share';
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-70');
+        }
     }
 }
 
@@ -1208,7 +1251,7 @@ function showFollowers(type) {
                         <img src="${user.profileImage || '/img/default-avatar.png'}" alt="${user.username}" 
                              class="w-10 h-10 rounded-full object-cover">
                         <div class="ml-3">
-                            <a href="/profile/${user.username}" class="font-medium text-gray-800 dark:text-white hover:underline">${user.username}</a>
+                            <a href="/user/${user.username}" class="font-medium text-gray-800 dark:text-white hover:underline">${user.username}</a>
                             <p class="text-sm text-gray-500 dark:text-gray-400">${user.name || ''}</p>
                         </div>
                     </div>
@@ -1230,6 +1273,18 @@ function closeFollowersModal() {
     document.getElementById('followersModal').classList.add('hidden');
     document.body.style.overflow = ''; // Re-enable scrolling
 }
+
+// Close modals with ESC key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        // Close any open modals
+        closeCreatePostModal();
+        closeFollowersModal();
+        closeDeleteConfirmModal();
+        closeStoryPreview();
+        console.log('ESC key pressed, closing modals');
+    }
+});
 </script>
 
 <!-- Followers Modal - Instagram Style -->
