@@ -176,26 +176,7 @@ const uploadStory = multer({
 });
 
 // Configure multer storage for chat media uploads
-const chatMediaStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const dir = path.join(__dirname, 'public/uploads/chat');
-        
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        
-        cb(null, dir);
-    },
-    filename: function (req, file, cb) {
-        // Generate unique filename
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, 'chat-' + uniqueSuffix + ext);
-    }
-});
-
-// Filter for images and videos
+const chatMediaStorage = multer.memoryStorage();
 const chatMediaFilter = function (req, file, cb) {
     // Accept images and videos
     if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
@@ -214,19 +195,7 @@ const uploadChatMedia = multer({
 }).single('media');
 
 // Add voice message upload configuration
-const uploadVoiceStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const dir = path.join(__dirname, 'public/uploads/voice');
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: function (req, file, cb) {
-        cb(null, req.user._id + '-' + Date.now() + '-' + file.originalname);
-    }
-});
-
+const uploadVoiceStorage = multer.memoryStorage();
 const uploadVoice = multer({
     storage: uploadVoiceStorage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
@@ -1554,10 +1523,29 @@ app.post("/chat/:chatId/media", isLoggedIn, async (req, res) => {
                 return res.status(404).json({ error: "Chat not found" });
             }
             
-            // Determine media type
+            // Get cloudinary upload function
+            const { uploadToCloudinary } = require('./config/cloudinary');
+            
+            // Determine media type and handle upload
             let mediaType = 'none';
+            let mediaUrl = null;
+            
             if (req.file) {
                 mediaType = req.file.mimetype.startsWith('image/') ? 'image' : 'video';
+                
+                try {
+                    // Upload file to Cloudinary
+                    const result = await uploadToCloudinary(req.file, {
+                        folder: 'jccbuzz/chat',
+                        resource_type: 'auto' // Handle both images and videos
+                    });
+                    
+                    mediaUrl = result.secure_url;
+                    console.log(`Chat media uploaded to Cloudinary: ${mediaUrl}`);
+                } catch (uploadError) {
+                    console.error('Error uploading to Cloudinary:', uploadError);
+                    return res.status(500).json({ error: "Error uploading media" });
+                }
             }
             
             // Create message
@@ -1565,7 +1553,7 @@ app.post("/chat/:chatId/media", isLoggedIn, async (req, res) => {
                 sender: user._id,
                 content: content || '',
                 mediaType,
-                mediaUrl: req.file ? `/uploads/chat/${req.file.filename}` : null,
+                mediaUrl,
                 read: false,
                 timestamp: Date.now()
             };
@@ -2488,12 +2476,31 @@ app.post("/chat/:chatId/voice", isLoggedIn, async (req, res) => {
                 return res.status(404).json({ error: "Chat not found" });
             }
             
+            // Get cloudinary upload function
+            const { uploadToCloudinary } = require('./config/cloudinary');
+            
+            let mediaUrl = null;
+            
+            try {
+                // Upload to Cloudinary
+                const result = await uploadToCloudinary(req.file, {
+                    folder: 'jccbuzz/voice',
+                    resource_type: 'auto' // Handle audio files
+                });
+                
+                mediaUrl = result.secure_url;
+                console.log(`Voice message uploaded to Cloudinary: ${mediaUrl}`);
+            } catch (uploadError) {
+                console.error('Error uploading voice message to Cloudinary:', uploadError);
+                return res.status(500).json({ error: "Error uploading voice message" });
+            }
+            
             // Create message
             const message = {
                 sender: user._id,
                 content: '', // No text content for voice messages
                 mediaType: 'audio',
-                mediaUrl: `/uploads/voice/${req.file.filename}`,
+                mediaUrl: mediaUrl,
                 read: false,
                 createdAt: Date.now()
             };
