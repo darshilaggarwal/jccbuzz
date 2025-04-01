@@ -2,14 +2,28 @@ services:
   - type: web
     name: jccbuzz
     env: node
-    buildCommand: pnpm install && node setup.js
+    buildCommand: npm install
     startCommand: node startForRender.js
+    plan: free
+    branch: main
     envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: NODE_VERSION
         value: 18.19.0
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
-      - key: MONGODB_URI
-        value: mongodb+srv://darshilaggarwal11:UbQoLdX99DmR21S1@cluster0.w9kvi8i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0 
+        value: 3000 

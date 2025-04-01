@@ -29,6 +29,7 @@ const socketIo = require('socket.io');
 const { Server } = require('socket.io');
 // const LocalStrategy = require('passport-local').Strategy;
 const socketModule = require('./socket/socket');
+const { cloudinary, uploadToCloudinary, getPublicIdFromUrl, deleteFromCloudinary } = require('./config/cloudinary');
 
 // Create HTTP server and Socket.io instance
 const server = http.createServer(app);
@@ -135,17 +136,44 @@ const upload = multer({
 
 // Configure multer for post images
 const postStorage = multer.memoryStorage();
-const uploadPostImages = multer({ 
-    storage: postStorage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-}).array('processedImages', 10); // Max 10 images
+const uploadPostImages = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed'), false);
+        }
+    }
+});
+
+// Configure multer for profile pictures
+const profileUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: function (req, file, cb) {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed'));
+        }
+    }
+});
 
 // Configure multer for story upload
 const storyStorage = multer.memoryStorage();
-const uploadStory = multer({ 
-    storage: storyStorage,
-    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
-}).single('story');
+const uploadStory = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image or video files are allowed'), false);
+        }
+    }
+});
 
 // Configure multer storage for chat media uploads
 const chatMediaStorage = multer.diskStorage({
@@ -304,7 +332,7 @@ app.get("/edit/:id" ,isLoggedIn ,  async (req,res)=>{
 })
 
 
-app.post("/post", isLoggedIn, uploadPostImages, async (req, res) => {
+app.post("/post", isLoggedIn, uploadPostImages.array('processedImages'), async (req, res) => {
     try {
         const user = await userModel.findOne({ email: req.user.email });
         if (!req.body.title || !req.body.content) {
@@ -313,22 +341,33 @@ app.post("/post", isLoggedIn, uploadPostImages, async (req, res) => {
         
         const { title, content } = req.body;
         
+        // Get cloudinary upload function
+        const { uploadToCloudinary } = require('./config/cloudinary');
+        
+        console.log(`Processing ${req.files ? req.files.length : 0} images for post`);
+        
         // Process images
         let processedImages = [];
         if (req.files && req.files.length > 0) {
             processedImages = await Promise.all(
-                req.files.map(async (file) => {
+                req.files.map(async (file, index) => {
+                    console.log(`Processing image ${index + 1} for post`);
+                    
+                    // Process image with sharp first to optimize
                     const processedBuffer = await sharp(file.buffer)
                         .resize(1080, 1080, { fit: 'inside' })
                         .jpeg({ quality: 80 })
                         .toBuffer();
                     
-                    const filename = `post-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-                    const imagePath = path.join('public/uploads/posts', filename);
-                    await sharp(processedBuffer).toFile(imagePath);
+                    // Upload processed image to Cloudinary
+                    const result = await uploadToCloudinary(processedBuffer, {
+                        folder: 'jccbuzz/posts'
+                    });
+                    
+                    console.log(`Image ${index + 1} uploaded to Cloudinary: ${result.secure_url}`);
                     
                     return {
-                        url: `/uploads/posts/${filename}`,
+                        url: result.secure_url,
                         aspectRatio: 1
                     };
                 })
@@ -990,24 +1029,35 @@ app.post("/post/:postId/unlike", isLoggedIn, async (req, res) => {
 });
 
 // Add profile image upload route
-app.post('/upload-profile-pic', isLoggedIn, (req, res) => {
-    upload(req, res, function(err) {
-        if (err instanceof multer.MulterError) {
-            // A Multer error occurred when uploading
-            return res.status(400).send(err.message);
-        } else if (err) {
-            // An unknown error occurred
-            return res.status(400).send(err.message);
+app.post('/upload-profile-pic', isLoggedIn, profileUpload.single('profilepic'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).send('No file uploaded');
         }
         
-        // Everything went fine
-        if (!req.file) {
-            return res.status(400).send('Please select an image file.');
-        }
-
-        // Process the valid upload
-        processUpload(req, res);
-    });
+        // Get cloudinary upload function
+        const { uploadToCloudinary } = require('./config/cloudinary');
+        
+        console.log('Uploading profile picture to Cloudinary');
+        
+        // Upload to Cloudinary - pass the whole file object to handle all cases
+        const result = await uploadToCloudinary(req.file, { 
+            folder: 'jccbuzz/profiles' 
+        });
+        
+        console.log('Profile picture uploaded to:', result.secure_url);
+        
+        // Update user profile with Cloudinary URL
+        const user = await userModel.findOne({ email: req.user.email });
+        user.profileImage = result.secure_url;
+        await user.save();
+        
+        // Redirect back to edit profile page
+        res.redirect('/edit-profile');
+    } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        res.status(500).send('Error uploading profile picture');
+    }
 });
 
 // Separate function to handle the actual upload processing
@@ -1015,16 +1065,18 @@ async function processUpload(req, res) {
     try {
         const user = await userModel.findOne({ email: req.user.email });
         
-        // Delete old profile image if it exists and isn't the default
-        if (user.profileImage && !user.profileImage.includes('default-profile.png')) {
-            const oldImagePath = path.join(__dirname, 'public', user.profileImage);
-            if (fs.existsSync(oldImagePath)) {
-                fs.unlinkSync(oldImagePath);
-            }
-        }
+        // Get cloudinary upload function
+        const { uploadToCloudinary } = require('./config/cloudinary');
         
-        user.profileImage = '/uploads/profiles/' + req.file.filename;
+        // Upload to Cloudinary
+        const result = await uploadToCloudinary(req.file.buffer, { 
+            folder: 'jccbuzz/profiles' 
+        });
+        
+        // Update user profile with Cloudinary URL
+        user.profileImage = result.secure_url;
         await user.save();
+        
         res.redirect('/profile');
     } catch (error) {
         console.error('Upload error:', error);
@@ -1543,7 +1595,7 @@ app.post("/chat/:chatId/media", isLoggedIn, async (req, res) => {
 });
 
 // Upload story
-app.post("/story", isLoggedIn, uploadStory, async (req, res) => {
+app.post("/story", isLoggedIn, uploadStory.single('file'), async (req, res) => {
     try {
         const user = await userModel.findOne({ email: req.user.email });
         
@@ -1551,11 +1603,13 @@ app.post("/story", isLoggedIn, uploadStory, async (req, res) => {
             return res.status(400).json({ error: "No media file provided" });
         }
 
-        const filename = `story-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-        const imagePath = path.join('public/uploads/stories', filename);
-
-        // Process image to maintain mobile-like aspect ratio
-        await sharp(req.file.buffer)
+        console.log('Processing story upload');
+        
+        // Get cloudinary upload function
+        const { uploadToCloudinary } = require('./config/cloudinary');
+        
+        // Process image to maintain mobile-like aspect ratio and optimize
+        const processedBuffer = await sharp(req.file.buffer)
             .resize({
                 width: 1080,
                 height: 1920,
@@ -1563,7 +1617,16 @@ app.post("/story", isLoggedIn, uploadStory, async (req, res) => {
                 background: { r: 0, g: 0, b: 0, alpha: 1 }
             })
             .jpeg({ quality: 85 })
-            .toFile(imagePath);
+            .toBuffer();
+            
+        console.log('Story image processed, uploading to Cloudinary');
+        
+        // Upload to Cloudinary
+        const result = await uploadToCloudinary(processedBuffer, {
+            folder: 'jccbuzz/stories'
+        });
+        
+        console.log('Story uploaded to Cloudinary:', result.secure_url);
 
         // Parse text overlay and emojis from request
         const textOverlay = req.body.textOverlay ? JSON.parse(req.body.textOverlay) : null;
@@ -1572,7 +1635,7 @@ app.post("/story", isLoggedIn, uploadStory, async (req, res) => {
         const story = await storyModel.create({
             user: user._id,
             media: {
-                url: `/uploads/stories/${filename}`,
+                url: result.secure_url,
                 type: req.file.mimetype.startsWith('video/') ? 'video' : 'image'
             },
             textOverlay,
@@ -1653,15 +1716,22 @@ app.delete("/story/:storyId", isLoggedIn, async (req, res) => {
             return res.status(403).json({ error: "Not authorized" });
         }
 
-        // Delete story media file
-        const filePath = path.join(__dirname, 'public', story.media.url);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+        // Get Cloudinary functions
+        const { getPublicIdFromUrl, deleteFromCloudinary } = require('./config/cloudinary');
+        
+        // Delete from Cloudinary if it's a Cloudinary URL
+        if (story.media && story.media.url) {
+            const publicId = getPublicIdFromUrl(story.media.url);
+            if (publicId) {
+                await deleteFromCloudinary(publicId);
+                console.log(`Deleted story media from Cloudinary: ${publicId}`);
+            }
         }
 
         await story.delete();
         res.json({ message: "Story deleted successfully" });
     } catch (error) {
+        console.error('Error deleting story:', error);
         res.status(500).json({ error: "Error deleting story" });
     }
 });
@@ -2589,6 +2659,7 @@ app.post("/verify/request-otp", async (req, res) => {
         if (!enrollment_number) {
             return res.status(400).json({ error: "Enrollment number is required" });
         }
+        
         
         console.log("Requesting OTP for enrollment number:", enrollment_number);
         

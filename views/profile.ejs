@@ -975,7 +975,7 @@ async function uploadStory() {
     }
 
     const formData = new FormData();
-    formData.append('story', storyFile);
+    formData.append('file', storyFile);
 
     try {
         const response = await fetch('/story', {

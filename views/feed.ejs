@@ -2609,7 +2609,7 @@ async function uploadStory() {
     uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
 
     const formData = new FormData();
-    formData.append('story', storyFile);
+    formData.append('file', storyFile);
 
     try {
         const response = await fetch('/story', {
