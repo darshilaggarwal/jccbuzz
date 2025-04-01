@@ -72,6 +72,53 @@
         .btn-primary:hover:before {
             left: 100%;
         }
+        
+        /* Mobile responsiveness improvements */
+        @media (max-width: 640px) {
+            /* Navbar adjustments */
+            header .h-16 {
+                height: auto;
+                padding: 8px 0;
+            }
+            
+            header img.h-40 {
+                height: 2.5rem; 
+                margin-top: 0;
+            }
+            
+            /* Better auth buttons on mobile */
+            header .flex.items-center.space-x-4 {
+                gap: 8px;
+            }
+            
+            header .btn-primary {
+                padding: 8px 12px;
+                font-size: 14px;
+                white-space: nowrap;
+                border-radius: 6px;
+            }
+            
+            /* Login form adjustments */
+            .max-w-md {
+                width: 90%;
+                padding: 16px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            
+            /* Input padding adjustments */
+            input[type="text"], input[type="password"] {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+            
+            /* Submit button improvements */
+            button[type="submit"] {
+                padding-top: 10px;
+                padding-bottom: 10px;
+                margin-top: 8px;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50">

@@ -836,6 +836,75 @@
 }
 
 /* Add subtle hover effects to post containers */
+
+/* Mobile-specific post styling for Instagram-like appearance */
+@media (max-width: 768px) {
+    /* Make the main container full width on mobile */
+    .mx-auto.py-6 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Posts container takes full width */
+    .max-w-md.mx-auto.space-y-4 {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 0 !important;
+        space-y: 1px !important;
+    }
+    
+    /* Each post container styling */
+    .post-container {
+        margin-bottom: 8px !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        width: 100% !important;
+    }
+    
+    /* Header section of post */
+    .post-container .px-2 {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    
+    /* Post content area */
+    .post-container .px-3 {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    
+    /* Fix image aspect ratio and overflow */
+    .post-image .swiper-container {
+        width: 100% !important;
+        border-radius: 0 !important;
+    }
+    
+    /* Instagram-like action buttons */
+    .post-action-btn {
+        padding: 6px !important;
+    }
+    
+    /* Post metadata spacing */
+    .post-container .mb-1.5 {
+        margin-bottom: 4px !important;
+    }
+    
+    /* Story container improvements */
+    .story-container {
+        margin-bottom: 8px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    
+    /* Create post button position */
+    .fixed.right-4.bottom-4 {
+        right: 12px !important;
+        bottom: 70px !important;
+    }
+}
 </style>
 
 <script>
