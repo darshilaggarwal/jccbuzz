@@ -56,6 +56,31 @@ function setupResponsiveImages() {
     // Apply max width to post containers
     document.querySelectorAll('.post-container').forEach(container => {
         container.style.maxWidth = '470px'; // Ensure it fits on most screens
+        container.style.width = '100%'; // Ensures full width up to max-width
+    });
+    
+    // Apply consistent sizing to post images on profile pages
+    document.querySelectorAll('.group[data-post-id] img').forEach(img => {
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+    });
+    
+    // Make sure swiper-container is consistent across all pages
+    document.querySelectorAll('.post-image .swiper-container').forEach(container => {
+        container.style.width = '100%';
+        container.style.height = '0';
+        container.style.paddingBottom = '100%'; // Creates a perfect square aspect ratio
+        container.style.position = 'relative';
+    });
+    
+    // Fix parent containers for consistent layout
+    document.querySelectorAll('.swiper-wrapper').forEach(wrapper => {
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
     });
 }
 

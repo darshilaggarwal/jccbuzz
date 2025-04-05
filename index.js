@@ -136,7 +136,7 @@ const upload = multer({
 
 // Configure multer for post images
 const postStorage = multer.memoryStorage();
-const uploadPostImages = multer({
+const uploadPostImages = multer({ 
     storage: multer.memoryStorage(),
     limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
     fileFilter: (req, file, cb) => {
@@ -163,7 +163,7 @@ const profileUpload = multer({
 
 // Configure multer for story upload
 const storyStorage = multer.memoryStorage();
-const uploadStory = multer({
+const uploadStory = multer({ 
     storage: multer.memoryStorage(),
     limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
     fileFilter: (req, file, cb) => {
@@ -3305,7 +3305,12 @@ app.get("/notifications", isLoggedIn, async (req, res) => {
     try {
         const user = await userModel.findOne({ email: req.user.email });
         
+        // Get notifications with populated data for links
         let notifications = await notificationModel.find({ recipient: user._id })
+            .populate('sender', 'name username profileImage')
+            .populate('data.postId')
+            .populate('data.commentId')
+            .populate('data.storyId')
             .sort({ createdAt: -1 });
         
         res.render('notifications', {

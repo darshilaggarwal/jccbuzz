@@ -78,7 +78,23 @@
                         // Determine data-type for filtering
                         let dataType = notification.type.includes('project_join') ? 'project' : 'social';
                     %>
-                        <div class="notification-item p-4 <%= notificationClass %> hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" data-id="<%= notification._id %>" data-type="<%= dataType %>" data-read="<%= notification.read ? 'true' : 'false' %>">
+                        <div class="notification-item p-4 <%= notificationClass %> hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" 
+                             data-id="<%= notification._id %>" 
+                             data-type="<%= dataType %>" 
+                             data-read="<%= notification.read ? 'true' : 'false' %>"
+                             data-notif-type="<%= notification.type %>"
+                             <% if (notification.type === 'like' || notification.type === 'comment' || notification.type === 'new_post') { %>
+                                data-post-id="<%= notification.data?.postId?._id || notification.data?.postId || '' %>"
+                             <% } else if (notification.type === 'follow' || notification.type === 'followRequest' || notification.type === 'followAccepted') { %>
+                                data-user-id="<%= notification.sender?._id || notification.sender || '' %>"
+                                data-username="<%= notification.sender?.username || '' %>"
+                             <% } else if (notification.type === 'comment_like' || notification.type === 'reply' || notification.type === 'mention') { %>
+                                data-post-id="<%= notification.data?.postId?._id || notification.data?.postId || '' %>"
+                                data-comment-id="<%= notification.data?.commentId?._id || notification.data?.commentId || '' %>"
+                             <% } else if (notification.type === 'story_view') { %>
+                                data-story-id="<%= notification.data?.storyId?._id || notification.data?.storyId || '' %>"
+                             <% } %>
+                        >
                             <div class="flex items-start">
                                 <div class="flex-shrink-0 mr-4">
                                     <div class="w-10 h-10 rounded-full <%= iconBgClass %> flex items-center justify-center shadow-sm">
@@ -306,11 +322,17 @@
         
         // Make notification items clickable
         notifications.forEach(notification => {
-            notification.addEventListener('click', function() {
+            notification.addEventListener('click', function(e) {
+                // Don't redirect if clicking on the mark as read button
+                if (e.target.classList.contains('mark-read-btn')) {
+                    return;
+                }
+                
                 const notificationId = this.getAttribute('data-id');
+                const notificationType = this.getAttribute('data-notif-type');
                 const isRead = this.getAttribute('data-read') === 'true';
                 
-                // Only mark as read if it's unread
+                // Mark as read if unread
                 if (!isRead) {
                     fetch(`/api/notifications/${notificationId}/read`, {
                         method: 'POST',
@@ -331,14 +353,34 @@
                         this.setAttribute('data-read', 'true');
                         const markReadBtn = this.querySelector('.mark-read-btn');
                         if (markReadBtn) markReadBtn.remove();
-        })
-        .catch(error => {
-            console.error('Error marking notification as read:', error);
-        });
-    }
-    
-                // Navigate based on notification type (optional)
-                // You can add navigation logic here if you want notifications to link somewhere
+                    })
+                    .catch(error => {
+                        console.error('Error marking notification as read:', error);
+                    });
+                }
+                
+                // Navigation based on notification type
+                if (notificationType === 'like' || notificationType === 'comment' || notificationType === 'new_post') {
+                    const postId = this.getAttribute('data-post-id');
+                    if (postId) {
+                        window.location.href = `/post/${postId}`;
+                    }
+                } else if (notificationType === 'follow' || notificationType === 'followRequest' || notificationType === 'followAccepted') {
+                    const username = this.getAttribute('data-username');
+                    if (username) {
+                        window.location.href = `/user/${username}`;
+                    }
+                } else if (notificationType === 'comment_like' || notificationType === 'reply' || notificationType === 'mention') {
+                    // For comment interactions, go to the post with the comment
+                    const postId = this.getAttribute('data-post-id');
+                    const commentId = this.getAttribute('data-comment-id');
+                    if (postId) {
+                        window.location.href = `/post/${postId}${commentId ? '#comment-' + commentId : ''}`;
+                    }
+                } else if (notificationType === 'story_view') {
+                    // For story views, redirect to the profile stories section
+                    window.location.href = '/profile#stories';
+                }
             });
         });
         

@@ -66,8 +66,39 @@ router.get("/social", isLoggedIn, async (req, res) => {
     }
 });
 
-// Mark notification as read
+// Mark notification as read (PUT version)
 router.put("/:id/read", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        
+        const notification = await notificationModel.findOneAndUpdate(
+            { 
+                _id: req.params.id, 
+                recipient: user._id 
+            },
+            { read: true, readAt: new Date() },
+            { new: true }
+        );
+        
+        if (!notification) {
+            return res.status(404).json({ error: "Notification not found" });
+        }
+        
+        // Get updated unread count (all notifications)
+        const unreadCount = await notificationModel.countDocuments({
+            recipient: user._id,
+            read: false
+        });
+        
+        res.json({ success: true, unreadCount });
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ error: "Error marking notification as read" });
+    }
+});
+
+// Mark notification as read (POST version to support the frontend)
+router.post("/:id/read", isLoggedIn, async (req, res) => {
     try {
         const user = await userModel.findOne({ email: req.user.email });
         
