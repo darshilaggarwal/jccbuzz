@@ -29,6 +29,10 @@ const commentSchema = new mongoose.Schema({
             type: String,
             required: true
         },
+        parentReplyIndex: {
+            type: Number,
+            default: -1  // -1 means it's a direct reply to the comment, not to another reply
+        },
         likes: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'

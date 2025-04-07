@@ -1,59 +1,73 @@
-<div class="mt-4 border-t pt-4">
+<!-- Instagram-style comments section -->
+<div class="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3">
     <!-- Comments Section with toggle -->
-    <div class="comments-section mt-2">
+    <div class="comments-section">
         <!-- View all comments button -->
         <% if (post.comments && post.comments.length > 0) { %>
         <button 
             onclick="toggleComments('<%= post._id %>')" 
-            class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2 flex items-center"
+            class="text-gray-500 dark:text-gray-400 text-sm mb-2 flex items-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             aria-expanded="false"
             aria-controls="comments-container-<%= post._id %>"
         >
-            <span id="comments-toggle-text-<%= post._id %>">View all <%= post.comments.length %> comments</span>
-            <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300" id="comments-toggle-icon-<%= post._id %>"></i>
+            <span id="comments-toggle-text-<%= post._id %>">View <%= post.comments.length %> <%= post.comments.length === 1 ? 'comment' : 'comments' %></span>
+            <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-200" id="comments-toggle-icon-<%= post._id %>"></i>
         </button>
         
         <!-- Collapsible comments container with animation classes -->
-        <div class="space-y-3 max-h-96 overflow-y-auto hidden opacity-0 transition-all duration-300 ease-in-out" 
+        <div class="space-y-2.5 max-h-96 overflow-y-auto hidden opacity-0 transition-all duration-300 ease-in-out" 
              id="comments-container-<%= post._id %>">
         <% } else { %>
         <div class="hidden" id="comments-container-<%= post._id %>">
         <% } %>
             <% if (post.comments && post.comments.length > 0) { %>
                 <% post.comments.forEach((comment, commentIndex) => { %>
-                    <div class="flex space-x-2 comment-item">
+                    <div class="flex space-x-2.5 comment-item group">
                         <% if (comment.user) { %>
-                        <img src="<%= comment.user.profileImage %>" 
-                             alt="<%= comment.user.name %>" 
-                             class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
-                        <div class="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
-                            <div class="flex justify-between items-start">
-                                <p class="font-medium text-sm text-gray-800 dark:text-white"><%= comment.user.name %></p>
-                                <span class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(comment.createdAt).toLocaleDateString() %></span>
+                        <a href="/profile/<%= comment.user.username || comment.user._id %>" class="flex-shrink-0">
+                            <img src="<%= comment.user.profileImage %>" 
+                                 alt="<%= comment.user.name %>" 
+                                 class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
+                        </a>
+                        <div class="flex-1 rounded-xl py-1.5 px-3">
+                            <div class="flex flex-wrap items-start">
+                                <a href="/profile/<%= comment.user.username || comment.user._id %>" class="font-medium text-sm text-gray-800 dark:text-white mr-1.5 hover:underline"><%= comment.user.name %></a>
+                                <p class="text-gray-700 dark:text-gray-300 text-sm break-words inline"><%= comment.content %></p>
                             </div>
                         <% } else { %>
                         <div class="w-8 h-8 rounded-full flex-shrink-0 bg-gray-300 flex items-center justify-center">
                             <i class="fas fa-user text-gray-500"></i>
                         </div>
-                        <div class="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
-                            <div class="flex justify-between items-start">
-                                <p class="font-medium text-sm text-gray-800 dark:text-white">Deleted User</p>
-                                <span class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(comment.createdAt).toLocaleDateString() %></span>
+                        <div class="flex-1 rounded-xl py-1.5 px-3">
+                            <div class="flex flex-wrap items-start">
+                                <span class="font-medium text-sm text-gray-800 dark:text-white mr-1.5">Deleted User</span>
+                                <p class="text-gray-700 dark:text-gray-300 text-sm break-words inline"><%= comment.content %></p>
                             </div>
                         <% } %>
-                            <p class="text-gray-600 dark:text-gray-300 text-sm"><%= comment.content %></p>
                             
-                            <!-- Comment actions -->
-                            <div class="mt-2 flex items-center text-xs space-x-4">
+                            <!-- Comment metadata and actions -->
+                            <div class="mt-1 flex items-center text-xs space-x-4 text-gray-500 dark:text-gray-400">
+                                <span class="text-xs"><%= new Date(comment.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) %></span>
+                                
                                 <button onclick="likeComment('<%= comment._id %>', this)" 
-                                        class="comment-like-btn <%= comment.likes && comment.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500">
-                                    <i class="fas fa-heart"></i>
-                                    <span class="like-count ml-1"><%= comment.likes ? comment.likes.length : 0 %></span>
+                                        class="comment-like-btn <%= comment.likes && comment.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500 transition-colors duration-200">
+                                    <i class="fas fa-heart text-xs"></i>
+                                    <% if (comment.likes && comment.likes.length > 0) { %>
+                                    <span class="like-count ml-1"><%= comment.likes.length %></span>
+                                    <% } %>
                                 </button>
+                                
                                 <button onclick="toggleReplyForm('<%= post._id %>', '<%= comment._id %>')" 
-                                        class="text-gray-500 hover:text-blue-500">
+                                        class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
                                     Reply
                                 </button>
+                                
+                                <% if (comment.user && user && comment.user._id.toString() === user._id.toString()) { %>
+                                <button onclick="deleteComment('<%= comment._id %>', this)" 
+                                        class="text-gray-500 hover:text-red-500 transition-colors duration-200 opacity-0 group-hover:opacity-100">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                                <% } %>
                             </div>
                             
                             <!-- Hidden reply form, shown when reply button is clicked -->
@@ -61,9 +75,9 @@
                                 <form class="flex items-center" onsubmit="addReply(event, '<%= comment._id %>')">
                                     <input type="text" 
                                            placeholder="Add a reply..." 
-                                           class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                           class="flex-1 py-1.5 px-3 text-xs border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white"
                                            required>
-                                    <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                                    <button type="submit" class="ml-1.5 text-blue-500 hover:text-blue-600 transition-colors">
                                         <i class="fas fa-paper-plane"></i>
                                     </button>
                                 </form>
@@ -71,23 +85,26 @@
                             
                             <!-- Display replies if any -->
                             <% if (comment.replies && comment.replies.length > 0) { %>
-                                <div class="mt-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-2">
+                                <div class="mt-1.5 pl-2 border-l border-gray-200 dark:border-gray-700 space-y-2 pt-1">
                                     <% comment.replies.forEach((reply, replyIndex) => { %>
-                                        <div class="reply">
+                                        <div class="reply group" id="reply-<%= comment._id %>-<%= replyIndex %>">
                                             <div class="flex items-start">
                                                 <% if (reply.user) { %>
-                                                <div class="flex-shrink-0 mr-1">
+                                                <a href="/profile/<%= reply.user.username || reply.user._id %>" class="flex-shrink-0 mr-1.5">
                                                     <img src="<%= reply.user.profileImage %>" 
                                                          alt="<%= reply.user.name %>" 
                                                          class="w-6 h-6 rounded-full object-cover">
-                                                </div>
+                                                </a>
                                                 <div class="flex-1">
                                                     <p class="text-xs">
-                                                        <span class="font-medium text-gray-800 dark:text-white"><%= reply.user.name %></span>
-                                                        <span class="text-gray-600 dark:text-gray-300"><%= reply.content %></span>
+                                                        <a href="/profile/<%= reply.user.username || reply.user._id %>" class="font-medium text-gray-800 dark:text-white hover:underline"><%= reply.user.name %></a>
+                                                        <% if (reply.parentReplyIndex >= 0 && comment.replies[reply.parentReplyIndex] && comment.replies[reply.parentReplyIndex].user) { %>
+                                                            <span class="text-gray-500 dark:text-gray-400">@<%= comment.replies[reply.parentReplyIndex].user.name %></span>
+                                                        <% } %>
+                                                        <span class="text-gray-700 dark:text-gray-300 break-words"><%= reply.content %></span>
                                                     </p>
                                                 <% } else { %>
-                                                <div class="flex-shrink-0 mr-1">
+                                                <div class="flex-shrink-0 mr-1.5">
                                                     <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
                                                         <i class="fas fa-user text-gray-500 text-xs"></i>
                                                     </div>
@@ -95,15 +112,44 @@
                                                 <div class="flex-1">
                                                     <p class="text-xs">
                                                         <span class="font-medium text-gray-800 dark:text-white">Deleted User</span>
-                                                        <span class="text-gray-600 dark:text-gray-300"><%= reply.content %></span>
+                                                        <span class="text-gray-700 dark:text-gray-300 break-words"><%= reply.content %></span>
                                                     </p>
                                                 <% } %>
-                                                    <div class="mt-1 flex items-center text-xs space-x-3">
+                                                    <div class="mt-1 flex items-center text-xs space-x-3 text-gray-500 dark:text-gray-400">
+                                                        <span class="text-xs"><%= new Date(reply.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) %></span>
+                                                        
                                                         <button onclick="likeReply('<%= comment._id %>', '<%= replyIndex %>', this)" 
-                                                                class="reply-like-btn <%= reply.likes && reply.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500">
-                                                            <i class="fas fa-heart"></i>
-                                                            <span class="reply-like-count"><%= reply.likes ? reply.likes.length : 0 %></span>
+                                                                class="reply-like-btn <%= reply.likes && reply.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500' %> hover:text-red-500 transition-colors duration-200">
+                                                            <i class="fas fa-heart text-xs"></i>
+                                                            <% if (reply.likes && reply.likes.length > 0) { %>
+                                                            <span class="reply-like-count"><%= reply.likes.length %></span>
+                                                            <% } %>
                                                         </button>
+                                                        
+                                                        <button onclick="toggleNestedReplyForm('<%= comment._id %>', '<%= replyIndex %>')" 
+                                                                class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                                            Reply
+                                                        </button>
+                                                        
+                                                        <% if (reply.user && user && reply.user._id.toString() === user._id.toString()) { %>
+                                                        <button onclick="deleteReply('<%= comment._id %>', '<%= replyIndex %>', this)" 
+                                                                class="text-gray-500 hover:text-red-500 transition-colors duration-200 opacity-0 group-hover:opacity-100">
+                                                            <i class="fas fa-trash text-xs"></i>
+                                                        </button>
+                                                        <% } %>
+                                                    </div>
+                                                    
+                                                    <!-- Hidden nested reply form -->
+                                                    <div id="nested-reply-form-<%= comment._id %>-<%= replyIndex %>" class="hidden mt-1">
+                                                        <form class="flex items-center" onsubmit="addNestedReply(event, '<%= comment._id %>', '<%= replyIndex %>')">
+                                                            <input type="text" 
+                                                                   placeholder="Reply to <%= reply.user ? reply.user.name : 'this comment' %>..." 
+                                                                   class="flex-1 py-1 px-2 text-xs border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white"
+                                                                   required>
+                                                            <button type="submit" class="ml-1.5 text-blue-500 hover:text-blue-600 transition-colors">
+                                                                <i class="fas fa-paper-plane"></i>
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                 </div>
                                             </div>
@@ -118,17 +164,17 @@
         </div>
 
         <!-- Comment Form - Keep this visible for quick commenting -->
-        <form class="mt-3 flex items-center" onsubmit="addComment(event, '<%= post._id %>')">
+        <form class="mt-2.5 flex items-center" onsubmit="addComment(event, '<%= post._id %>')">
             <img src="<%= user.profileImage %>" 
                  alt="Your profile" 
-                 class="w-8 h-8 rounded-full object-cover mr-2">
+                 class="w-8 h-8 rounded-full object-cover mr-2.5">
             <div class="relative flex-1">
                 <input type="text" 
                        id="comment-input-<%= post._id %>" 
                        placeholder="Add a comment..." 
-                       class="w-full py-2 px-3 border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white text-sm"
+                       class="w-full py-2 px-3.5 border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white text-sm"
                        required>
-                <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-600">
+                <button type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-600 transition-colors">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
@@ -144,6 +190,9 @@ function addComment(event, postId) {
     const content = inputEl.value.trim();
     
     if (!content) return;
+    
+    // Disable input while submitting
+    inputEl.disabled = true;
     
     fetch(`/post/${postId}/comment`, {
         method: 'POST',
@@ -161,27 +210,35 @@ function addComment(event, postId) {
     .then(data => {
         // Create new comment HTML
         const commentHTML = `
-            <div class="flex space-x-2 comment-item animate-fadeIn">
-                <img src="${data.comment.user.profileImage}" 
-                     alt="${data.comment.user.name}" 
-                     class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
-                <div class="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
-                    <div class="flex justify-between items-start">
-                        <p class="font-medium text-sm text-gray-800 dark:text-white">${data.comment.user.name}</p>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
+            <div class="flex space-x-2.5 comment-item group animate-fadeIn">
+                <a href="/profile/${data.comment.user.username || data.comment.user._id}" class="flex-shrink-0">
+                    <img src="${data.comment.user.profileImage}" 
+                         alt="${data.comment.user.name}" 
+                         class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
+                </a>
+                <div class="flex-1 rounded-xl py-1.5 px-3">
+                    <div class="flex flex-wrap items-start">
+                        <a href="/profile/${data.comment.user.username || data.comment.user._id}" class="font-medium text-sm text-gray-800 dark:text-white mr-1.5 hover:underline">${data.comment.user.name}</a>
+                        <p class="text-gray-700 dark:text-gray-300 text-sm break-words inline">${data.comment.content}</p>
                     </div>
-                    <p class="text-gray-600 dark:text-gray-300 text-sm">${data.comment.content}</p>
                     
-                    <!-- Comment actions -->
-                    <div class="mt-2 flex items-center text-xs space-x-4">
+                    <!-- Comment metadata and actions -->
+                    <div class="mt-1 flex items-center text-xs space-x-4 text-gray-500 dark:text-gray-400">
+                        <span class="text-xs">just now</span>
+                        
                         <button onclick="likeComment('${data.comment._id}', this)" 
-                                class="comment-like-btn text-gray-500 hover:text-red-500">
-                            <i class="fas fa-heart"></i>
-                            <span class="like-count ml-1">0</span>
+                                class="comment-like-btn text-gray-500 hover:text-red-500 transition-colors duration-200">
+                            <i class="fas fa-heart text-xs"></i>
                         </button>
+                        
                         <button onclick="toggleReplyForm('${postId}', '${data.comment._id}')" 
-                                class="text-gray-500 hover:text-blue-500">
+                                class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
                             Reply
+                        </button>
+                        
+                        <button onclick="deleteComment('${data.comment._id}', this)" 
+                                class="text-gray-500 hover:text-red-500 transition-colors duration-200 opacity-0 group-hover:opacity-100">
+                            <i class="fas fa-trash text-xs"></i>
                         </button>
                     </div>
                     
@@ -190,9 +247,9 @@ function addComment(event, postId) {
                         <form class="flex items-center" onsubmit="addReply(event, '${data.comment._id}')">
                             <input type="text" 
                                    placeholder="Add a reply..." 
-                                   class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                   class="flex-1 py-1.5 px-3 text-xs border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white"
                                    required>
-                            <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                            <button type="submit" class="ml-1.5 text-blue-500 hover:text-blue-600 transition-colors">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </form>
@@ -209,18 +266,18 @@ function addComment(event, postId) {
             if (!commentsContainer) {
                 const newCommentsContainer = document.createElement('div');
                 newCommentsContainer.id = `comments-container-${postId}`;
-                newCommentsContainer.className = 'space-y-3 max-h-96 overflow-y-auto hidden opacity-0 transition-all duration-300 ease-in-out';
+                newCommentsContainer.className = 'space-y-2.5 max-h-96 overflow-y-auto hidden opacity-0 transition-all duration-300 ease-in-out';
                 newCommentsContainer.innerHTML = commentHTML;
                 
                 // Create the toggle button if it doesn't exist
                 const toggleBtn = document.createElement('button');
-                toggleBtn.className = 'text-gray-500 dark:text-gray-400 text-sm font-medium mb-2 flex items-center';
+                toggleBtn.className = 'text-gray-500 dark:text-gray-400 text-sm mb-2 flex items-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors';
                 toggleBtn.setAttribute('onclick', `toggleComments('${postId}')`);
                 toggleBtn.setAttribute('aria-expanded', 'false');
                 toggleBtn.setAttribute('aria-controls', `comments-container-${postId}`);
                 toggleBtn.innerHTML = `
                     <span id="comments-toggle-text-${postId}">View 1 comment</span>
-                    <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300" id="comments-toggle-icon-${postId}"></i>
+                    <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-200" id="comments-toggle-icon-${postId}"></i>
                 `;
                 
                 // Add the button and container to the DOM
@@ -234,13 +291,13 @@ function addComment(event, postId) {
                 let toggleBtn = document.querySelector(`button[aria-controls="comments-container-${postId}"]`);
                 if (!toggleBtn) {
                     toggleBtn = document.createElement('button');
-                    toggleBtn.className = 'text-gray-500 dark:text-gray-400 text-sm font-medium mb-2 flex items-center';
+                    toggleBtn.className = 'text-gray-500 dark:text-gray-400 text-sm mb-2 flex items-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors';
                     toggleBtn.setAttribute('onclick', `toggleComments('${postId}')`);
                     toggleBtn.setAttribute('aria-expanded', 'false');
                     toggleBtn.setAttribute('aria-controls', `comments-container-${postId}`);
                     toggleBtn.innerHTML = `
                         <span id="comments-toggle-text-${postId}">View 1 comment</span>
-                        <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-300" id="comments-toggle-icon-${postId}"></i>
+                        <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-200" id="comments-toggle-icon-${postId}"></i>
                     `;
                     
                     const commentSection = inputEl.closest('.comments-section');
@@ -249,12 +306,20 @@ function addComment(event, postId) {
                     document.getElementById(`comments-toggle-text-${postId}`).textContent = `View 1 comment`;
                 }
             }
+            
+            // Show the comments container with animation
+            setTimeout(() => {
+                toggleComments(postId);
+            }, 100);
         } else {
             commentsContainer.insertAdjacentHTML('beforeend', commentHTML);
             
             // Update the toggle button text
             const commentCount = commentsContainer.querySelectorAll('.comment-item').length;
-            document.getElementById(`comments-toggle-text-${postId}`).textContent = `View all ${commentCount} comments`;
+            document.getElementById(`comments-toggle-text-${postId}`).textContent = `View ${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}`;
+            
+            // Scroll to the new comment
+            commentsContainer.scrollTop = commentsContainer.scrollHeight;
         }
         
         // Clear the input
@@ -269,7 +334,11 @@ function addComment(event, postId) {
     })
     .catch(error => {
         console.error('Error adding comment:', error);
-        showToast('Failed to add comment. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable input
+        inputEl.disabled = false;
+        inputEl.focus();
     });
 }
 
@@ -303,17 +372,24 @@ function toggleComments(postId) {
         }, 300);
         
         toggleIcon.style.transform = 'rotate(0deg)';
-        toggleText.textContent = `View all ${commentCount} comments`;
+        toggleText.textContent = `View ${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}`;
     }
 }
 
 // Toggle reply form visibility
 function toggleReplyForm(postId, commentId) {
     const replyForm = document.getElementById(`reply-form-${commentId}`);
-    replyForm.classList.toggle('hidden');
     
-    if (!replyForm.classList.contains('hidden')) {
+    if (replyForm.classList.contains('hidden')) {
+        replyForm.classList.remove('hidden');
+        replyForm.classList.add('animate-fadeIn');
         replyForm.querySelector('input').focus();
+    } else {
+        replyForm.classList.add('animate-fadeOut');
+        setTimeout(() => {
+            replyForm.classList.add('hidden');
+            replyForm.classList.remove('animate-fadeOut');
+        }, 200);
     }
 }
 
@@ -324,6 +400,9 @@ function addReply(event, commentId) {
     const content = input.value.trim();
     
     if (!content) return;
+    
+    // Disable input while submitting
+    input.disabled = true;
     
     fetch(`/comment/${commentId}/reply`, {
         method: 'POST',
@@ -341,24 +420,48 @@ function addReply(event, commentId) {
     .then(reply => {
         // Create new reply HTML
         const replyHTML = `
-            <div class="reply">
+            <div class="reply group animate-fadeIn" id="reply-${commentId}-${reply.replyIndex || 0}">
                 <div class="flex items-start">
-                    <div class="flex-shrink-0 mr-1">
+                    <a href="/profile/${reply.user.username || reply.user._id}" class="flex-shrink-0 mr-1.5">
                         <img src="${reply.user.profileImage}" 
                              alt="${reply.user.name}" 
                              class="w-6 h-6 rounded-full object-cover">
-                    </div>
+                    </a>
                     <div class="flex-1">
                         <p class="text-xs">
-                            <span class="font-medium text-gray-800 dark:text-white">${reply.user.name}</span>
-                            <span class="text-gray-600 dark:text-gray-300">${reply.content}</span>
+                            <a href="/profile/${reply.user.username || reply.user._id}" class="font-medium text-gray-800 dark:text-white hover:underline">${reply.user.name}</a>
+                            <span class="text-gray-700 dark:text-gray-300 break-words">${reply.content}</span>
                         </p>
-                        <div class="mt-1 flex items-center text-xs space-x-3">
+                        <div class="mt-1 flex items-center text-xs space-x-3 text-gray-500 dark:text-gray-400">
+                            <span class="text-xs">just now</span>
+                            
                             <button onclick="likeReply('${commentId}', '${reply.replyIndex || 0}', this)" 
-                                    class="reply-like-btn text-gray-500 hover:text-red-500">
-                                <i class="fas fa-heart"></i>
-                                <span class="reply-like-count">0</span>
+                                    class="reply-like-btn text-gray-500 hover:text-red-500 transition-colors duration-200">
+                                <i class="fas fa-heart text-xs"></i>
                             </button>
+                            
+                            <button onclick="toggleNestedReplyForm('${commentId}', '${reply.replyIndex || 0}')" 
+                                    class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                Reply
+                            </button>
+                            
+                            <button onclick="deleteReply('${commentId}', '${reply.replyIndex || 0}', this)" 
+                                    class="text-gray-500 hover:text-red-500 transition-colors duration-200 opacity-0 group-hover:opacity-100">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden nested reply form -->
+                        <div id="nested-reply-form-${commentId}-${reply.replyIndex || 0}" class="hidden mt-1">
+                            <form class="flex items-center" onsubmit="addNestedReply(event, '${commentId}', '${reply.replyIndex || 0}')">
+                                <input type="text" 
+                                       placeholder="Reply to ${reply.user.name}..." 
+                                       class="flex-1 py-1 px-2 text-xs border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white"
+                                       required>
+                                <button type="submit" class="ml-1.5 text-blue-500 hover:text-blue-600 transition-colors">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -366,11 +469,11 @@ function addReply(event, commentId) {
         `;
         
         // Find or create the replies container
-        let repliesContainer = event.target.closest('.flex-1').querySelector('.pl-3');
+        let repliesContainer = event.target.closest('.flex-1').querySelector('.pl-2');
         
         if (!repliesContainer) {
             repliesContainer = document.createElement('div');
-            repliesContainer.className = 'mt-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-2';
+            repliesContainer.className = 'mt-1.5 pl-2 border-l border-gray-200 dark:border-gray-700 space-y-2 pt-1 animate-fadeIn';
             event.target.closest('.flex-1').appendChild(repliesContainer);
         }
         
@@ -380,15 +483,25 @@ function addReply(event, commentId) {
         // Clear the input and hide the form
         input.value = '';
         toggleReplyForm('', commentId);
+        
+        // Scroll to show the new reply
+        repliesContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     })
     .catch(error => {
         console.error('Error adding reply:', error);
-        alert('Failed to add reply. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable input
+        input.disabled = false;
     });
 }
 
 // Like/unlike a comment
 function likeComment(commentId, button) {
+    // Add animation for the heart icon
+    const heart = button.querySelector('i');
+    heart.classList.add('animate-heartbeat');
+    
     fetch(`/comment/${commentId}/like`, {
         method: 'POST',
         headers: {
@@ -403,7 +516,22 @@ function likeComment(commentId, button) {
     })
     .then(data => {
         const likeCountEl = button.querySelector('.like-count');
-        likeCountEl.textContent = data.likes;
+        
+        // If like count element doesn't exist and we have likes, create it
+        if (!likeCountEl && data.likes > 0) {
+            const span = document.createElement('span');
+            span.className = 'like-count ml-1';
+            span.textContent = data.likes;
+            button.appendChild(span);
+        } 
+        // If like count element exists, update it or remove if zero
+        else if (likeCountEl) {
+            if (data.likes > 0) {
+                likeCountEl.textContent = data.likes;
+            } else {
+                likeCountEl.remove();
+            }
+        }
         
         if (data.isLiked) {
             button.classList.add('text-red-500');
@@ -412,14 +540,24 @@ function likeComment(commentId, button) {
             button.classList.remove('text-red-500');
             button.classList.add('text-gray-500');
         }
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            heart.classList.remove('animate-heartbeat');
+        }, 600);
     })
     .catch(error => {
         console.error('Error liking comment:', error);
+        heart.classList.remove('animate-heartbeat');
     });
 }
 
 // Like/unlike a reply
 function likeReply(commentId, replyIndex, button) {
+    // Add animation for the heart icon
+    const heart = button.querySelector('i');
+    heart.classList.add('animate-heartbeat');
+    
     fetch(`/comment/${commentId}/reply/${replyIndex}/like`, {
         method: 'POST',
         headers: {
@@ -434,7 +572,22 @@ function likeReply(commentId, replyIndex, button) {
     })
     .then(data => {
         const likeCountEl = button.querySelector('.reply-like-count');
-        likeCountEl.textContent = data.likes;
+        
+        // If like count element doesn't exist and we have likes, create it
+        if (!likeCountEl && data.likes > 0) {
+            const span = document.createElement('span');
+            span.className = 'reply-like-count ml-1';
+            span.textContent = data.likes;
+            button.appendChild(span);
+        } 
+        // If like count element exists, update it or remove if zero
+        else if (likeCountEl) {
+            if (data.likes > 0) {
+                likeCountEl.textContent = data.likes;
+            } else {
+                likeCountEl.remove();
+            }
+        }
         
         if (data.isLiked) {
             button.classList.add('text-red-500');
@@ -443,9 +596,253 @@ function likeReply(commentId, replyIndex, button) {
             button.classList.remove('text-red-500');
             button.classList.add('text-gray-500');
         }
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            heart.classList.remove('animate-heartbeat');
+        }, 600);
     })
     .catch(error => {
         console.error('Error liking reply:', error);
+        heart.classList.remove('animate-heartbeat');
+    });
+}
+
+// Delete a comment
+function deleteComment(commentId, button) {
+    const commentItem = button.closest('.comment-item');
+    if (commentItem) {
+        // Add fade out animation
+        commentItem.classList.add('animate-fadeOut');
+    }
+    
+    fetch(`/comment/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to delete comment');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Find and remove the comment element from the DOM after animation completes
+            if (commentItem) {
+                setTimeout(() => {
+                    commentItem.remove();
+                    
+                    // Update the comment count in the toggle button
+                    const postId = commentItem.closest('[id^="comments-container-"]').id.split('-').slice(2).join('-');
+                    const container = document.getElementById(`comments-container-${postId}`);
+                    const commentCount = container.querySelectorAll('.comment-item').length;
+                    const toggleText = document.getElementById(`comments-toggle-text-${postId}`);
+                    
+                    if (toggleText) {
+                        if (commentCount === 0) {
+                            // Hide the container and toggle button if no comments left
+                            container.innerHTML = '';
+                            container.classList.add('hidden');
+                            toggleText.parentElement.classList.add('hidden');
+                        } else {
+                            toggleText.textContent = `View ${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}`;
+                        }
+                    }
+                }, 300);
+            }
+        } else {
+            console.error('Error deleting comment:', data.error);
+            // Remove animation if deletion failed
+            if (commentItem) {
+                commentItem.classList.remove('animate-fadeOut');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting comment:', error);
+        // Remove animation if deletion failed
+        if (commentItem) {
+            commentItem.classList.remove('animate-fadeOut');
+        }
+    });
+}
+
+// Delete a reply
+function deleteReply(commentId, replyIndex, button) {
+    const replyItem = button.closest('.reply');
+    if (replyItem) {
+        // Add fade out animation
+        replyItem.classList.add('animate-fadeOut');
+    }
+    
+    fetch(`/comment/${commentId}/reply/${replyIndex}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to delete reply');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Find and remove the reply element from the DOM after animation completes
+            if (replyItem) {
+                setTimeout(() => {
+                    const repliesContainer = replyItem.closest('.pl-2');
+                    replyItem.remove();
+                    
+                    // If this was the last reply, remove the replies container
+                    if (repliesContainer && repliesContainer.children.length === 0) {
+                        repliesContainer.remove();
+                    }
+                }, 300);
+            }
+        } else {
+            console.error('Error deleting reply:', data.error);
+            // Remove animation if deletion failed
+            if (replyItem) {
+                replyItem.classList.remove('animate-fadeOut');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting reply:', error);
+        // Remove animation if deletion failed
+        if (replyItem) {
+            replyItem.classList.remove('animate-fadeOut');
+        }
+    });
+}
+
+// Toggle nested reply form
+function toggleNestedReplyForm(commentId, replyIndex) {
+    const replyForm = document.getElementById(`nested-reply-form-${commentId}-${replyIndex}`);
+    if (replyForm) {
+        if (replyForm.classList.contains('hidden')) {
+            replyForm.classList.remove('hidden');
+            replyForm.classList.add('animate-fadeIn');
+            replyForm.querySelector('input').focus();
+        } else {
+            replyForm.classList.add('animate-fadeOut');
+            setTimeout(() => {
+                replyForm.classList.add('hidden');
+                replyForm.classList.remove('animate-fadeOut');
+            }, 200);
+        }
+    }
+}
+
+// Add nested reply
+function addNestedReply(event, commentId, parentReplyIndex) {
+    event.preventDefault();
+    const input = event.target.querySelector('input');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    // Disable input while submitting
+    input.disabled = true;
+    
+    fetch(`/comment/${commentId}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            content,
+            parentReplyIndex: parseInt(parentReplyIndex)
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to add reply');
+        }
+        return response.json();
+    })
+    .then(reply => {
+        // Create new reply HTML
+        const parentReply = document.getElementById(`reply-${commentId}-${parentReplyIndex}`);
+        const parentUserName = parentReply.querySelector('.font-medium').textContent;
+        
+        const replyHTML = `
+            <div class="reply group animate-fadeIn" id="reply-${commentId}-${reply.replyIndex || 0}">
+                <div class="flex items-start">
+                    <a href="/profile/${reply.user.username || reply.user._id}" class="flex-shrink-0 mr-1.5">
+                        <img src="${reply.user.profileImage}" 
+                             alt="${reply.user.name}" 
+                             class="w-6 h-6 rounded-full object-cover">
+                    </a>
+                    <div class="flex-1">
+                        <p class="text-xs">
+                            <a href="/profile/${reply.user.username || reply.user._id}" class="font-medium text-gray-800 dark:text-white hover:underline">${reply.user.name}</a>
+                            <span class="text-gray-500 dark:text-gray-400">@${parentUserName}</span>
+                            <span class="text-gray-700 dark:text-gray-300 break-words">${reply.content}</span>
+                        </p>
+                        <div class="mt-1 flex items-center text-xs space-x-3 text-gray-500 dark:text-gray-400">
+                            <span class="text-xs">just now</span>
+                            
+                            <button onclick="likeReply('${commentId}', '${reply.replyIndex || 0}', this)" 
+                                    class="reply-like-btn text-gray-500 hover:text-red-500 transition-colors duration-200">
+                                <i class="fas fa-heart text-xs"></i>
+                            </button>
+                            
+                            <button onclick="toggleNestedReplyForm('${commentId}', '${reply.replyIndex || 0}')" 
+                                    class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                Reply
+                            </button>
+                            
+                            <button onclick="deleteReply('${commentId}', '${reply.replyIndex || 0}', this)" 
+                                    class="text-gray-500 hover:text-red-500 transition-colors duration-200 opacity-0 group-hover:opacity-100">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden nested reply form -->
+                        <div id="nested-reply-form-${commentId}-${reply.replyIndex || 0}" class="hidden mt-1">
+                            <form class="flex items-center" onsubmit="addNestedReply(event, '${commentId}', '${reply.replyIndex || 0}')">
+                                <input type="text" 
+                                       placeholder="Reply to ${reply.user.name}..." 
+                                       class="flex-1 py-1 px-2 text-xs border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white"
+                                       required>
+                                <button type="submit" class="ml-1.5 text-blue-500 hover:text-blue-600 transition-colors">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Find the replies container
+        let repliesContainer = parentReply.closest('.pl-2');
+        
+        // Add the reply
+        repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
+        
+        // Clear the input and hide the form
+        input.value = '';
+        toggleNestedReplyForm(commentId, parentReplyIndex);
+        
+        // Scroll to show the new reply
+        const newReply = document.getElementById(`reply-${commentId}-${reply.replyIndex || 0}`);
+        if (newReply) {
+            newReply.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    })
+    .catch(error => {
+        console.error('Error adding nested reply:', error);
+    })
+    .finally(() => {
+        // Re-enable input
+        input.disabled = false;
     });
 }
 
@@ -456,27 +853,35 @@ if (typeof io !== 'undefined') {
         const commentsContainer = document.getElementById(`comments-container-${data.postId}`);
         if (commentsContainer) {
             const commentHTML = `
-                <div class="flex space-x-2 comment-item animate-fadeIn">
-                    <img src="${data.comment.user.profileImage}" 
-                         alt="${data.comment.user.name}" 
-                         class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
-                    <div class="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
-                        <div class="flex justify-between items-start">
-                            <p class="font-medium text-sm text-gray-800 dark:text-white">${data.comment.user.name}</p>
-                            <span class="text-xs text-gray-500 dark:text-gray-400">just now</span>
+                <div class="flex space-x-2.5 comment-item group animate-fadeIn">
+                    <a href="/profile/${data.comment.user.username || data.comment.user._id}" class="flex-shrink-0">
+                        <img src="${data.comment.user.profileImage}" 
+                             alt="${data.comment.user.name}" 
+                             class="w-8 h-8 rounded-full flex-shrink-0 object-cover">
+                    </a>
+                    <div class="flex-1 rounded-xl py-1.5 px-3">
+                        <div class="flex flex-wrap items-start">
+                            <a href="/profile/${data.comment.user.username || data.comment.user._id}" class="font-medium text-sm text-gray-800 dark:text-white mr-1.5 hover:underline">${data.comment.user.name}</a>
+                            <p class="text-gray-700 dark:text-gray-300 text-sm break-words inline">${data.comment.content}</p>
                         </div>
-                        <p class="text-gray-600 dark:text-gray-300 text-sm">${data.comment.content}</p>
                         
-                        <!-- Comment actions -->
-                        <div class="mt-2 flex items-center text-xs space-x-4">
+                        <!-- Comment metadata and actions -->
+                        <div class="mt-1 flex items-center text-xs space-x-4 text-gray-500 dark:text-gray-400">
+                            <span class="text-xs">just now</span>
+                            
                             <button onclick="likeComment('${data.comment._id}', this)" 
-                                    class="comment-like-btn text-gray-500 hover:text-red-500">
-                                <i class="fas fa-heart"></i>
-                                <span class="like-count ml-1">0</span>
+                                    class="comment-like-btn text-gray-500 hover:text-red-500 transition-colors duration-200">
+                                <i class="fas fa-heart text-xs"></i>
                             </button>
+                            
                             <button onclick="toggleReplyForm('${data.postId}', '${data.comment._id}')" 
-                                    class="text-gray-500 hover:text-blue-500">
+                                    class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
                                 Reply
+                            </button>
+                            
+                            <button onclick="deleteComment('${data.comment._id}', this)" 
+                                    class="text-gray-500 hover:text-red-500 transition-colors duration-200 opacity-0 group-hover:opacity-100">
+                                <i class="fas fa-trash text-xs"></i>
                             </button>
                         </div>
                         
@@ -485,9 +890,9 @@ if (typeof io !== 'undefined') {
                             <form class="flex items-center" onsubmit="addReply(event, '${data.comment._id}')">
                                 <input type="text" 
                                        placeholder="Add a reply..." 
-                                       class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                       class="flex-1 py-1.5 px-3 text-xs border border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white"
                                        required>
-                                <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                                <button type="submit" class="ml-1.5 text-blue-500 hover:text-blue-600 transition-colors">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
                             </form>
@@ -504,7 +909,47 @@ if (typeof io !== 'undefined') {
                 const currentCount = parseInt(commentCountEl.textContent) || 0;
                 commentCountEl.textContent = currentCount + 1;
             }
+            
+            // Update toggle button text if it exists
+            const toggleText = document.getElementById(`comments-toggle-text-${data.postId}`);
+            if (toggleText) {
+                const commentCount = commentsContainer.querySelectorAll('.comment-item').length;
+                toggleText.textContent = `View ${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}`;
+            }
         }
     });
 }
-</script> 
+</script>
+
+<style>
+/* Animation classes */
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+.animate-fadeOut {
+    animation: fadeOut 0.3s ease-in-out forwards;
+}
+
+.animate-heartbeat {
+    animation: heartbeat 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+</style> 

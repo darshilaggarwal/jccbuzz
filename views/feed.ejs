@@ -43,7 +43,7 @@
 </div>
 
 <!-- Top Navigation Bar with Story Bubbles -->
-<div class="sticky top-0 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 z-30 pb-2">
+<div class="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 pb-2">
     <div class="max-w-xl mx-auto px-2">
         
 
@@ -905,6 +905,57 @@
         bottom: 70px !important;
     }
 }
+
+/* Caption content styling */
+.caption-content {
+    word-break: break-word;
+    max-width: 100%;
+    display: inline;
+    color: #4B5563;
+    line-height: 1.4;
+}
+
+/* Story ring gradient styling */
+.story-ring {
+    background: linear-gradient(to right, #3B82F6, #8B5CF6, #D946EF);
+}
+
+/* Story section styling for smooth transitions */
+.story-section {
+    position: relative; /* Changed from sticky to relative */
+    background-color: inherit;
+}
+
+/* Animation classes */
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+.animate-fadeOut {
+    animation: fadeOut 0.3s ease-in-out forwards;
+}
+
+.animate-heartbeat {
+    animation: heartbeat 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
 </style>
 
 <script>
@@ -1059,78 +1110,116 @@ function showComments(postId) {
 
             const comments = data.comments;
             if (comments && comments.length > 0) {
-                const commentsHTML = comments.map(comment => `
-                    <div class="flex space-x-3 mb-4">
-                        <img src="${comment.user.profileImage || '/images/default-profile.png'}" 
-                             alt="${comment.user.name}" 
-                             class="w-8 h-8 rounded-full object-cover">
-                        <div class="flex-1">
-                            <div class="flex justify-between items-start">
-                                <p class="font-medium text-sm text-gray-800 dark:text-white">${comment.user.name}</p>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">${formatTimeAgo(new Date(comment.createdAt))}</span>
-                            </div>
-                            <p class="text-gray-600 dark:text-gray-300 text-sm">${comment.content}</p>
-                            
-                            <!-- Comment actions -->
-                            <div class="mt-1 flex items-center text-xs space-x-4">
-                                <button onclick="likeComment('${comment._id}', this)" 
-                                        class="comment-like-btn ${comment.likes && comment.likes.includes('<%= user._id %>') ? 'text-red-500' : 'text-gray-500'} hover:text-red-500"
-                                        data-comment-id="${comment._id}">
-                                    <i class="fas fa-heart"></i>
-                                    <span class="like-count ml-1">${comment.likes ? comment.likes.length : 0}</span>
-                                </button>
-                                <button onclick="toggleReplyForm('${comment._id}')" 
-                                        class="text-gray-500 hover:text-blue-500">
-                                    Reply
-                                </button>
-                            </div>
-                            
-                            <!-- Replies section -->
-                            ${comment.replies && comment.replies.length > 0 ? `
-                                <div class="mt-2 space-y-2">
-                                    ${comment.replies.map((reply, index) => `
-                                        <div class="flex space-x-3 ml-4">
-                                            <img src="${reply.user.profileImage || '/images/default-profile.png'}" 
-                                                 alt="${reply.user.name}" 
-                                                 class="w-6 h-6 rounded-full object-cover">
+                const commentsHTML = comments.map(comment => {
+                    // First generate the replies HTML if any
+                    let repliesHTML = '';
+                    if (comment.replies && comment.replies.length > 0) {
+                        repliesHTML = `
+                            <div class="mt-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-2">
+                                ${comment.replies.map((reply, replyIndex) => `
+                                    <div class="reply" id="reply-${comment._id}-${replyIndex}">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mr-1">
+                                                <img src="${reply.user.profileImage || '/images/default-profile.png'}" 
+                                                     alt="${reply.user.name}" 
+                                                     class="w-6 h-6 rounded-full object-cover">
+                                            </div>
                                             <div class="flex-1">
-                                                <div class="flex justify-between items-start">
-                                                    <p class="font-medium text-xs text-gray-800 dark:text-white">${reply.user.name}</p>
-                                                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatTimeAgo(new Date(reply.createdAt))}</span>
-                                                </div>
-                                                <p class="text-gray-600 dark:text-gray-300 text-xs">${reply.content}</p>
-                                                
-                                                <!-- Reply actions -->
-                                                <div class="mt-1 flex items-center text-xs space-x-4">
-                                                    <button onclick="likeReply('${comment._id}', ${index}, this)" 
-                                                            class="reply-like-btn ${reply.likes && reply.likes.includes('<%= user._id %>') ? 'text-red-500' : 'text-gray-500'} hover:text-red-500"
-                                                            data-comment-id="${comment._id}"
-                                                            data-reply-index="${index}">
+                                                <p class="text-xs">
+                                                    <span class="font-medium text-gray-800 dark:text-white">${reply.user.name}</span>
+                                                    ${reply.parentReplyIndex >= 0 && comment.replies[reply.parentReplyIndex] ? 
+                                                        `<span class="text-gray-500 dark:text-gray-400">@${comment.replies[reply.parentReplyIndex].user.name}</span>` : ''}
+                                                    <span class="text-gray-600 dark:text-gray-300">${reply.content}</span>
+                                                </p>
+                                                <div class="mt-1 flex items-center text-xs space-x-3">
+                                                    <button onclick="likeReply('${comment._id}', '${replyIndex}', this)" 
+                                                            class="reply-like-btn ${reply.likes && reply.likes.includes('<%= user._id %>') ? 'text-red-500' : 'text-gray-500'} hover:text-red-500">
                                                         <i class="fas fa-heart"></i>
-                                                        <span class="reply-like-count ml-1">${reply.likes ? reply.likes.length : 0}</span>
+                                                        <span class="reply-like-count">${reply.likes ? reply.likes.length : 0}</span>
                                                     </button>
+                                                    <button onclick="toggleNestedReplyForm('${comment._id}', '${replyIndex}')" 
+                                                            class="text-gray-500 hover:text-blue-500">
+                                                        Reply
+                                                    </button>
+                                                    ${reply.user._id === '<%= user._id %>' ? `
+                                                    <button onclick="deleteReply('${comment._id}', '${replyIndex}', this)" 
+                                                            class="text-gray-500 hover:text-red-500">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    ` : ''}
+                                                </div>
+                                                
+                                                <!-- Hidden nested reply form -->
+                                                <div id="nested-reply-form-${comment._id}-${replyIndex}" class="hidden mt-1">
+                                                    <form class="flex items-center" onsubmit="addNestedReply(event, '${comment._id}', '${replyIndex}')">
+                                                        <input type="text" 
+                                                               placeholder="Reply to ${reply.user.name}..." 
+                                                               class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                                               required>
+                                                        <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                                                            <i class="fas fa-paper-plane"></i>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </div>
                                         </div>
-                                    `).join('')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+                
+                    return `
+                        <div class="flex space-x-3 mb-4">
+                            <img src="${comment.user.profileImage || '/images/default-profile.png'}" 
+                                 alt="${comment.user.name}" 
+                                 class="w-8 h-8 rounded-full object-cover">
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start">
+                                    <p class="font-medium text-sm text-gray-800 dark:text-white">${comment.user.name}</p>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatTimeAgo(new Date(comment.createdAt))}</span>
                                 </div>
-                            ` : ''}
-                            
-                            <!-- Reply form -->
-                            <div id="reply-form-${comment._id}" class="hidden mt-2">
-                                <form class="flex items-center" onsubmit="addReply(event, '${comment._id}')">
-                                    <input type="text" 
-                                           placeholder="Add a reply..." 
-                                           class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
-                                           required>
-                                    <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
-                                        <i class="fas fa-paper-plane"></i>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">${comment.content}</p>
+                                
+                                <!-- Comment actions -->
+                                <div class="mt-1 flex items-center text-xs space-x-4">
+                                    <button onclick="likeComment('${comment._id}', this)" 
+                                            class="comment-like-btn ${comment.likes && comment.likes.includes('<%= user._id %>') ? 'text-red-500' : 'text-gray-500'} hover:text-red-500"
+                                            data-comment-id="${comment._id}">
+                                        <i class="fas fa-heart"></i>
+                                        <span class="like-count ml-1">${comment.likes ? comment.likes.length : 0}</span>
                                     </button>
-                                </form>
+                                    <button onclick="toggleReplyForm('${comment._id}')" 
+                                            class="text-gray-500 hover:text-blue-500">
+                                        Reply
+                                    </button>
+                                    ${comment.user._id === '<%= user._id %>' ? `
+                                    <button onclick="deleteComment('${comment._id}', this)" 
+                                            class="text-gray-500 hover:text-red-500">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    ` : ''}
+                                </div>
+                                
+                                <!-- Reply form -->
+                                <div id="reply-form-${comment._id}" class="hidden mt-2">
+                                    <form class="flex items-center" onsubmit="addReply(event, '${comment._id}')">
+                                        <input type="text" 
+                                               placeholder="Add a reply..." 
+                                               class="flex-1 py-1 px-2 text-xs border border-gray-300 dark:border-gray-700 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"
+                                               required>
+                                        <button type="submit" class="ml-1 text-blue-500 hover:text-blue-600">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Replies section -->
+                                ${repliesHTML}
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 modalCommentsContainer.innerHTML = commentsHTML;
             } else {
@@ -1168,21 +1257,17 @@ function addCommentFromModal(postId) {
     })
     .then(data => {
         if (data.error) {
-            showToast(data.error, 'error');
+            console.error('Error adding comment:', data.error);
         } else {
             // Clear input
             input.value = '';
             
             // Refresh comments
             showComments(postId);
-            
-            // Show success toast with comment type and showOnlyImportant set to true
-            showToast('Comment added successfully', 'comment', true);
         }
     })
     .catch(error => {
         console.error('Error adding comment:', error);
-        showToast('Failed to add comment', 'error');
     })
     .finally(() => {
         // Re-enable input
@@ -2968,6 +3053,189 @@ async function openUserStories(userId) {
         showToast('Failed to load stories');
     }
 }
+
+// Delete a comment
+function deleteComment(commentId, button) {
+    // Removed confirmation alert
+    
+    fetch(`/comment/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to delete comment');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Find and remove the comment element from the DOM
+            const commentItem = button.closest('.flex.space-x-3.mb-4');
+            if (commentItem) {
+                commentItem.remove();
+            }
+            // Removed toast message
+        } else {
+            console.error('Error deleting comment:', data.error);
+            // Removed toast message
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting comment:', error);
+        // Removed toast message
+    });
+}
+
+// Delete a reply
+function deleteReply(commentId, replyIndex, button) {
+    // Removed confirmation alert
+    
+    fetch(`/comment/${commentId}/reply/${replyIndex}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to delete reply');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Find and remove the reply element from the DOM
+            const replyItem = button.closest('.reply');
+            if (replyItem) {
+                replyItem.remove();
+            }
+            // Removed toast message
+        } else {
+            console.error('Error deleting reply:', data.error);
+            // Removed toast message
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting reply:', error);
+        // Removed toast message
+    });
+}
+
+// Toggle nested reply form
+function toggleNestedReplyForm(commentId, replyIndex) {
+    const replyForm = document.getElementById(`nested-reply-form-${commentId}-${replyIndex}`);
+    if (replyForm) {
+        replyForm.classList.toggle('hidden');
+        if (!replyForm.classList.contains('hidden')) {
+            replyForm.querySelector('input').focus();
+        }
+    }
+}
+
+// Add nested reply
+function addNestedReply(event, commentId, parentReplyIndex) {
+    event.preventDefault();
+    const input = event.target.querySelector('input');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    // Disable input while submitting
+    input.disabled = true;
+    
+    fetch(`/comment/${commentId}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            content,
+            parentReplyIndex: parseInt(parentReplyIndex)
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to add reply');
+        }
+        return response.json();
+    })
+    .then(reply => {
+        // In modal view, just refresh the comments
+        if (currentPostIdForComments) {
+            showComments(currentPostIdForComments);
+        }
+    })
+    .catch(error => {
+        console.error('Error adding nested reply:', error);
+    })
+    .finally(() => {
+        // Re-enable input and hide the form
+        input.disabled = false;
+        toggleNestedReplyForm(commentId, parentReplyIndex);
+    });
+}
+
+// Add reply from modal
+function addReplyFromModal(commentId) {
+    const input = document.getElementById('modalCommentInput');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    // Disable input and show loading state
+    input.disabled = true;
+    
+    fetch(`/comment/${commentId}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to add reply');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            showToast(data.error, 'error');
+        } else {
+            // Clear input
+            input.value = '';
+            
+            // Refresh comments
+            showComments(currentPostIdForComments);
+            
+            // Show success toast with comment type and showOnlyImportant set to true
+            showToast('Reply added successfully', 'reply', true);
+        }
+    })
+    .catch(error => {
+        console.error('Error adding reply:', error);
+        showToast('Failed to add reply', 'error');
+    })
+    .finally(() => {
+        // Re-enable input
+        input.disabled = false;
+    });
+}
+
+// Add this code for hiding the story section on scroll
+document.addEventListener('DOMContentLoaded', function() {
+    // No longer hiding the story section - it will scroll with the page
+    const storySection = document.querySelector('.story-section');
+    if (storySection) {
+        // Reset any previously applied styles
+        storySection.style.transform = '';
+        storySection.style.opacity = '1';
+        storySection.style.transition = 'none';
+    }
+});
 </script>
 
 <!-- Story Preview Modal -->
@@ -3003,20 +3271,4 @@ async function openUserStories(userId) {
     }
 });
 </script>
-
-<style>
-    /* Caption content styling */
-    .caption-content {
-        word-break: break-word;
-        max-width: 100%;
-        display: inline;
-        color: #4B5563;
-        line-height: 1.4;
-    }
-    
-    /* Story ring gradient styling */
-    .story-ring {
-        background: linear-gradient(to right, #3B82F6, #8B5CF6, #D946EF);
-    }
-</style>
 

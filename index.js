@@ -1163,15 +1163,23 @@ app.post("/post/:postId/comment", isLoggedIn, async (req, res) => {
 // Add reply to comment
 app.post("/comment/:commentId/reply", isLoggedIn, async (req, res) => {
     try {
-        const { content } = req.body;
+        const { content, parentReplyIndex } = req.body;
         const user = await userModel.findOne({ email: req.user.email });
         const comment = await commentModel.findById(req.params.commentId);
 
-        comment.replies.push({
+        // Add the parentReplyIndex field if it's provided
+        const replyData = {
             user: user._id,
             content,
             likes: []
-        });
+        };
+        
+        // If parentReplyIndex is provided and valid, add it to the reply
+        if (parentReplyIndex !== undefined && parentReplyIndex >= -1) {
+            replyData.parentReplyIndex = parentReplyIndex;
+        }
+
+        comment.replies.push(replyData);
 
         await comment.save();
         await comment.populate('replies.user', 'name username profileImage');
@@ -1200,6 +1208,37 @@ app.post("/comment/:commentId/reply", isLoggedIn, async (req, res) => {
                 });
             } catch (notifError) {
                 console.error('Error creating reply notification:', notifError);
+                // Continue even if notification fails
+            }
+        }
+        
+        // If this is a reply to another reply, also notify that user
+        if (parentReplyIndex !== undefined && parentReplyIndex >= 0 && 
+            comment.replies[parentReplyIndex] && 
+            comment.replies[parentReplyIndex].user.toString() !== user._id.toString()) {
+            
+            try {
+                const post = await postModel.findById(comment.post);
+                const sender = await userModel.findById(user._id);
+                const senderName = sender ? sender.name : 'Someone';
+                const recipientId = comment.replies[parentReplyIndex].user;
+                
+                const { createNotification } = require('./utils/notifications');
+                
+                await createNotification({
+                    recipient: recipientId,
+                    sender: user._id,
+                    type: 'reply_to_reply',
+                    title: 'New Reply',
+                    message: `${senderName} replied to your response`,
+                    data: {
+                        postId: post._id,
+                        commentId: comment._id,
+                        replyIndex: replyIndex
+                    }
+                });
+            } catch (notifError) {
+                console.error('Error creating reply-to-reply notification:', notifError);
                 // Continue even if notification fails
             }
         }
@@ -1283,6 +1322,70 @@ app.post("/comment/:commentId/like", isLoggedIn, async (req, res) => {
         res.json({ likes: comment.likes.length, isLiked: !isLiked });
     } catch (error) {
         res.status(500).json({ error: "Error processing like" });
+    }
+});
+
+// Delete comment
+app.delete("/comment/:commentId", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        const comment = await commentModel.findById(req.params.commentId);
+        
+        if (!comment) {
+            return res.status(404).json({ error: "Comment not found" });
+        }
+        
+        // Check if user owns the comment
+        if (comment.user.toString() !== user._id.toString()) {
+            return res.status(403).json({ error: "You can only delete your own comments" });
+        }
+        
+        // Get the post to update its comments array
+        const post = await postModel.findById(comment.post);
+        if (post) {
+            // Remove comment from post's comments array
+            post.comments = post.comments.filter(id => id.toString() !== comment._id.toString());
+            await post.save();
+        }
+        
+        // Delete the comment
+        await commentModel.findByIdAndDelete(comment._id);
+        
+        res.json({ success: true, message: "Comment deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting comment:", error);
+        res.status(500).json({ error: "Error deleting comment" });
+    }
+});
+
+// Delete reply
+app.delete("/comment/:commentId/reply/:replyIndex", isLoggedIn, async (req, res) => {
+    try {
+        const user = await userModel.findOne({ email: req.user.email });
+        const comment = await commentModel.findById(req.params.commentId);
+        const replyIndex = parseInt(req.params.replyIndex);
+        
+        if (!comment) {
+            return res.status(404).json({ error: "Comment not found" });
+        }
+        
+        if (!comment.replies || replyIndex >= comment.replies.length) {
+            return res.status(404).json({ error: "Reply not found" });
+        }
+        
+        // Check if user owns the reply
+        if (comment.replies[replyIndex].user.toString() !== user._id.toString()) {
+            return res.status(403).json({ error: "You can only delete your own replies" });
+        }
+        
+        // Remove the reply
+        comment.replies.splice(replyIndex, 1);
+        await comment.save();
+        
+        res.json({ success: true, message: "Reply deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting reply:", error);
+        res.status(500).json({ error: "Error deleting reply" });
     }
 });
 
