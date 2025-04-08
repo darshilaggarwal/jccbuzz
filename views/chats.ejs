@@ -44,12 +44,9 @@
         
         <!-- Filter Options (Primary/General) -->
         <div class="flex mt-3 border-b border-gray-200 dark:border-gray-800">
-            <button id="primaryFilterBtn" class="flex-1 text-center py-2 border-b-2 border-blue-500 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 font-medium focus:outline-none">
-                Primary
-            </button>
-            <button id="generalFilterBtn" class="flex-1 text-center py-2 border-b-2 border-transparent text-gray-500 dark:text-gray-400 focus:outline-none">
-                General
-            </button>
+            <h2 class="w-full text-center py-2 text-sm text-gray-500 dark:text-gray-400">
+                All Messages
+            </h2>
         </div>
     </div>
     
@@ -209,9 +206,6 @@
         </div>
         
         <div class="p-0 divide-y divide-gray-200 dark:divide-gray-700">
-            <button id="moveToGeneralBtn" class="w-full text-left py-2.5 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-500 dark:hover:text-purple-400 text-gray-700 dark:text-gray-300 transition-colors">
-                <i class="fas fa-exchange-alt mr-2"></i> <span id="moveToGeneralText">Move to General</span>
-            </button>
             <button id="deleteChatBtn" class="w-full text-left py-2.5 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-red-500 transition-colors">
                 <i class="fas fa-trash mr-2"></i> Delete chat
             </button>
@@ -362,17 +356,10 @@
 
 <script>
 // Track chat categories in memory - global scope so showChatMenu can access it
-let generalChatIds = [];
 let allChats = [];
-let primaryFilterBtn, generalFilterBtn;
 let chatListContainer;
 let currentChatId = null;
 let currentOtherUserId = null;
-
-// Function to save general chat IDs to localStorage - global scope
-function saveGeneralChats() {
-    localStorage.setItem('generalChatIds', JSON.stringify(generalChatIds));
-}
 
 // Function to attach chat menu event listeners - global scope
 function attachChatMenuListeners() {
@@ -393,8 +380,8 @@ function attachChatMenuListeners() {
     });
 }
 
-// Function to refresh the chat list based on filter - global scope
-function refreshChatList(showGeneral = false) {
+// Function to refresh the chat list
+function refreshChatList() {
     if (!chatListContainer) {
         chatListContainer = document.getElementById('chatListContainer');
     }
@@ -402,42 +389,22 @@ function refreshChatList(showGeneral = false) {
     // Clear the container
     chatListContainer.innerHTML = '';
     
-    // Get chats to show based on filter
-    const chatsToShow = allChats.filter(chat => 
-        showGeneral ? generalChatIds.includes(chat.id) : !generalChatIds.includes(chat.id)
-    );
-    
-    if (chatsToShow.length > 0) {
-        // Add chats to the container
-        chatsToShow.forEach(chat => {
+    if (allChats.length > 0) {
+        // Add all chats to the container
+        allChats.forEach(chat => {
             const clone = chat.element.cloneNode(true);
-            // Update general-category class based on current state
-            if (generalChatIds.includes(chat.id)) {
-                clone.classList.add('general-category');
-            } else {
-                clone.classList.remove('general-category');
-            }
             chatListContainer.appendChild(clone);
         });
     } else {
         // No chats found - show empty state
-        const emptyMessage = showGeneral ? 
-            `<div class="flex flex-col items-center justify-center py-20 px-4 text-center">
-                <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-5 shadow-md">
-                    <i class="fas fa-inbox text-white text-2xl"></i>
-                </div>
-                <h3 class="text-gray-800 dark:text-white font-medium mb-3 text-lg">No chats in General</h3>
-                <p class="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
-                    You can move conversations to General to keep your Primary inbox focused.
-                </p>
-            </div>` :
+        const emptyMessage = 
             `<div class="flex flex-col items-center justify-center py-20 px-4 text-center">
                 <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-5 shadow-md">
                     <i class="fas fa-paper-plane text-white text-2xl"></i>
                 </div>
-                <h3 class="text-gray-800 dark:text-white font-medium mb-3 text-lg">No messages in Primary</h3>
+                <h3 class="text-gray-800 dark:text-white font-medium mb-3 text-lg">No messages yet</h3>
                 <p class="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
-                    All your conversations are in the General tab.
+                    When you send or receive messages, they'll appear here.
                 </p>
             </div>`;
         
@@ -583,21 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize socket connection for real-time updates
     initializeSocketConnection();
 
-    // Filter functionality for Primary/General
-    primaryFilterBtn = document.getElementById('primaryFilterBtn');
-    generalFilterBtn = document.getElementById('generalFilterBtn');
     chatListContainer = document.getElementById('chatListContainer');
-
-    // Load general chat IDs from localStorage on page load
-    const savedGeneralChats = localStorage.getItem('generalChatIds');
-    if (savedGeneralChats) {
-        try {
-            generalChatIds = JSON.parse(savedGeneralChats);
-        } catch (e) {
-            console.error('Error parsing saved general chats:', e);
-            generalChatIds = [];
-        }
-    }
 
     // Initial state - collect all chats and store them
     document.querySelectorAll('.chat-item').forEach(chat => {
@@ -605,60 +558,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!chatMenuBtn) return; // Skip if no menu button
         
         const chatId = chatMenuBtn.getAttribute('data-chat-id');
-        // Check if this chat should be in general based on localStorage
-        const isGeneral = generalChatIds.includes(chatId);
-        
-        // Update UI to match saved state
-        if (isGeneral) {
-            chat.classList.add('general-category');
-            
-            // Hide general chats if we're on the primary tab (default)
-            if (primaryFilterBtn.classList.contains('border-blue-500')) {
-                chat.style.display = 'none';
-            }
-        } else {
-            chat.classList.remove('general-category');
-        }
         
         const chatData = {
             element: chat.cloneNode(true),
-            id: chatId,
-            isGeneral: isGeneral
+            id: chatId
         };
         
         allChats.push(chatData);
-    });
-
-    // Check if we should start in General tab based on URL hash
-    if (window.location.hash === '#general') {
-        // Switch to General tab programmatically
-        generalFilterBtn.click();
-    }
-
-    // Function to toggle active filter state
-    function toggleFilter(activeButton, inactiveButton) {
-        // Update button styles
-        activeButton.classList.add('border-blue-500', 'text-transparent', 'bg-clip-text', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-600', 'font-medium');
-        activeButton.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-        
-        inactiveButton.classList.remove('border-blue-500', 'text-transparent', 'bg-clip-text', 'bg-gradient-to-r', 'from-blue-500', 'to-purple-600', 'font-medium');
-        inactiveButton.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-    }
-
-    // Primary filter
-    primaryFilterBtn.addEventListener('click', function() {
-        toggleFilter(primaryFilterBtn, generalFilterBtn);
-        refreshChatList(false); // Show primary chats
-        // Update URL hash
-        window.location.hash = '';
-    });
-
-    // General filter
-    generalFilterBtn.addEventListener('click', function() {
-        toggleFilter(generalFilterBtn, primaryFilterBtn);
-        refreshChatList(true); // Show general chats
-        // Update URL hash
-        window.location.hash = 'general';
     });
     
     // Run attachChatMenuListeners on page load
@@ -707,10 +613,6 @@ function showChatMenu(button) {
     // Set the title in the modal
     document.getElementById('chatOptionsTitle').textContent = otherUserName;
     
-    // Check if chat is in general based on our tracking array
-    const isInGeneral = generalChatIds.includes(currentChatId);
-    document.getElementById('moveToGeneralText').textContent = isInGeneral ? 'Move to Primary' : 'Move to General';
-    
     // Show the modal
     document.getElementById('chatOptionsModal').classList.remove('hidden');
 }
@@ -724,80 +626,6 @@ document.getElementById('chatOptionsModal').addEventListener('click', function(e
     if (e.target === this) {
         this.classList.add('hidden');
     }
-});
-
-// Move to General functionality
-document.getElementById('moveToGeneralBtn').addEventListener('click', function() {
-    if (!currentChatId) return;
-    
-    // Get the button text element
-    const btnText = this.querySelector('#moveToGeneralText');
-    const isInGeneral = btnText.textContent.includes('Move to Primary');
-    
-    // Show loading state
-    const originalHTML = this.innerHTML;
-    this.innerHTML = '<div class="spinner mx-auto"></div>';
-    this.disabled = true;
-    
-    // Simulate API call with timeout (client-side only)
-    setTimeout(() => {
-        // Hide the options modal
-        document.getElementById('chatOptionsModal').classList.add('hidden');
-        
-        // Find the chat item
-        const chatElement = document.querySelector(`[data-chat-id="${currentChatId}"]`).closest('.chat-item');
-        
-        if (chatElement) {
-            // Fade out animation
-            chatElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-            chatElement.style.opacity = '0';
-            chatElement.style.transform = 'translateX(100px)';
-            
-            // Update our tracking arrays and refresh the view
-            setTimeout(() => {
-                if (isInGeneral) {
-                    // Move from General to Primary
-                    generalChatIds = generalChatIds.filter(id => id !== currentChatId);
-                    showToast('Chat moved to primary', 'success');
-                } else {
-                    // Move from Primary to General
-                    if (!generalChatIds.includes(currentChatId)) {
-                        generalChatIds.push(currentChatId);
-                    }
-                    showToast('Chat moved to general', 'success');
-                }
-                
-                // Save changes to localStorage
-                saveGeneralChats();
-                
-                // Update all chats array with latest state
-                allChats.forEach(chat => {
-                    if (chat.id === currentChatId) {
-                        chat.isGeneral = !isInGeneral;
-                        
-                        // Update the element to reflect new state
-                        if (chat.isGeneral) {
-                            chat.element.classList.add('general-category');
-                        } else {
-                            chat.element.classList.remove('general-category');
-                        }
-                    }
-                });
-                
-                // Refresh the current view
-                if (generalFilterBtn.classList.contains('border-blue-500')) {
-                    refreshChatList(true); // Refresh general tab
-                } else {
-                    refreshChatList(false); // Refresh primary tab
-                }
-            }, 300);
-        }
-        
-        // Re-enable the button with updated text for next time
-        this.disabled = false;
-        this.innerHTML = originalHTML;
-        btnText.textContent = isInGeneral ? 'Move to General' : 'Move to Primary';
-    }, 800);
 });
 
 // Delete chat button click
@@ -843,18 +671,10 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function()
             // Remove after animation completes
             setTimeout(() => {
                 // Remove from our tracking arrays
-                generalChatIds = generalChatIds.filter(id => id !== currentChatId);
                 allChats = allChats.filter(chat => chat.id !== currentChatId);
                 
-                // Save changes to localStorage
-                saveGeneralChats();
-                
-                // Refresh the current view
-                if (generalFilterBtn.classList.contains('border-blue-500')) {
-                    refreshChatList(true);
-                } else {
-                    refreshChatList(false);
-                }
+                // Refresh the chat list
+                refreshChatList();
                 
                 showToast('Chat deleted successfully', 'success');
             }, 300);
