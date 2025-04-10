@@ -581,25 +581,115 @@ function initializeSocketConnection() {
     // Check if socket.io is loaded
     if (typeof io === 'undefined') return;
     
-    const socket = io();
+    const socket = io(window.location.origin, {
+        transports: ['websocket'],
+        auth: {
+            userId: '<%= user._id %>'
+        }
+    });
     
     socket.on('connect', () => {
         console.log('Connected to socket.io server');
+        // Authenticate after connection
+        socket.emit('authenticate', '<%= user._id %>');
     });
     
     socket.on('newMessage', data => {
-        // Refresh the page if new message received
-        window.location.reload();
+        console.log('New message received:', data);
+        
+        // Update the chat list UI without refreshing
+        const chatElement = document.querySelector(`[data-chat-id="${data.chatId}"]`);
+        if (chatElement) {
+            // Update last message
+            const lastMessageElement = chatElement.querySelector('.last-message');
+            if (lastMessageElement) {
+                lastMessageElement.textContent = data.message.content;
+            }
+            
+            // Update timestamp
+            const timestampElement = chatElement.querySelector('.message-time');
+            if (timestampElement) {
+                timestampElement.textContent = formatTime(new Date());
+            }
+            
+            // Move chat to top of list
+            const chatList = document.getElementById('chatList');
+            if (chatList && chatElement.parentNode !== chatList) {
+                chatList.insertBefore(chatElement, chatList.firstChild);
+            }
+            
+            // Update unread count if needed
+            if (data.message.sender._id !== '<%= user._id %>') {
+                const unreadCountElement = chatElement.querySelector('.unread-count');
+                if (unreadCountElement) {
+                    const currentCount = parseInt(unreadCountElement.textContent) || 0;
+                    unreadCountElement.textContent = currentCount + 1;
+                    unreadCountElement.classList.remove('hidden');
+                }
+            }
+            
+            // Update total unread count in header
+            const headerUnreadCount = document.querySelector('.header-unread-count');
+            if (headerUnreadCount) {
+                const currentTotal = parseInt(headerUnreadCount.textContent) || 0;
+                headerUnreadCount.textContent = currentTotal + 1;
+            }
+        }
     });
     
     socket.on('messageRead', data => {
-        // Update read status if needed
-        console.log('Message read:', data);
+        // Update read status in the chat list
+        const chatElement = document.querySelector(`[data-chat-id="${data.chatId}"]`);
+        if (chatElement) {
+            const unreadCountElement = chatElement.querySelector('.unread-count');
+            if (unreadCountElement) {
+                unreadCountElement.classList.add('hidden');
+            }
+            
+            // Update total unread count in header
+            const headerUnreadCount = document.querySelector('.header-unread-count');
+            if (headerUnreadCount) {
+                const currentTotal = parseInt(headerUnreadCount.textContent) || 0;
+                const chatUnreadCount = parseInt(unreadCountElement?.textContent) || 0;
+                headerUnreadCount.textContent = Math.max(0, currentTotal - chatUnreadCount);
+            }
+        }
     });
     
     socket.on('userOnline', data => {
         // Update online status indicators
-        console.log('User online:', data);
+        const onlineUserId = data.userId || data;
+        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${onlineUserId}"]`);
+        if (statusDot) {
+            statusDot.classList.remove('bg-gray-400');
+            statusDot.classList.add('bg-green-500');
+        }
+    });
+    
+    socket.on('userOffline', data => {
+        // Update offline status indicators
+        const offlineUserId = data.userId || data;
+        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${offlineUserId}"]`);
+        if (statusDot) {
+            statusDot.classList.remove('bg-green-500');
+            statusDot.classList.add('bg-gray-400');
+        }
+    });
+    
+    // Handle connection errors
+    socket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+    });
+    
+    // Handle disconnection
+    socket.on('disconnect', (reason) => {
+        console.log('Socket disconnected:', reason);
+    });
+    
+    // Handle reconnection
+    socket.on('reconnect', (attemptNumber) => {
+        console.log('Socket reconnected after', attemptNumber, 'attempts');
+        socket.emit('authenticate', '<%= user._id %>');
     });
 }
 

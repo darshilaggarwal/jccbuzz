@@ -1,5 +1,26 @@
 <%- include('partials/header2') %>
 
+<!-- Add Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Add Tailwind CSS properly -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<!-- Add message sound -->
+<audio id="messageSound" preload="auto" style="display: none;">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Add toast container -->
+<div id="toast" class="fixed bottom-4 right-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all duration-300 z-50">
+    <span id="toast-message"></span>
+</div>
+
+<!-- Add connection status indicator -->
+<div id="connection-status" class="fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hidden">
+    <span>Connecting to chat server...</span>
+</div>
+
 <div class="max-w-4xl mx-auto mt-8 px-4">
     <div class="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden flex flex-col h-[calc(100vh-8rem)]">
         <!-- Chat Header - Make it sticky -->
@@ -375,151 +396,134 @@
     </div>
 </template>
 
-<!-- Add hidden audio for message notifications -->
-<audio id="messageSound" preload="auto" style="display: none;">
-    <source src="/sounds/message.mp3" type="audio/mpeg">
-    <source src="/sounds/message.ogg" type="audio/ogg">
-</audio>
-
+<!-- Add jQuery before other scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
+
 <script>
-// Improved Socket.IO connection setup
+// Initialize variables
+const messagesContainer = document.getElementById('messages');
+const messageForm = document.getElementById('messageForm');
+const messageInput = document.getElementById('messageInput');
+const userId = '<%= user._id %>';
+const chatId = '<%= chat._id %>';
+const receiverId = '<%= otherUser._id %>';
+let selectedMedia = null;
+
+// Initialize socket connection
 const socketOptions = {
-    transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
-    reconnection: true,               // Enable reconnection
-    reconnectionAttempts: 5,          // Number of reconnection attempts
-    reconnectionDelay: 1000,          // Initial delay before reconnection (1 second)
-    reconnectionDelayMax: 5000,       // Maximum delay between reconnections (5 seconds)
-    timeout: 20000,                   // Connection timeout
-    autoConnect: true,                // Connect automatically
-    path: '/socket.io'                // Socket.IO path (must match server)
+    transports: ['websocket'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000,
+    autoConnect: true,
+    path: '/socket.io',
+    auth: {
+        userId: userId
+    }
 };
 
 // Create socket with options
 const socket = io(window.location.origin, socketOptions);
-const userId = '<%= user._id %>';
-const chatId = '<%= chat._id %>';
-const receiverId = '<%= otherUser._id %>';
-let typingTimeout;
-let selectedMedia = null;
-let currentMessageId = null;
 
-const messagesContainer = document.getElementById('messages');
-const messageForm = document.getElementById('messageForm');
-const messageInput = document.getElementById('messageInput');
-const typingStatus = document.getElementById('typingStatus');
-const mediaInput = document.getElementById('mediaInput');
-const mediaButton = document.getElementById('mediaButton');
-const mediaPreview = document.getElementById('mediaPreview');
-const previewContent = document.getElementById('previewContent');
-const cancelMedia = document.getElementById('cancelMedia');
+// Track connection state
+let isSocketConnected = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
+// Track existing messages to prevent duplicates
+const renderedMessageIds = new Set();
+const messageQueue = new Set();
+
+// Track scroll position
+let lastScrollPosition = 0;
+let isInitialLoad = true;
+
+// Save scroll position before page unload
+window.addEventListener('beforeunload', () => {
+    if (messagesContainer) {
+        lastScrollPosition = messagesContainer.scrollTop;
+        sessionStorage.setItem('chatScrollPosition', lastScrollPosition);
+    }
+});
+
+// Restore scroll position on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Track existing messages and prevent duplicates
+    const existingMessages = new Set();
+    document.querySelectorAll('[data-message-id]').forEach(element => {
+        const messageId = element.getAttribute('data-message-id');
+        if (messageId) {
+            if (!existingMessages.has(messageId)) {
+                existingMessages.add(messageId);
+                renderedMessageIds.add(messageId);
+            } else {
+                // Remove duplicate message
+                element.remove();
+            }
+        }
+    });
+    
+    // Join chat room
+    if (isSocketConnected) {
+        socket.emit('joinChat', chatId);
+    }
+    
+    // Mark all existing messages as read if page is visible
+    if (document.visibilityState !== 'hidden' && isSocketConnected) {
+        document.querySelectorAll('[data-message-id]').forEach(element => {
+            const messageId = element.getAttribute('data-message-id');
+            if (messageId) {
+                socket.emit('markAsRead', { messageId });
+            }
+        });
+    }
+
+    // Immediately scroll to bottom on initial load
+    if (isInitialLoad) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        isInitialLoad = false;
+    }
+
+    // Restore scroll position after a short delay to ensure messages are loaded
+    setTimeout(() => {
+        const savedPosition = sessionStorage.getItem('chatScrollPosition');
+        if (savedPosition && messagesContainer) {
+            messagesContainer.scrollTop = parseInt(savedPosition);
+            // Clear the saved position after restoring
+            sessionStorage.removeItem('chatScrollPosition');
+        } else {
+            // If no saved position, scroll to bottom
+            scrollToBottom();
+        }
+    }, 100);
+});
+
+// Update scrollToBottom function to handle new messages
 function scrollToBottom() {
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-// Helper function to create message HTML
-function createMessageHTML(message) {
-    const isSender = message.sender._id === userId;
-    
-    // Special handling for shared posts
-    if (message.isPostShare || message.sharedPostPreview) {
-        const post = message.sharedPostPreview || {};
-        return `
-            <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}" data-shared-post-id="${post.postId}">
-                <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
-                    <span class="message-content">${message.content}</span>
-                    ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
-                </div>
-                
-                <!-- Post preview card -->
-                <div class="shared-post-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-                    <!-- Rest of post preview card code -->
-                </div>
-                
-                <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
-                    ${formatTime(message.createdAt || Date.now())}
-                </div>
-            </div>
-        `;
-    }
-    
-    // Special handling for story replies
-    if (message.isStoryReply) {
-        return `
-            <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
-                <!-- Story reply content -->
-                ${message.content ? `
-                    <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
-                        <span class="message-content">${message.content}</span>
-                        ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
-                    </div>
-                ` : ''}
-                <!-- Rest of story reply code -->
-            </div>
-        `;
-    }
-    
-    // Regular messages
-    return `
-        <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
-            ${message.mediaType !== 'none' && message.mediaUrl ? `
-                <!-- Media content code -->
-            ` : ''}
-            ${message.content ? `
-                <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
-                    <span class="message-content">${message.content}</span>
-                    ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
-                </div>
-            ` : ''}
-            <!-- Rest of message code -->
-        </div>
-    `;
-}
-
-// Modify the existing message rendering in the chat to show reactions
-function appendMessage(message, isSender) {
-    console.log('Appending message to UI:', message, isSender ? 'sender' : 'receiver');
-    
-    // Skip if we've already rendered this message
-    if (message._id && renderedMessageIds.has(message._id)) {
-        console.log('Skipping already rendered message in appendMessage:', message._id);
-        return;
-    }
-    
-    // Create message container
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-6`;
-    
-    // Generate innerHTML using createMessageHTML
-    messageDiv.innerHTML = createMessageHTML(message);
-    
-    // Add to DOM
-    messagesContainer.appendChild(messageDiv);
-    
-    // Track that we've rendered this message
-    if (message._id) {
-        renderedMessageIds.add(message._id);
-    }
-    
-    // Initialize audio player if needed
-    if (message.mediaType === 'audio') {
-        const audioPlayer = messageDiv.querySelector('.audio-player');
-        if (audioPlayer) {
-            initAudioPlayer(audioPlayer);
+    if (messagesContainer) {
+        // Only scroll if we're near the bottom (within 100px)
+        const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+        if (isNearBottom) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
     }
-    
-    // Scroll to new message
-    scrollToBottom();
 }
 
-// Authenticate with Socket.IO and improve connection handling
-socket.auth = { userId: userId };
+// Add scroll event listener to track user's scroll position
+messagesContainer.addEventListener('scroll', () => {
+    if (messagesContainer) {
+        lastScrollPosition = messagesContainer.scrollTop;
+    }
+});
 
-// Add connection management
+// Initialize socket connection
 socket.on('connect', () => {
     console.log('✅ Socket connected with ID:', socket.id);
+    isSocketConnected = true;
+    reconnectAttempts = 0;
     
     // Set auth data
     socket.auth = { userId };
@@ -530,281 +534,85 @@ socket.emit('authenticate', userId);
     // Join relevant chat room
     socket.emit('joinChat', chatId);
     
+    // Process any queued messages
+    processMessageQueue();
+    
     // Inform UI that connection is established
     document.getElementById('connection-status')?.classList.add('hidden');
 });
 
+// Handle connection errors
 socket.on('connect_error', (error) => {
     console.error('❌ Socket connection error:', error.message);
+    isSocketConnected = false;
     
-    // Show connection error in UI if element exists
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
         statusEl.textContent = 'Connection error. Trying to reconnect...';
         statusEl.classList.remove('hidden');
     }
+    
+    // Attempt to reconnect
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        setTimeout(() => {
+            socket.connect();
+        }, 1000 * reconnectAttempts);
+    } else {
+        showToast('Failed to connect to chat server. Please refresh the page.', 'error');
+    }
 });
 
+// Handle disconnection
 socket.on('disconnect', (reason) => {
     console.log('Socket disconnected, reason:', reason);
+    isSocketConnected = false;
     
-    // Show disconnection in UI if element exists
     const statusEl = document.getElementById('connection-status');
     if (statusEl) {
         statusEl.textContent = 'Disconnected. Reconnecting...';
         statusEl.classList.remove('hidden');
     }
+    
+    // Attempt to reconnect
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        setTimeout(() => {
+            socket.connect();
+        }, 1000 * reconnectAttempts);
+    }
 });
 
+// Handle reconnection
 socket.on('reconnect', (attemptNumber) => {
     console.log('Socket reconnected after', attemptNumber, 'attempts');
+    isSocketConnected = true;
+    reconnectAttempts = 0;
     
-    // Re-authenticate and join rooms after reconnection
     socket.auth = { userId };
     socket.emit('authenticate', userId);
     socket.emit('joinChat', chatId);
-    
-    // Hide connection error message
     document.getElementById('connection-status')?.classList.add('hidden');
+    processMessageQueue();
 });
 
-socket.on('disconnect', () => {
-  console.log('Socket disconnected');
-  // Try to reconnect automatically
-  setTimeout(() => {
-    if (socket.disconnected) {
-      socket.connect();
-    }
-  }, 1000);
-});
-
-socket.on('connect_error', (error) => {
-  console.error('Socket connection error:', error);
-});
-
-// Listen for online/offline status with improved selectors
-socket.on('userOnline', (data) => {
-    // Handle both object format and direct ID format
-    const onlineUserId = data.userId || data;
-    console.log('User online event received:', onlineUserId);
+// Process queued messages
+function processMessageQueue() {
+    if (!isSocketConnected) return;
     
-    if (onlineUserId === receiverId || onlineUserId.toString() === receiverId.toString()) {
-        // Use the more specific selector with the added class
-        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${receiverId}"]`);
-        if (statusDot) {
-            console.log('Updating status dot to online for user:', receiverId);
-            statusDot.classList.remove('bg-gray-400');
-            statusDot.classList.add('bg-green-500');
-        } else {
-            console.warn('Status dot element not found for online status update');
-        }
-    }
-});
-
-socket.on('userOffline', (data) => {
-    // Handle both object format and direct ID format
-    const offlineUserId = data.userId || data;
-    console.log('User offline event received:', offlineUserId);
-    
-    if (offlineUserId === receiverId || offlineUserId.toString() === receiverId.toString()) {
-        // Use the more specific selector with the added class
-        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${receiverId}"]`);
-        if (statusDot) {
-            console.log('Updating status dot to offline for user:', receiverId);
-            statusDot.classList.remove('bg-green-500');
-            statusDot.classList.add('bg-gray-400');
-        } else {
-            console.warn('Status dot element not found for offline status update');
-        }
-    }
-});
-
-// Add message tracking to prevent duplicates
-const renderedMessageIds = new Set();
-
-// IMPROVE the newMessage handler to prevent duplicates
-socket.on('newMessage', (data) => {
-    console.log('💬 New message received:', data);
-    
-    try {
-        // Check if this message belongs to the current chat
-        const messageData = data.message || data;
-        const messageChatId = data.chatId || messageData.chat;
-        
-        if (messageChatId === chatId || messageChatId === chatId.toString()) {
-            console.log('Message belongs to current chat, rendering...');
-            
-            // Extract the message object based on different possible formats
-            const message = data.message || data;
-            
-            // Skip if we've already rendered this message
-            if (message._id && renderedMessageIds.has(message._id)) {
-                console.log('Skipping duplicate message:', message._id);
-                return;
-            }
-            
-            // Skip if this is our own message (we've already rendered it)
-            if (message.sender && message.sender._id === userId) {
-                console.log('Skipping our own message (already rendered)');
-                // Still mark it as rendered
-                if (message._id) {
-                    renderedMessageIds.add(message._id);
-                }
-                return;
-            }
-            
-            // Create and append the message
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex justify-start group mb-6`;  // Incoming messages are left-aligned
-            messageDiv.innerHTML = createMessageHTML(message);
-            messagesContainer.appendChild(messageDiv);
-            
-            // Mark message as rendered
-            if (message._id) {
-                renderedMessageIds.add(message._id);
-            }
-            
-            // Play notification sound if available
-            const notificationSound = document.getElementById('messageSound');
-            if (notificationSound) {
-                notificationSound.play().catch(e => console.log('Could not play notification sound', e));
-            }
-            
-            // Mark as read if the page is visible
-            if (document.visibilityState !== 'hidden') {
-                socket.emit('markAsRead', { messageId: message._id });
-            }
-            
-            // Scroll to bottom
-        scrollToBottom();
-        } else {
-            console.log('Message not for this chat, ignoring');
-        }
-    } catch (error) {
-        console.error('Error processing new message:', error);
-    }
-});
-
-// Listen for typing status with improved reliability
-socket.on('userTyping', (data) => {
-    console.log('User typing event received:', data);
-    console.log('Current chat ID:', chatId);
-    console.log('Current receiver ID:', receiverId);
-    
-    if ((data.chatId === chatId || data.chat === chatId) && data.userId === receiverId) {
-        console.log('Showing typing indicator!');
-        // Show typing indicator
-        typingStatus.textContent = "typing...";
-        typingStatus.classList.remove('hidden');
-        
-        // Clear any previous timeout
-        clearTimeout(typingTimeout);
-        
-        // Hide after delay
-        typingTimeout = setTimeout(() => {
-            typingStatus.classList.add('hidden');
-            typingStatus.textContent = ""; // Clear text when hiding
-        }, 3000);
-    } else {
-        console.log('Not showing typing indicator - IDs do not match');
-    }
-});
-
-// Listen for voice recording status
-socket.on('userRecordingVoice', (data) => {
-    console.log('User recording voice message event received:', data);
-    console.log('Current chat ID:', chatId);
-    console.log('Current receiver ID:', receiverId);
-    
-    if ((data.chatId === chatId || data.chat === chatId) && data.userId === receiverId) {
-        if (data.isRecording) {
-            console.log('Showing recording indicator!');
-            // Show recording indicator with proper styling
-            typingStatus.textContent = "recording voice message...";
-            typingStatus.classList.remove('hidden');
-            
-            // Don't hide until recording stops
-            clearTimeout(typingTimeout);
-        } else {
-            console.log('Hiding recording indicator');
-            // Hide indicator after delay when recording stops
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                typingStatus.classList.add('hidden');
-            }, 1000);
-        }
-    } else {
-        console.log('Not showing recording indicator - IDs do not match');
-    }
-});
-
-// Make sure typing indicator is actually hidden when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Simple reset on page load - set empty text and hide
-    typingStatus.textContent = "";
-    typingStatus.classList.add('hidden');
-});
-
-// Handle message input with debounce for typing indicator
-let typingDebounce;
-messageInput.addEventListener('input', () => {
-    // Clear previous timeout
-    clearTimeout(typingDebounce);
-    
-    // Emit typing event
-    console.log('Emitting typing event with data:', { receiverId, chatId, userId });
-    socket.emit('typing', { 
-        receiverId, 
-        chatId,
-        userId // Include our own ID
+    messageQueue.forEach(messageId => {
+        socket.emit('markAsRead', { messageId });
     });
-    
-    // Set debounce timer
-    typingDebounce = setTimeout(() => {
-        // Do nothing, just debounce the events
-    }, 1000);
-});
+    messageQueue.clear();
+}
 
-// Handle message submission
+// Handle message form submission
 messageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const content = messageInput.value.trim();
     
     if (!content && !selectedMedia) return;
     
-    if (selectedMedia) {
-        // Handle media upload (existing code)
-        const formData = new FormData();
-        formData.append('media', selectedMedia);
-        if (content) formData.append('content', content);
-        formData.append('receiverId', receiverId);
-        
-        try {
-            const response = await fetch(`/chat/${chatId}/media`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            
-            // Immediately add message to the UI
-            appendMessage(data, true);
-            scrollToBottom();
-            
-            // Also emit message via socket for real-time delivery
-            socket.emit('chatMessage', {
-                chatId: chatId,
-                message: data,
-                receiverId: receiverId
-            });
-        } catch (error) {
-            console.error('Error sending media message:', error);
-        }
-        
-        selectedMedia = null;
-        mediaPreview.classList.add('hidden');
-        mediaInput.value = '';
-    } else {
-        // Text message submission
         try {
             const response = await fetch(`/chat/${chatId}/message`, {
                 method: 'POST',
@@ -813,1338 +621,42 @@ messageForm.addEventListener('submit', async (e) => {
                 },
                 body: JSON.stringify({
                     content,
-                    receiverId
+                receiverId: receiverId
                 })
             });
             
-            const data = await response.json();
-            
-            // Immediately add message to the UI
-            appendMessage(data, true);
-            scrollToBottom();
-            
-            // Also emit message via socket for real-time delivery
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+                    const data = await response.json();
+                    
+        // Create and append the message
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex justify-end group mb-6`;
+        messageDiv.innerHTML = createMessageHTML(data);
+        messagesContainer.appendChild(messageDiv);
+        
+        // Scroll to bottom
+scrollToBottom();
+
+        // Clear input
+        messageInput.value = '';
+        
+        // Emit message via socket if connected
+        if (isSocketConnected) {
             socket.emit('chatMessage', {
                 chatId: chatId,
                 message: data,
                 receiverId: receiverId
             });
-        } catch (error) {
-            console.error('Error sending message:', error);
-        }
-    }
-    
-    messageInput.value = '';
-});
-
-// Handle media button click
-mediaButton.addEventListener('click', () => {
-    mediaInput.click();
-});
-
-// Handle media selection
-mediaInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    selectedMedia = file;
-    previewContent.innerHTML = '';
-    mediaPreview.classList.remove('hidden');
-    
-    if (file.type.startsWith('image/')) {
-        const img = document.createElement('img');
-        img.className = 'h-20 rounded object-contain';
-        img.file = file;
-        previewContent.appendChild(img);
-        
-        const reader = new FileReader();
-        reader.onload = (e) => { img.src = e.target.result; };
-        reader.readAsDataURL(file);
-    } else if (file.type.startsWith('video/')) {
-        const video = document.createElement('video');
-        video.className = 'h-20 rounded';
-        video.controls = true;
-        previewContent.appendChild(video);
-        
-        const reader = new FileReader();
-        reader.onload = (e) => { video.src = e.target.result; };
-        reader.readAsDataURL(file);
-    }
-});
-
-// Update the message options to separate own vs other functions
-function showMyMessageOptions(messageId) {
-    if (!messageId) {
-        console.error("No message ID provided");
-        return;
-    }
-    currentMessageId = messageId;
-    document.getElementById('messageOptionsModal').classList.remove('hidden');
-}
-
-function showReactionPickerForMessage(messageId) {
-    if (!messageId) {
-        console.error("No message ID provided");
-        return;
-    }
-    
-    console.log("Opening reaction picker for message:", messageId);
-    currentMessageId = messageId;
-    
-    // Position the reaction picker near the message
-    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (messageElement) {
-        const rect = messageElement.getBoundingClientRect();
-        const reactionPicker = document.getElementById('reactionPickerModal');
-        const pickerContent = reactionPicker.querySelector('div');
-        
-        // Update the position of the reaction picker for better UX
-        pickerContent.style.top = `${rect.top - 100}px`;
-        
-        document.getElementById('reactionPickerModal').classList.remove('hidden');
-    } else {
-        console.error("Message element not found");
-    }
-}
-
-// Improved reaction picker display
-function showReactionPicker() {
-    if (!currentMessageId) {
-        console.error("No message selected for reaction");
-        return;
-    }
-    document.getElementById('messageOptionsModal').classList.add('hidden');
-    document.getElementById('reactionPickerModal').classList.remove('hidden');
-}
-
-// Update the improved addReaction function to better handle the reaction process
-async function addReaction(reaction) {
-    if (!currentMessageId) {
-        console.error("Cannot add reaction: No message ID");
-        closeReactionPicker();
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/message/${currentMessageId}/react`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ reaction })
-        });
-        
-        if (response.ok) {
-            const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
-            if (!messageElement) {
-                console.error("Message element not found for reaction");
-                return;
-            }
-            
-            // Remove existing reaction if any
-            const existingReaction = messageElement.querySelector('.reaction-bubble');
-            if (existingReaction) {
-                existingReaction.remove();
-            }
-            
-            // Create and add the new reaction
-            const reactionElement = document.createElement('div');
-            reactionElement.className = 'absolute -bottom-6 right-2 reaction-bubble';
-            reactionElement.innerHTML = `<span class="reaction">${reaction}</span>`;
-            messageElement.appendChild(reactionElement);
-            
-            // Emit reaction to other user
-            socket.emit('messageReacted', {
-                chatId,
-                messageId: currentMessageId,
-                reaction,
-                receiverId
-            });
         } else {
-            const errorText = await response.text();
-            console.error("Failed to add reaction:", errorText);
+            showToast('Message sent but not delivered in real-time. Reconnecting...', 'warning');
         }
-    } catch (error) {
-        console.error('Error adding reaction:', error);
-    }
-    
-    closeReactionPicker();
-    currentMessageId = null; // Reset after use
-}
-
-// Fix delete function to also reset currentMessageId
-async function deleteMessage() {
-    if (!currentMessageId) {
-        console.error("Cannot delete: No message ID");
-        closeMessageOptions();
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/message/${currentMessageId}/delete`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`).closest('.flex');
-            if (messageElement) {
-                // Add fade-out animation
-                messageElement.style.transition = 'opacity 0.3s ease-out';
-                messageElement.style.opacity = '0';
-                setTimeout(() => {
-                    messageElement.remove();
-                }, 300);
-                
-                // Emit delete event to other user
-                socket.emit('messageDeleted', {
-                    chatId,
-                    messageId: currentMessageId,
-                    receiverId
-                });
-            }
-        } else {
-            console.error("Failed to delete message:", await response.text());
-        }
-    } catch (error) {
-        console.error('Error deleting message:', error);
-    }
-    
-    closeMessageOptions();
-    currentMessageId = null; // Reset after use
-}
-
-// Improved edit function to reset currentMessageId after use
-async function editMessage() {
-    if (!currentMessageId) {
-        console.error("Cannot edit: No message ID");
-        closeMessageOptions();
-        return;
-    }
-    
-    const messageId = currentMessageId; // Store message ID before closing modal
-    closeMessageOptions(); // Close modal after storing message ID
-    
-    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (!messageElement) {
-        console.error("Message element not found");
-        return;
-    }
-    
-    const messageTextContainer = messageElement.querySelector('.message-text');
-    const messageSpan = messageElement.querySelector('.message-content');
-    
-    if (!messageSpan) {
-        console.error("Message content span not found");
-        return;
-    }
-    
-    const currentContent = messageSpan.textContent;
-    
-    // Create inline edit input
-    const inputElement = document.createElement('input');
-    inputElement.type = 'text';
-    inputElement.value = currentContent;
-    inputElement.className = 'w-full bg-blue-600 border-none focus:outline-none focus:ring-0 p-0 text-white rounded';
-    
-    // Replace text with input
-    messageSpan.replaceWith(inputElement);
-    inputElement.focus();
-    inputElement.select();
-    
-    // Handle edit completion
-    const completeEdit = async (save = true) => {
-        const newContent = inputElement.value.trim();
-        if (save && newContent && newContent !== currentContent) {
-            try {
-                const response = await fetch(`/message/${messageId}/edit`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ content: newContent })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    // Update message content and edited status
-                    messageTextContainer.innerHTML = `
-                        <span class="message-content">${data.content}</span>
-                        <span class="text-xs opacity-75">(edited)</span>
-                    `;
-                    messageTextContainer.classList.add('flex', 'items-center', 'gap-1');
-                    
-                    // Update message data attribute
-                    messageElement.setAttribute('data-edited', 'true');
-                    
-                    // Emit edit event
-                    socket.emit('messageEdited', {
-                        chatId,
-                        messageId: messageId,
-                        content: data.content,
-                        isEdited: true,
-                        receiverId
-                    });
-                } else {
-                    console.error("Failed to update message:", await response.text());
-                    const newSpan = document.createElement('span');
-                    newSpan.className = 'message-content';
-                    newSpan.textContent = currentContent;
-                    inputElement.replaceWith(newSpan);
-                }
-            } catch (error) {
-                console.error('Error editing message:', error);
-                const newSpan = document.createElement('span');
-                newSpan.className = 'message-content';
-                newSpan.textContent = currentContent;
-                inputElement.replaceWith(newSpan);
-            }
-        } else {
-            // If not saving or content unchanged, restore original content
-            const newSpan = document.createElement('span');
-            newSpan.className = 'message-content';
-            newSpan.textContent = currentContent;
-            inputElement.replaceWith(newSpan);
-        }
-        
-        // Only reset currentMessageId after edit is complete
-        currentMessageId = null;
-    };
-    
-    // Handle input events
-    inputElement.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            completeEdit(true);
-        } else if (e.key === 'Escape') {
-            completeEdit(false);
-        }
-    });
-    
-    // Handle blur event (clicking outside)
-    inputElement.addEventListener('blur', () => {
-        completeEdit(true);
-    });
-}
-
-// Handle message options
-function closeMessageOptions() {
-    document.getElementById('messageOptionsModal').classList.add('hidden');
-}
-
-// Cancel media upload
-cancelMedia.addEventListener('click', () => {
-    selectedMedia = null;
-    mediaInput.value = '';
-    mediaPreview.classList.add('hidden');
-});
-
-function closeReactionPicker() {
-    document.getElementById('reactionPickerModal').classList.add('hidden');
-    currentMessageId = null; // Reset after use
-}
-
-// Add back event listeners
-// Add listener for message deletion from other user
-socket.on('messageDeleted', (data) => {
-    if (data.chatId === chatId) {
-        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`).closest('.flex');
-        if (messageElement) {
-            messageElement.style.transition = 'opacity 0.3s ease-out';
-            messageElement.style.opacity = '0';
-            setTimeout(() => {
-                messageElement.remove();
-            }, 300);
-        }
-    }
-});
-
-// Fix the messageEdited listener to properly update edited messages
-socket.on('messageEdited', (data) => {
-    if (data.chatId === chatId) {
-        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
-        if (messageElement) {
-            const messageSpan = messageElement.querySelector('.message-content');
-            if (messageSpan) {
-                messageSpan.textContent = data.content;
-                
-                // Add edited indicator if not already present
-                const messageTextContainer = messageElement.querySelector('.message-text');
-                if (messageTextContainer && !messageTextContainer.querySelector('.text-xs.opacity-75')) {
-                    messageTextContainer.classList.add('flex', 'items-center', 'gap-1');
-                    const editedSpan = document.createElement('span');
-                    editedSpan.className = 'text-xs opacity-75';
-                    editedSpan.textContent = '(edited)';
-                    messageTextContainer.appendChild(editedSpan);
-                }
-            } else {
-                console.error("Message span not found for edit");
-            }
-        }
-    }
-});
-
-// Add socket listener for reactions
-socket.on('messageReacted', (data) => {
-    if (data.chatId === chatId) {
-        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
-        if (!messageElement) {
-            console.error("Message element not found for reaction");
-            return;
-        }
-        
-        // Remove existing reaction if any
-        const existingReaction = messageElement.querySelector('.reaction-bubble');
-        if (existingReaction) {
-            existingReaction.remove();
-        }
-        
-        // Create and add the new reaction
-        const reactionElement = document.createElement('div');
-        reactionElement.className = 'absolute -bottom-6 left-2 reaction-bubble';
-        reactionElement.innerHTML = `<span class="reaction">${data.reaction}</span>`;
-        messageElement.appendChild(reactionElement);
-    }
-});
-
-// Initial scroll to bottom
-scrollToBottom();
-
-// Update reaction bubble styling
-document.head.insertAdjacentHTML('beforeend', `
-<style>
-/* Story ring gradient */
-.story-ring {
-    background: linear-gradient(45deg, #3B82F6 0%, #6366F1 50%, #A855F7 100%);
-    border-radius: 50%;
-}
-
-/* Add Instagram-style styling */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fadeIn {
-    animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* Toast animation */
-@keyframes slideUp {
-    from { transform: translate(-50%, 100%); opacity: 0; }
-    to { transform: translate(-50%, 0); opacity: 1; }
-}
-
-.toast-show {
-    animation: slideUp 0.3s ease-out forwards;
-}
-
-/* Recording dot animation */
-.recording-dot {
-    width: 12px;
-    height: 12px;
-    background: linear-gradient(45deg, #f56565, #e53e3e);
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(0.8); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-/* Message bubble hover effect */
-.message-bubble {
-    transition: all 0.2s ease;
-}
-
-.message-bubble:hover {
-    /* Removing the scale effect */
-    /* transform: scale(1.02); */
-}
-
-/* Reactions styling */
-.reaction-bubble {
-    background-color: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(4px);
-    border-radius: 1rem;
-    padding: 0.2rem 0.4rem;
-    z-index: 10;
-    display: inline-block;
-    font-size: 1.25rem;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
-    animation: bounceIn 0.3s ease-out;
-}
-
-@keyframes bounceIn {
-    0% { transform: scale(0); opacity: 0; }
-    60% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* Audio player styling with gradient */
-.audio-player .waveform {
-    position: relative;
-    overflow: hidden;
-    border-radius: 12px;
-}
-
-.audio-player .waveform::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
-    animation: wave 2s linear infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.audio-player.playing .waveform::before {
-    opacity: 1;
-}
-
-.audio-player .play-btn {
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
-}
-
-.audio-player .play-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
-}
-
-.audio-player .progress-bar {
-    position: relative;
-}
-
-.audio-player .progress-bar::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
-    width: 4px;
-    background-color: #fff;
-    border-radius: 0 4px 4px 0;
-    box-shadow: 0 0 5px rgba(0,0,0,0.3);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.audio-player.playing .progress-bar::after {
-    opacity: 1;
-}
-
-@keyframes wave {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-/* Instagram-style ripple effect for button clicks */
-.ripple {
-    position: relative;
-    overflow: hidden;
-}
-
-.ripple::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 1;
-    border-radius: 50%;
-    animation: ripple 0.6s ease-out;
-}
-
-@keyframes ripple {
-    to {
-        transform: translate(-50%, -50%) scale(3);
-        opacity: 0;
-    }
-}
-
-/* Instagram glass-morphism effect for modals */
-.glass-effect {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Gradient text */
-.gradient-text {
-    background: linear-gradient(to right, #3B82F6, #A855F7);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-
-/* Shimmer effect for loading states */
-.shimmer {
-    position: relative;
-    overflow: hidden;
-}
-
-.shimmer::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    transform: translateX(-100%);
-    background-image: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 0,
-        rgba(255, 255, 255, 0.2) 20%,
-        rgba(255, 255, 255, 0.5) 60%,
-        rgba(255, 255, 255, 0)
-    );
-    animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-    100% {
-        transform: translateX(100%);
-    }
-}
-
-/* Call button pulse effect */
-#callButton {
-    position: relative;
-}
-
-#callButton::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    padding: 2px;
-    background: linear-gradient(45deg, #3B82F6, #A855F7);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0.7;
-    animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse-border {
-    0%, 100% {
-        opacity: 0.7;
-    }
-    50% {
-        opacity: 0.3;
-    }
-}
-
-/* Message input focus effect */
-#messageInput:focus {
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-/* Make scrollbar more stylish */
-::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: linear-gradient(to bottom, #3B82F6, #A855F7);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(to bottom, #2563EB, #9333EA);
-}
-
-/* Message text style */
-.message-text {
-    word-break: break-word;
-}
-
-/* Media size constraints for chat messages */
-.max-w-full {
-    max-width: 200px !important; /* Limit image/video width */
-    max-height: 200px !important; /* Limit image/video height */
-    object-fit: contain !important; /* Maintain aspect ratio */
-}
-
-/* Shared post card styling */
-.shared-post-card {
-    max-width: 250px;
-    transition: transform 0.2s ease;
-}
-
-.shared-post-card:hover {
-    transform: scale(1.02);
-}
-
-/* Add style for typing & recording indicator */
-#typingStatus {
-    font-style: italic;
-    background-image: linear-gradient(90deg, #3B82F6, #8B5CF6);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    display: inline-flex;
-    align-items: center;
-}
-
-#typingStatus.recording::before {
-    content: '';
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background-color: #EF4444;
-    border-radius: 50%;
-    margin-right: 4px;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
-}
-
-#recordingVisualizer {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-#recordingVisualizer canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.audio-player .waveform {
-    position: relative;
-    overflow: hidden;
-}
-
-.audio-player .waveform::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
-    animation: wave 2s linear infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.audio-player.playing .waveform::before {
-    opacity: 1;
-}
-</style>
-`);
-
-// Voice recording variables
-let mediaRecorder;
-let audioChunks = [];
-let recordingStream;
-let recordingStartTime;
-let recordingTimer;
-let recordingVisualizerContext;
-let recordingAnalyser;
-
-const voiceButton = document.getElementById('voiceButton');
-const recordingIndicator = document.getElementById('recordingIndicator');
-const recordingVisualizer = document.getElementById('recordingVisualizer');
-const recordingTimerEl = document.getElementById('recordingTimer');
-const voiceControls = document.getElementById('voiceControls');
-const cancelRecording = document.getElementById('cancelRecording');
-const sendRecording = document.getElementById('sendRecording');
-
-// Set up voice recording
-voiceButton.addEventListener('click', async () => {
-    try {
-        if (recordingStream) {
-            // Already recording, stop it
-            stopRecording();
-            // Emit recording stopped event
-            console.log('Emitting recording stopped event');
-            socket.emit('recordingVoice', {
-                receiverId,
-                chatId,
-                userId,
-                isRecording: false
-            });
-            return;
-        }
-        
-        // Request microphone access
-        recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-        // Hide text input and show recording UI
-        messageInput.classList.add('hidden');
-        recordingIndicator.classList.remove('hidden');
-        voiceControls.classList.remove('hidden');
-        
-        // Emit recording started event
-        console.log('Emitting recording started event');
-        socket.emit('recordingVoice', {
-            receiverId,
-            chatId,
-            userId,
-            isRecording: true
-        });
-        
-        // Set up audio context for visualization
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const source = audioContext.createMediaStreamSource(recordingStream);
-        recordingAnalyser = audioContext.createAnalyser();
-        recordingAnalyser.fftSize = 256;
-        source.connect(recordingAnalyser);
-        
-        // Set up recording timer
-        recordingStartTime = Date.now();
-        recordingTimer = setInterval(updateRecordingTimer, 1000);
-        
-        // Set up media recorder
-        mediaRecorder = new MediaRecorder(recordingStream);
-        audioChunks = [];
-        
-        mediaRecorder.addEventListener('dataavailable', event => {
-            audioChunks.push(event.data);
-        });
-        
-        mediaRecorder.addEventListener('stop', () => {
-            // Create blob from recorded chunks
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            sendVoiceMessage(audioBlob);
-        });
-        
-        // Start visualizing audio
-        setupVisualization();
-        
-        // Start recording
-        mediaRecorder.start();
         
     } catch (error) {
-        console.error('Error starting voice recording:', error);
-        showToast('Could not access microphone. Please check your permissions.', 'error');
-    }
-});
-
-// Stop recording and send message
-function stopRecording() {
-    if (!recordingStream) return;
-    
-    // Stop recording
-    mediaRecorder.stop();
-    recordingStream.getTracks().forEach(track => track.stop());
-    
-    // Clear timer
-    clearInterval(recordingTimer);
-    
-    // Reset UI
-    messageInput.classList.remove('hidden');
-    recordingIndicator.classList.add('hidden');
-    voiceControls.classList.add('hidden');
-    
-    // Clean up
-    recordingStream = null;
-    recordingAnalyser = null;
-}
-
-// Stop recording and discard audio
-function stopRecordingAndDiscard() {
-    if (!recordingStream) return;
-    
-    try {
-        // Make sure to terminate the media recorder properly
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            // Need to use a dummy handler to prevent the normal stop handler from running
-            const originalStopHandler = mediaRecorder.onstop;
-            mediaRecorder.onstop = null; // Remove the handler temporarily
-            
-            // Stop recording without triggering send
-            mediaRecorder.stop();
-            
-            // Restore original handler if needed
-            setTimeout(() => {
-                mediaRecorder.onstop = originalStopHandler;
-            }, 100);
-        }
-        
-        // Stop all tracks in the stream
-        if (recordingStream && recordingStream.getTracks) {
-            recordingStream.getTracks().forEach(track => track.stop());
-        }
-        
-        // Clear timer
-        if (recordingTimer) {
-            clearInterval(recordingTimer);
-        }
-        
-        // Reset UI
-        messageInput.classList.remove('hidden');
-        recordingIndicator.classList.add('hidden');
-        voiceControls.classList.add('hidden');
-        
-        // Clean up
-        recordingStream = null;
-        recordingAnalyser = null;
-        audioChunks = [];
-        
-        console.log('Voice recording successfully cancelled');
-        showToast('Recording cancelled', 'info');
-    } catch (error) {
-        console.error('Error cancelling recording:', error);
-    }
-}
-
-// Cancel recording button
-cancelRecording.addEventListener('click', () => {
-    console.log('Cancel recording button clicked');
-    if (recordingStream) {
-        // Emit recording stopped event first
-        socket.emit('recordingVoice', {
-            receiverId,
-            chatId,
-            userId,
-            isRecording: false
-        });
-        
-        // Then discard the recording
-        stopRecordingAndDiscard();
-    }
-});
-
-// Send recording button
-sendRecording.addEventListener('click', () => {
-    if (recordingStream) {
-        stopRecording();
-        // Emit recording stopped event
-        socket.emit('recordingVoice', {
-            receiverId,
-            chatId,
-            userId,
-            isRecording: false
-        });
-    }
-});
-
-// Update recording timer
-function updateRecordingTimer() {
-    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-    const minutes = Math.floor(elapsed / 60);
-    const seconds = elapsed % 60;
-    recordingTimerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-// Set up audio visualization
-function setupVisualization() {
-    recordingVisualizerContext = document.createElement('canvas').getContext('2d');
-    recordingVisualizer.innerHTML = '';
-    recordingVisualizer.appendChild(recordingVisualizerContext.canvas);
-    recordingVisualizerContext.canvas.width = recordingVisualizer.clientWidth;
-    recordingVisualizerContext.canvas.height = recordingVisualizer.clientHeight;
-    
-    visualize();
-}
-
-// Update styles for better visualization
-document.head.insertAdjacentHTML('beforeend', `
-<style>
-.recording-dot {
-    width: 12px;
-    height: 12px;
-    background-color: #EF4444;
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
-}
-
-#recordingVisualizer {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-#recordingVisualizer canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.audio-player .waveform {
-    position: relative;
-    overflow: hidden;
-}
-
-.audio-player .waveform::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
-    animation: wave 2s linear infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.audio-player.playing .waveform::before {
-    opacity: 1;
-}
-
-.audio-player .play-btn {
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
-}
-
-.audio-player .play-btn:hover {
-    transform: scale(1.1);
-    background-color: rgba(0,0,0,0.1);
-}
-
-.audio-player .progress-bar {
-    position: relative;
-}
-
-.audio-player .progress-bar::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
-    width: 4px;
-    background-color: #fff;
-    border-radius: 0 4px 4px 0;
-    box-shadow: 0 0 5px rgba(0,0,0,0.3);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.audio-player.playing .progress-bar::after {
-    opacity: 1;
-}
-
-@keyframes wave {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-</style>
-`);
-
-// Update the visualization function to make it more visually appealing
-function visualize() {
-    if (!recordingAnalyser) return;
-    
-    const bufferLength = recordingAnalyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    function draw() {
-        if (!recordingStream) return;
-        
-        requestAnimationFrame(draw);
-        
-        recordingAnalyser.getByteFrequencyData(dataArray);
-        
-        recordingVisualizerContext.clearRect(0, 0, recordingVisualizerContext.canvas.width, recordingVisualizerContext.canvas.height);
-        
-        const barWidth = (recordingVisualizerContext.canvas.width / bufferLength) * 2.5;
-        let x = 0;
-        
-        // Create gradient
-        const gradient = recordingVisualizerContext.createLinearGradient(0, 0, 0, recordingVisualizerContext.canvas.height);
-        gradient.addColorStop(0, '#EF4444'); // Red at top
-        gradient.addColorStop(0.5, '#EC4899'); // Pink in middle
-        gradient.addColorStop(1, '#8B5CF6'); // Purple at bottom
-        recordingVisualizerContext.fillStyle = gradient;
-        
-        for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * recordingVisualizerContext.canvas.height;
-            
-            // Make the bars more visually appealing with rounded tops
-            recordingVisualizerContext.beginPath();
-            recordingVisualizerContext.roundRect(
-                x, 
-                recordingVisualizerContext.canvas.height - barHeight, 
-                barWidth, 
-                barHeight,
-                [barWidth/2, barWidth/2, 0, 0] // Rounded top corners
-            );
-            recordingVisualizerContext.fill();
-            
-            x += barWidth + 1;
-        }
-    }
-    
-    draw();
-}
-
-// Send voice message to server
-async function sendVoiceMessage(audioBlob) {
-    const formData = new FormData();
-    formData.append('voice', audioBlob, 'voice-message.webm');
-    formData.append('receiverId', receiverId);
-    
-    try {
-        const response = await fetch(`/chat/${chatId}/voice`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Append message locally
-            appendMessage(data, true);
-            scrollToBottom();
-            
-            // Emit message for real-time delivery
-            socket.emit('chatMessage', {
-                chatId,
-                message: data,
-                receiverId
-            });
-            
-            // Play sent sound
-            const sentSound = document.getElementById('messageSound');
-            if (sentSound) {
-                sentSound.play().catch(e => console.log('Could not play sent sound', e));
-            }
-        } else {
-            console.error('Error sending voice message:', data.error);
-            showToast('Failed to send voice message. Please try again.', 'error');
-        }
-    } catch (error) {
-        console.error('Error sending voice message:', error);
-        showToast('Network error. Please check your connection and try again.', 'error');
-    }
-}
-
-// Helper function to format time for audio duration display
-function formatTime(seconds) {
-    if (isNaN(seconds)) return '0:00';
-    
-    // If seconds is a Date object, return formatted time
-    if (seconds instanceof Date) {
-        const hours = seconds.getHours();
-        const minutes = seconds.getMinutes();
-        return `${hours}:${minutes.toString().padStart(2, '0')}`;
-    }
-    
-    // Otherwise format as duration
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
-// Helper function to update audio duration display
-function updateAudioDuration(audio, durationElement) {
-    if (!audio || !durationElement) return;
-    
-    if (isNaN(audio.duration)) {
-        durationElement.textContent = '0:00';
-    } else {
-        durationElement.textContent = formatTime(audio.duration);
-    }
-}
-
-// Helper function to toggle audio playback
-function toggleAudioPlayback(audio, playIcon, pauseIcon) {
-    // Pause all other audio elements first
-    document.querySelectorAll('audio').forEach(a => {
-        if (a !== audio && !a.paused) {
-            a.pause();
-            // Reset all other play/pause icons
-            const playerContainer = a.closest('.audio-player');
-            if (playerContainer) {
-                playerContainer.querySelector('.play-icon')?.classList.remove('hidden');
-                playerContainer.querySelector('.pause-icon')?.classList.add('hidden');
-            }
-        }
-    });
-    
-    if (audio.paused) {
-        audio.play();
-        playIcon.classList.add('hidden');
-        pauseIcon.classList.remove('hidden');
-    } else {
-        audio.pause();
-        playIcon.classList.remove('hidden');
-        pauseIcon.classList.add('hidden');
-    }
-}
-
-// Function to initialize audio player
-function initAudioPlayer(player) {
-    const audio = player.querySelector('audio');
-    const playBtn = player.querySelector('.play-btn');
-    const playIcon = playBtn.querySelector('.play-icon');
-    const pauseIcon = playBtn.querySelector('.pause-icon');
-    const progressBar = player.querySelector('.progress-bar');
-    const currentTimeEl = player.querySelector('.current-time');
-    const durationEl = player.querySelector('.audio-duration');
-    const waveform = player.querySelector('.waveform');
-    
-    if (!audio || audio.hasAttribute('data-initialized')) return;
-    
-    // Format time helper function
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-    
-    // Update progress function
-    const updateProgress = () => {
-        if (!audio.paused) {
-            const currentTime = audio.currentTime;
-            const duration = audio.duration;
-            const progressPercent = (currentTime / duration) * 100;
-            
-            // Update progress bar width
-            progressBar.style.width = `${progressPercent}%`;
-            
-            // Update current time display
-            currentTimeEl.textContent = formatTime(currentTime);
-            
-            // Continue updating
-            requestAnimationFrame(updateProgress);
-        }
-    };
-    
-    // Load audio and update duration
-    audio.addEventListener('loadedmetadata', () => {
-        const duration = Math.round(audio.duration);
-        durationEl.textContent = formatTime(duration);
-    });
-    
-    // Play/pause functionality
-    playBtn.addEventListener('click', () => {
-        if (audio.paused) {
-            // Pause all other playing audio
-            document.querySelectorAll('audio').forEach(a => {
-                if (a !== audio && !a.paused) {
-                    a.pause();
-                    const playerBtn = a.closest('.audio-player').querySelector('.play-btn');
-                    playerBtn.querySelector('.play-icon').classList.remove('hidden');
-                    playerBtn.querySelector('.pause-icon').classList.add('hidden');
-                    a.closest('.audio-player').classList.remove('playing');
-                }
-            });
-            
-            audio.play();
-            playIcon.classList.add('hidden');
-            pauseIcon.classList.remove('hidden');
-            player.classList.add('playing');
-            
-            // Start progress animation
-            requestAnimationFrame(updateProgress);
-        } else {
-            audio.pause();
-            playIcon.classList.remove('hidden');
-            pauseIcon.classList.add('hidden');
-            player.classList.remove('playing');
-        }
-    });
-    
-    // Reset play button when audio ends
-    audio.addEventListener('ended', () => {
-        playIcon.classList.remove('hidden');
-        pauseIcon.classList.add('hidden');
-        player.classList.remove('playing');
-        
-        // Reset progress bar
-        progressBar.style.width = '0%';
-        currentTimeEl.textContent = '0:00';
-    });
-    
-    // Add seeking functionality
-    if (waveform) {
-        waveform.addEventListener('click', (e) => {
-            if (!audio.duration) return;
-            
-            const rect = waveform.getBoundingClientRect();
-            const position = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = position * audio.duration;
-            
-            // Update progress bar and time display
-            progressBar.style.width = `${position * 100}%`;
-            currentTimeEl.textContent = formatTime(audio.currentTime);
-            
-            // If audio was paused, start playing
-            if (audio.paused) {
-                audio.play();
-                playIcon.classList.add('hidden');
-                pauseIcon.classList.remove('hidden');
-                requestAnimationFrame(updateProgress);
-            }
-        });
-    }
-    
-    // Mark as initialized
-    audio.setAttribute('data-initialized', 'true');
-}
-
-// Initialize all audio players on page load
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.audio-player').forEach(initAudioPlayer);
-});
-
-// Make sure to initialize audio players for new messages
-socket.on('receive message', (message) => {
-    // Check if we already have this message
-    if (document.querySelector(`.message-${message._id}`)) {
-        return;
-    }
-
-    // Create the message
-    const messageContent = createMessageHTML(message);
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message message-${message._id} ${message.sender._id === userId ? 'sent' : 'received'}`;
-    messageDiv.innerHTML = messageContent;
-    messagesContainer.appendChild(messageDiv);
-
-    // Initialize audio player if this is an audio message
-    if (message.mediaType === 'audio') {
-        const newAudioPlayer = messageDiv.querySelector('.audio-player');
-        if (newAudioPlayer) {
-            initAudioPlayer(newAudioPlayer);
-        }
-    }
-
-    // Scroll to bottom
-    scrollToBottom();
-
-    // Mark message as read
-    if (message.sender._id !== userId) {
-        fetch(`/messages/${message._id}/read`, { method: 'POST' });
+        console.error('Error sending message:', error);
+        showToast('Failed to send message. Please try again.', 'error');
     }
 });
 
@@ -2415,294 +927,244 @@ function formatTime(input) {
     return '0:00';
 }
 
-// Add function to handle messages from the server
-socket.on('message', function(data) {
-    if (data.chatId === chatId) {
-        // Check if this is a new message
-        const existingMessage = document.querySelector(`[data-message-id="${data.message._id}"]`);
-        if (!existingMessage) {
-            // New message - append it to chat
-            appendNewMessage(data.message);
-            
-            // Mark message as read
-            markMessageAsRead(data.message._id);
-            
-            // If message has shared post, handle it specially
-            if (data.message.isSharedPost) {
-                // Add any special handling for shared posts
-                console.log('Received shared post:', data.message.sharedPost);
+// Handle incoming messages
+socket.on('newMessage', (data) => {
+    console.log('💬 New message received:', data);
+    
+    try {
+        const messageData = data.message || data;
+        const messageChatId = data.chatId || messageData.chat;
+        
+        if (messageChatId === chatId || messageChatId === chatId.toString()) {
+            // Skip if we've already rendered this message
+            if (messageData._id && renderedMessageIds.has(messageData._id)) {
+                console.log('Skipping duplicate message:', messageData._id);
+                return;
             }
-        }
-    }
-});
-
-// Add function to format time for messages
-function formatTime(timestamp) {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// Update message container to properly display shared posts
-$(document).ready(function() {
-    // Find existing messages that might be shared posts and update them
-    $('.flex.justify-start, .flex.justify-end').each(function() {
-        const messageEl = $(this).find('[data-message-id]');
-        if (messageEl.length) {
-            const messageId = messageEl.data('message-id');
-            // Check if this is a shared post by looking for indicators
-            if (messageEl.find('.message-content').text().includes('Shared a post')) {
-                // This might be a shared post, attach click handler to view the post
-                messageEl.css('cursor', 'pointer');
-                messageEl.on('click', function(e) {
-                    // Don't trigger if clicking on buttons
-                    if ($(e.target).closest('button').length === 0) {
-                        // Extract post ID if available in a data attribute
-                        const postId = $(this).data('shared-post-id');
-                        if (postId) {
-                            window.location.href = `/post/${postId}`;
-                        }
+            
+            // Skip if this is our own message
+            if (messageData.sender && messageData.sender._id === userId) {
+                if (messageData._id) {
+                    renderedMessageIds.add(messageData._id);
+                }
+                return;
+            }
+            
+            // Create and append the message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex justify-start group mb-6`;
+            messageDiv.innerHTML = createMessageHTML(messageData);
+            
+            // Check for duplicate before appending
+            const existingMessage = document.querySelector(`[data-message-id="${messageData._id}"]`);
+            if (!existingMessage) {
+                messagesContainer.appendChild(messageDiv);
+                
+                // Mark message as rendered
+                if (messageData._id) {
+                    renderedMessageIds.add(messageData._id);
+                }
+                
+                // Scroll to new message
+                scrollToBottom();
+                
+                // Mark message as read if page is visible
+                if (document.visibilityState !== 'hidden' && messageData._id) {
+                    if (isSocketConnected) {
+                        socket.emit('markAsRead', { messageId: messageData._id });
+                    } else {
+                        messageQueue.add(messageData._id);
                     }
-                });
-            }
-        }
-    });
-});
-
-// Add styles for shared post cards
-document.addEventListener('DOMContentLoaded', function() {
-    // Add styles for shared post cards
-    const sharedPostStyles = document.createElement('style');
-    sharedPostStyles.textContent = `
-        .shared-post-card {
-            width: 100%;
-            max-width: 240px;
-            transition: all 0.2s ease;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        .shared-post-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-    `;
-    document.head.appendChild(sharedPostStyles);
-    
-    // Find all shared post cards and add click handler
-    document.querySelectorAll('[data-shared-post-id]').forEach(function(element) {
-        element.addEventListener('click', function(e) {
-            // Don't trigger if clicking on buttons
-            if (!e.target.closest('button')) {
-                const postId = this.getAttribute('data-shared-post-id');
-                if (postId) {
-                    window.location.href = `/post/${postId}`;
+                } else if (messageData._id) {
+                    messageQueue.add(messageData._id);
                 }
             }
-        });
-    });
-});
-
-// Make sure we join the chat room and initialize rendered message IDs
-document.addEventListener('DOMContentLoaded', function() {
-    // Track existing messages to prevent duplicates
-    document.querySelectorAll('[data-message-id]').forEach(element => {
-        const messageId = element.getAttribute('data-message-id');
-        if (messageId) {
-            renderedMessageIds.add(messageId);
-            console.log('Tracking existing message:', messageId);
         }
-    });
-    
-    // Join the chat room
-    socket.emit('joinChat', chatId);
-    console.log('Joining chat room:', chatId);
-    
-    // Mark all existing messages as read if page is visible
-    if (document.visibilityState !== 'hidden') {
-        const unreadMessages = document.querySelectorAll('[data-message-id]');
-        unreadMessages.forEach(element => {
-            const messageId = element.dataset.messageId;
-            if (messageId) {
-                socket.emit('markAsRead', { messageId });
-            }
-        });
+    } catch (error) {
+        console.error('Error handling new message:', error);
+        showToast('Error receiving message. Please refresh the page.', 'error');
     }
-    
-    // Add page visibility change listener to update message read status
-    document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState !== 'hidden') {
-            const unreadMessages = document.querySelectorAll('[data-message-id]');
-            unreadMessages.forEach(element => {
-                const messageId = element.dataset.messageId;
-                if (messageId) {
-                    socket.emit('markAsRead', { messageId });
-                }
-            });
-        }
-    });
 });
 
-// Add explicit debug logging for all socket events
-socket.onAny((event, ...args) => {
-    console.log(`🔔 Socket event received: ${event}`, args);
+// Handle message read events
+socket.on('messageRead', (data) => {
+    console.log('Message read event received:', data);
+    try {
+        if (data.messageId) {
+            const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+            if (messageElement) {
+                messageElement.classList.add('read');
+            }
+        }
+    } catch (error) {
+        console.error('Error handling message read event:', error);
+    }
 });
 
-// Add function to initialize audio players
-function initAudioPlayer(audioPlayerElement) {
-    if (!audioPlayerElement) return;
+// Add page visibility change listener
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'hidden' && isSocketConnected) {
+        processMessageQueue();
+    }
+});
+
+// Add function to create HTML for a message
+function createMessageHTML(message) {
+    const isSender = message.sender._id === '<%= user._id %>';
+    let messageHTML = '';
     
-    const audio = audioPlayerElement.querySelector('audio');
-    const playBtn = audioPlayerElement.querySelector('.play-btn');
-    const playIcon = audioPlayerElement.querySelector('.play-icon');
-    const pauseIcon = audioPlayerElement.querySelector('.pause-icon');
-    const progressBar = audioPlayerElement.querySelector('.progress-bar');
-    const currentTimeEl = audioPlayerElement.querySelector('.current-time');
-    const durationEl = audioPlayerElement.querySelector('.duration');
-    
-    if (!audio || !playBtn) return;
-    
-    // Set up audio event listeners
-    audio.addEventListener('loadedmetadata', () => {
-        const duration = Math.floor(audio.duration);
-        const minutes = Math.floor(duration / 60);
-        const seconds = duration % 60;
-        if (durationEl) {
-            durationEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        }
-    });
-    
-    audio.addEventListener('timeupdate', () => {
-        if (progressBar) {
-            const progress = (audio.currentTime / audio.duration) * 100;
-            progressBar.style.width = `${progress}%`;
-        }
-        
-        if (currentTimeEl) {
-            const current = Math.floor(audio.currentTime);
-            const minutes = Math.floor(current / 60);
-            const seconds = current % 60;
-            currentTimeEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        }
-    });
-    
-    audio.addEventListener('ended', () => {
-        if (playIcon) playIcon.classList.remove('hidden');
-        if (pauseIcon) pauseIcon.classList.add('hidden');
-    });
-    
-    // Play/pause button
-    if (playBtn) {
-        playBtn.addEventListener('click', () => {
-            if (audio.paused) {
-                // Stop all other playing audio elements
-                document.querySelectorAll('audio').forEach(a => {
-                    if (a !== audio) a.pause();
-                });
+    if (message.isPostShare && message.sharedPostPreview) {
+        messageHTML = `
+            <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" 
+                 data-message-id="${message._id}" 
+                 data-shared-post-id="${message.sharedPostPreview.postId}"
+                 style="cursor: pointer;">
                 
-                audio.play();
-                if (playIcon) playIcon.classList.add('hidden');
-                if (pauseIcon) pauseIcon.classList.remove('hidden');
-            } else {
-                audio.pause();
-                if (playIcon) playIcon.classList.remove('hidden');
-                if (pauseIcon) pauseIcon.classList.add('hidden');
-            }
-        });
-    }
-}
-
-// Update appendMessage function to initialize audio players
-function appendMessage(message, isSender) {
-    console.log('Appending message to UI:', message, isSender ? 'sender' : 'receiver');
-    
-    // Create message container
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} group mb-6`;
-    
-    // Generate innerHTML using createMessageHTML
-    messageDiv.innerHTML = createMessageHTML(message);
-    
-    // Add to DOM
-    messagesContainer.appendChild(messageDiv);
-    
-    // Initialize audio player if needed
-    if (message.mediaType === 'audio') {
-        const audioPlayer = messageDiv.querySelector('.audio-player');
-        if (audioPlayer) {
-            initAudioPlayer(audioPlayer);
-        }
-    }
-    
-    // Scroll to new message
-    scrollToBottom();
-}
-
-// Add code to check and update online status on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Track connection state
-    let socketReady = false;
-    let retryCount = 0;
-    const MAX_RETRIES = 5;
-    
-    // Listen for socket connection event
-    socket.on('connect', function() {
-        console.log('Socket connected, now checking online status');
-        socketReady = true;
-        checkOnlineStatus();
-    });
-    
-    // Function to check online status with retry logic
-    function checkOnlineStatus() {
-        if (socketReady) {
-            // Request current online status for the chat recipient
-            socket.emit('checkOnlineStatus', { userId: receiverId });
-            console.log('Requesting online status for user:', receiverId);
-            
-            // Also poll for status updates periodically
-            setInterval(() => {
-                socket.emit('checkOnlineStatus', { userId: receiverId });
-            }, 30000); // Check every 30 seconds
-        } else if (retryCount < MAX_RETRIES) {
-            // Socket not ready yet, retry after delay
-            retryCount++;
-            console.log(`Socket not ready, retrying in 1 second (attempt ${retryCount}/${MAX_RETRIES})`);
-            setTimeout(checkOnlineStatus, 1000);
-        } else {
-            console.warn('Max retries reached for online status check');
-        }
-    }
-    
-    // Start checking after a small delay
-    setTimeout(checkOnlineStatus, 500);
-});
-
-// Listen for direct online status responses
-socket.on('userOnlineStatus', (data) => {
-    console.log('Received direct online status:', data);
-    
-    if (data.userId === receiverId || data.userId.toString() === receiverId.toString()) {
-        // Use the more specific selector with the added class
-        const statusDot = document.querySelector(`.online-status-dot[data-user-id="${receiverId}"]`);
-        if (statusDot) {
-            console.log(`Setting status dot to ${data.isOnline ? 'online' : 'offline'} for user:`, receiverId);
-            
-            // Add a small timeout to prevent quick flashes
-            setTimeout(() => {
-                // First remove both classes to ensure clean state
-                statusDot.classList.remove('bg-green-500', 'bg-gray-400');
+                <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
+                    <span class="message-content">${message.content}</span>
+                    ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
+                </div>
                 
-                // Then add the appropriate class
-                if (data.isOnline) {
-                    statusDot.classList.add('bg-green-500');
-                } else {
-                    statusDot.classList.add('bg-gray-400');
-                }
-            }, 100);
+                <div class="shared-post-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
+                    <div class="p-2 flex items-center border-b border-gray-100 dark:border-gray-700">
+                        <div class="relative">
+                            <img src="${message.sender.profileImage}" alt="${message.sender.username}" class="w-6 h-6 rounded-full object-cover">
+                        </div>
+                        <div class="ml-2">
+                            <p class="text-xs font-medium text-gray-900 dark:text-white">${message.sharedPostPreview.title}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="aspect-square w-full bg-black overflow-hidden">
+                        <img src="${message.sharedPostPreview.image}" alt="Post" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <div class="px-2 py-2 text-xs text-gray-800 dark:text-gray-200">
+                        <span class="font-semibold">${message.sharedPostPreview.title}</span> 
+                        ${message.sharedPostPreview.content && message.sharedPostPreview.content.length > 50 ? 
+                            message.sharedPostPreview.content.substring(0, 50) + '...' : 
+                            message.sharedPostPreview.content || ''}
+                    </div>
+                </div>
+                
+                ${isSender ? `
+                    <button onclick="showMyMessageOptions('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-ellipsis-h text-xs text-white"></i>
+                    </button>
+                ` : `
+                    <button onclick="showReactionPickerForMessage('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-smile text-xs text-white"></i>
+                    </button>
+                `}
+                
+                ${message.reaction ? `
+                    <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
+                        <span class="reaction">${message.reaction}</span>
+                    </div>
+                ` : ''}
+                
+                <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
+                    ${new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+            </div>
+        `;
+    } else if (message.mediaType !== 'none' && message.mediaUrl) {
+        messageHTML = `
+            <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
+                ${message.mediaType === 'image' ? `
+                    <img src="${message.mediaUrl}" alt="Shared image" class="max-w-full rounded-lg mb-2">
+                ` : message.mediaType === 'video' ? `
+                    <video src="${message.mediaUrl}" controls class="max-w-full rounded-lg mb-2"></video>
+                ` : message.mediaType === 'audio' ? `
+                    <div class="audio-player w-full mb-2">
+                        <audio src="${message.mediaUrl}" class="hidden"></audio>
+                        <div class="flex items-center gap-3">
+                            <button class="play-btn text-${isSender ? 'white' : 'blue-500'} rounded-full bg-${isSender ? 'blue-700' : 'gray-200'} dark:bg-${isSender ? 'blue-800' : 'gray-700'} w-8 h-8 flex items-center justify-center">
+                                <i class="fas fa-play play-icon"></i>
+                                <i class="fas fa-pause pause-icon hidden"></i>
+                            </button>
+                            <div class="flex-1 relative">
+                                <div class="waveform h-8 bg-${isSender ? 'blue-400/30' : 'gray-300'} dark:bg-${isSender ? 'blue-600/30' : 'gray-600'} rounded-full overflow-hidden">
+                                    <div class="progress-bar absolute top-0 left-0 h-full bg-${isSender ? 'blue-500' : 'gray-400'} dark:bg-${isSender ? 'blue-700' : 'gray-500'}" style="width: 0%;"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-${isSender ? 'white' : 'gray-600'} mt-1">
+                                    <span class="current-time">0:00</span>
+                                    <span class="audio-duration">0:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${message.content ? `
+                    <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
+                        <span class="message-content">${message.content}</span>
+                        ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
+                    </div>
+                ` : ''}
+                
+                ${isSender ? `
+                    <button onclick="showMyMessageOptions('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-ellipsis-h text-xs text-white"></i>
+                    </button>
+                ` : `
+                    <button onclick="showReactionPickerForMessage('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-smile text-xs text-white"></i>
+                    </button>
+                `}
+                
+                ${message.reaction ? `
+                    <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
+                        <span class="reaction">${message.reaction}</span>
+                    </div>
+                ` : ''}
+                
+                <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
+                    ${new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+            </div>
+        `;
         } else {
-            console.warn('Status dot element not found for status update');
-        }
+        messageHTML = `
+            <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
+                ${message.content ? `
+                    <div class="message-text ${message.isEdited ? 'flex items-center gap-1' : ''}">
+                        <span class="message-content">${message.content}</span>
+                        ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
+                    </div>
+                ` : ''}
+                
+                ${isSender ? `
+                    <button onclick="showMyMessageOptions('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-ellipsis-h text-xs text-white"></i>
+                    </button>
+                ` : `
+                    <button onclick="showReactionPickerForMessage('${message._id}')" 
+                            class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-smile text-xs text-white"></i>
+                    </button>
+                `}
+                
+                ${message.reaction ? `
+                    <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
+                        <span class="reaction">${message.reaction}</span>
+                    </div>
+                ` : ''}
+                
+                <div class="text-xs ${isSender ? 'text-blue-100' : 'text-gray-500'} mt-1">
+                    ${new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+            </div>
+        `;
     }
-});
+    
+    return messageHTML;
+}
 </script>
 
 <%- include('partials/footer') %> 
