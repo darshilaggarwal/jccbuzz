@@ -188,14 +188,22 @@
                         <div class="relative max-w-[70%] <%= isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700' %> rounded-lg p-3 <%= isSender ? 'shadow-blue-500/20 shadow-md' : '' %>" data-message-id="<%= message._id %>">
                             <% if (message.mediaType !== 'none' && message.mediaUrl) { %>
                             <% if (message.mediaType === 'image') { %>
-                                <img src="<%= message.mediaUrl %>" alt="Shared image" class="max-w-full rounded-lg mb-2">
+                                <div class="relative max-w-[200px]">
+                                    <img src="<%= message.mediaUrl %>" alt="Shared image" class="w-full h-auto rounded-lg mb-2">
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 rounded-lg"></div>
+                                </div>
                             <% } else if (message.mediaType === 'video') { %>
-                                <video src="<%= message.mediaUrl %>" controls class="max-w-full rounded-lg mb-2"></video>
+                                <div class="relative max-w-[200px]">
+                                    <video src="<%= message.mediaUrl %>" controls class="w-full h-auto rounded-lg mb-2">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 rounded-lg"></div>
+                                </div>
                             <% } else if (message.mediaType === 'audio') { %>
-                                <div class="audio-player w-full mb-2">
+                                <div class="audio-player w-full max-w-[300px] mb-2">
                                     <audio src="<%= message.mediaUrl %>" class="hidden"></audio>
                                     <div class="flex items-center gap-3">
-                                            <button class="play-btn text-<%= isSender ? 'white' : 'blue-500' %> rounded-full bg-<%= isSender ? 'blue-700' : 'gray-200' %> dark:bg-<%= isSender ? 'blue-800' : 'gray-700' %> w-8 h-8 flex items-center justify-center">
+                                            <button class="play-btn text-<%= isSender ? 'white' : 'blue-500' %> rounded-full bg-<%= isSender ? 'blue-700' : 'gray-200' %> dark:bg-<%= isSender ? 'blue-800' : 'gray-700' %> w-8 h-8 flex items-center justify-center hover:scale-105 transition-transform">
                                             <i class="fas fa-play play-icon"></i>
                                             <i class="fas fa-pause pause-icon hidden"></i>
                                         </button>
@@ -622,7 +630,454 @@ function processMessageQueue() {
     messageQueue.clear();
 }
 
-// Handle message form submission
+// Initialize media and voice recording functionality
+const mediaInput = document.getElementById('mediaInput');
+const mediaButton = document.getElementById('mediaButton');
+const voiceButton = document.getElementById('voiceButton');
+const recordingIndicator = document.getElementById('recordingIndicator');
+const recordingVisualizer = document.getElementById('recordingVisualizer');
+const recordingTimer = document.getElementById('recordingTimer');
+const voiceControls = document.getElementById('voiceControls');
+const cancelRecording = document.getElementById('cancelRecording');
+const sendRecording = document.getElementById('sendRecording');
+const mediaPreview = document.getElementById('mediaPreview');
+const previewContent = document.getElementById('previewContent');
+const cancelMedia = document.getElementById('cancelMedia');
+
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStartTime = null;
+let recordingTimerInterval = null;
+
+// Handle media button click
+mediaButton.addEventListener('click', () => {
+    mediaInput.click();
+});
+
+// Handle media file selection
+mediaInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        selectedMedia = file;
+        showMediaPreview(file);
+    }
+});
+
+// Show media preview
+function showMediaPreview(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        if (file.type.startsWith('image/')) {
+            previewContent.innerHTML = `<img src="${e.target.result}" alt="Preview" class="max-h-40 rounded-lg">`;
+        } else if (file.type.startsWith('video/')) {
+            previewContent.innerHTML = `<video src="${e.target.result}" controls class="max-h-40 rounded-lg"></video>`;
+        }
+        mediaPreview.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Handle cancel media
+cancelMedia.addEventListener('click', () => {
+    selectedMedia = null;
+    mediaInput.value = '';
+    mediaPreview.classList.add('hidden');
+});
+
+// Handle voice button click
+voiceButton.addEventListener('click', async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        startRecording(stream);
+    } catch (error) {
+        console.error('Error accessing microphone:', error);
+        showToast('Error accessing microphone. Please check permissions.', 'error');
+    }
+});
+
+// Start recording
+function startRecording(stream) {
+    mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 128000 // Higher quality audio
+    });
+    audioChunks = [];
+    
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+            audioChunks.push(e.data);
+        }
+    };
+    
+    mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        selectedMedia = audioBlob;
+        showVoicePreview(audioBlob);
+    };
+    
+    // Start recording
+    mediaRecorder.start(100); // Collect data every 100ms for more responsive waveform
+    recordingStartTime = Date.now();
+    
+    // Show recording indicator
+    recordingIndicator.classList.remove('hidden');
+    messageInput.classList.add('hidden');
+    
+    // Start timer
+    recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+    
+    // Show voice controls
+    voiceControls.classList.remove('hidden');
+    
+    // Set up audio visualization
+    setupAudioVisualization(stream);
+}
+
+// Set up audio visualization
+function setupAudioVisualization(stream) {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = recordingVisualizer.clientWidth || 200;
+    canvas.height = 40;
+    recordingVisualizer.innerHTML = '';
+    recordingVisualizer.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    
+    function draw() {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+        
+        requestAnimationFrame(draw);
+        
+        analyser.getByteFrequencyData(dataArray);
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let barHeight;
+        let x = 0;
+        
+        for (let i = 0; i < bufferLength; i++) {
+            barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#8b5cf6');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            
+            x += barWidth + 1;
+        }
+    }
+    
+    draw();
+}
+
+// Update recording timer
+function updateRecordingTimer() {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    recordingTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Handle cancel recording
+cancelRecording.addEventListener('click', () => {
+    stopRecording();
+    selectedMedia = null;
+    voiceControls.classList.add('hidden');
+    recordingIndicator.classList.add('hidden');
+    messageInput.classList.remove('hidden');
+});
+
+// Handle send recording
+sendRecording.addEventListener('click', async () => {
+    stopRecording();
+    voiceControls.classList.add('hidden');
+    recordingIndicator.classList.add('hidden');
+    messageInput.classList.remove('hidden');
+    
+    if (selectedMedia) {
+        await sendVoiceMessage(selectedMedia);
+        selectedMedia = null;
+    }
+});
+
+// Stop recording
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    clearInterval(recordingTimerInterval);
+}
+
+// Show voice preview
+function showVoicePreview(audioBlob) {
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    
+    // Create waveform visualization
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaElementSource(audio);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    function drawWaveform() {
+        requestAnimationFrame(drawWaveform);
+        analyser.getByteFrequencyData(dataArray);
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = recordingVisualizer.clientWidth;
+        canvas.height = recordingVisualizer.clientHeight;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let barHeight;
+        let x = 0;
+        
+        for (let i = 0; i < bufferLength; i++) {
+            barHeight = dataArray[i] / 2;
+            ctx.fillStyle = 'rgb(59, 130, 246)';
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            x += barWidth + 1;
+        }
+        
+        recordingVisualizer.innerHTML = '';
+        recordingVisualizer.appendChild(canvas);
+    }
+    
+    drawWaveform();
+}
+
+// Send voice message
+async function sendVoiceMessage(audioBlob) {
+    // Show a loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'flex justify-end group mb-6';
+    loadingDiv.innerHTML = `
+        <div class="relative max-w-[70%] bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-lg p-3 shadow-blue-500/20 shadow-md">
+            <div class="flex items-center space-x-2">
+                <div class="animate-pulse flex space-x-2">
+                    <div class="h-3 w-3 bg-blue-200 rounded-full"></div>
+                    <div class="h-3 w-3 bg-blue-300 rounded-full"></div>
+                    <div class="h-3 w-3 bg-blue-400 rounded-full"></div>
+                </div>
+                <span>Sending voice message...</span>
+            </div>
+        </div>
+    `;
+    messagesContainer.appendChild(loadingDiv);
+    scrollToBottom();
+
+    // Create an audio element to get duration before sending
+    const tempAudio = new Audio(URL.createObjectURL(audioBlob));
+    let audioDuration = 0;
+    
+    // Wait for metadata to load to get duration
+    await new Promise(resolve => {
+        tempAudio.addEventListener('loadedmetadata', () => {
+            audioDuration = tempAudio.duration;
+            resolve();
+        });
+        // If metadata loading fails, resolve anyway after a timeout
+        setTimeout(resolve, 1000);
+    });
+
+    const formData = new FormData();
+    formData.append('voice', audioBlob);
+    formData.append('receiverId', receiverId);
+    formData.append('duration', audioDuration.toString());
+    
+    try {
+        const response = await fetch(`/chat/${chatId}/voice`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // Remove loading indicator
+            loadingDiv.remove();
+            
+            const data = await response.json();
+            
+            // Create and append the message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex justify-end group mb-6`;
+            messageDiv.innerHTML = createMessageHTML(data);
+            
+            // Check for duplicate before appending
+            const existingMessage = document.querySelector(`[data-message-id="${data._id}"]`);
+            if (!existingMessage) {
+                messagesContainer.appendChild(messageDiv);
+                
+                // Initialize audio player for voice messages
+                if (data.mediaType === 'audio') {
+                    const audioPlayer = messageDiv.querySelector('.audio-player');
+                    if (audioPlayer) {
+                        initializeAudioPlayer(audioPlayer);
+                    }
+                }
+                
+                // Scroll to bottom
+                scrollToBottom();
+            }
+            
+            // Clear input and selected media
+            messageInput.value = '';
+            selectedMedia = null;
+            mediaPreview.classList.add('hidden');
+            
+            // Emit message via socket if connected
+            if (isSocketConnected) {
+                socket.emit('chatMessage', {
+                    chatId: chatId,
+                    message: data,
+                    receiverId: receiverId
+                });
+            }
+        } else {
+            // Remove loading indicator
+            loadingDiv.remove();
+            throw new Error('Failed to send voice message');
+        }
+    } catch (error) {
+        console.error('Error sending voice message:', error);
+        showToast('Failed to send voice message', 'error');
+        // Remove loading indicator if there was an error
+        loadingDiv.remove();
+    }
+}
+
+// Initialize audio player for voice messages
+function initializeAudioPlayer(player) {
+    if (!player) return;
+    
+    const audio = player.querySelector('audio');
+    const playBtn = player.querySelector('.play-btn');
+    const playIcon = player.querySelector('.play-icon');
+    const pauseIcon = player.querySelector('.pause-icon');
+    const progressBar = player.querySelector('.progress-bar');
+    const currentTime = player.querySelector('.current-time');
+    const duration = player.querySelector('.audio-duration');
+    
+    if (!audio || !playBtn || !progressBar || !currentTime || !duration) return;
+    
+    // Set a loading state
+    duration.textContent = '...';
+    
+    // Preload the audio
+    audio.preload = 'metadata';
+    
+    // Load audio metadata
+    audio.addEventListener('loadedmetadata', () => {
+        // Format duration
+        const durationSecs = audio.duration;
+        const mins = Math.floor(durationSecs / 60);
+        const secs = Math.floor(durationSecs % 60);
+        duration.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    });
+    
+    // Handle errors in loading metadata
+    audio.addEventListener('error', () => {
+        duration.textContent = '0:00';
+    });
+    
+    // Play/pause functionality with better error handling
+    playBtn.addEventListener('click', () => {
+        if (audio.paused) {
+            // Create a loading indicator
+            playIcon.classList.add('hidden');
+            const loadingIcon = document.createElement('i');
+            loadingIcon.className = 'fas fa-spinner fa-spin';
+            playBtn.appendChild(loadingIcon);
+            
+            // Try to play the audio
+            audio.play().then(() => {
+                // Success - show pause icon
+                if (loadingIcon) loadingIcon.remove();
+                pauseIcon.classList.remove('hidden');
+            }).catch(error => {
+                // Failure - revert to play icon and show error
+                console.error('Error playing audio:', error);
+                if (loadingIcon) loadingIcon.remove();
+                playIcon.classList.remove('hidden');
+                showToast('Error playing voice message', 'error');
+            });
+        } else {
+            audio.pause();
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+        }
+    });
+    
+    // Update progress bar and time
+    audio.addEventListener('timeupdate', () => {
+        if (isNaN(audio.duration)) return;
+        
+        const progress = (audio.currentTime / audio.duration) * 100;
+        progressBar.style.width = `${progress}%`;
+        
+        const mins = Math.floor(audio.currentTime / 60);
+        const secs = Math.floor(audio.currentTime % 60);
+        currentTime.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    });
+    
+    // Reset when audio ends
+    audio.addEventListener('ended', () => {
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        progressBar.style.width = '0%';
+        currentTime.textContent = '0:00';
+    });
+    
+    // Handle audio errors
+    audio.addEventListener('error', (error) => {
+        console.error('Audio error:', error);
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        const loadingIcon = playBtn.querySelector('.fa-spinner');
+        if (loadingIcon) loadingIcon.remove();
+        showToast('Error loading voice message', 'error');
+    });
+    
+    // Make the progress bar interactive (seek functionality)
+    const waveform = player.querySelector('.waveform');
+    if (waveform) {
+        waveform.addEventListener('click', (e) => {
+            if (isNaN(audio.duration)) return;
+            
+            const rect = waveform.getBoundingClientRect();
+            const clickPosition = (e.clientX - rect.left) / rect.width;
+            const newTime = audio.duration * clickPosition;
+            
+            // Set the new time
+            audio.currentTime = newTime;
+            
+            // Update the progress bar immediately for better UX
+            progressBar.style.width = `${clickPosition * 100}%`;
+        });
+    }
+}
+
+// Handle message form submission with media
 messageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const content = messageInput.value.trim();
@@ -630,6 +1085,60 @@ messageForm.addEventListener('submit', async (e) => {
     if (!content && !selectedMedia) return;
     
         try {
+        if (selectedMedia) {
+            const formData = new FormData();
+            formData.append('media', selectedMedia);
+            formData.append('content', content);
+            formData.append('receiverId', receiverId);
+            
+            const response = await fetch(`/chat/${chatId}/media`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Create and append the message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex justify-end group mb-6`;
+            messageDiv.innerHTML = createMessageHTML(data);
+            
+            // Check for duplicate before appending
+            const existingMessage = document.querySelector(`[data-message-id="${data._id}"]`);
+            if (!existingMessage) {
+                messagesContainer.appendChild(messageDiv);
+                
+                // Initialize audio player for voice messages
+                if (data.mediaType === 'audio') {
+                    const audioPlayer = messageDiv.querySelector('.audio-player');
+                    if (audioPlayer) {
+                        initializeAudioPlayer(audioPlayer);
+                    }
+                }
+                
+                // Scroll to bottom
+                scrollToBottom();
+            }
+            
+            // Clear input and selected media
+            messageInput.value = '';
+            selectedMedia = null;
+            mediaPreview.classList.add('hidden');
+            
+            // Emit message via socket if connected
+            if (isSocketConnected) {
+                socket.emit('chatMessage', {
+                    chatId: chatId,
+                    message: data,
+                    receiverId: receiverId
+                });
+            }
+        } else {
+            // Handle text-only message (existing code)
             const response = await fetch(`/chat/${chatId}/message`, {
                 method: 'POST',
                 headers: {
@@ -666,10 +1175,8 @@ scrollToBottom();
                 message: data,
                 receiverId: receiverId
             });
-        } else {
-            showToast('Message sent but not delivered in real-time. Reconnecting...', 'warning');
         }
-        
+        }
     } catch (error) {
         console.error('Error sending message:', error);
         showToast('Failed to send message. Please try again.', 'error');
@@ -976,6 +1483,14 @@ socket.on('newMessage', (data) => {
             if (!existingMessage) {
                 messagesContainer.appendChild(messageDiv);
                 
+                // Initialize audio player for voice messages
+                if (messageData.mediaType === 'audio') {
+                    const audioPlayer = messageDiv.querySelector('.audio-player');
+                    if (audioPlayer) {
+                        initializeAudioPlayer(audioPlayer);
+                    }
+                }
+                
                 // Mark message as rendered
                 if (messageData._id) {
                     renderedMessageIds.add(messageData._id);
@@ -1041,7 +1556,9 @@ function createMessageHTML(message) {
                     ${message.isEdited ? '<span class="text-xs opacity-75">(edited)</span>' : ''}
                 </div>
                 
+                <!-- Post preview card -->
                 <div class="shared-post-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
+                    <!-- Post header -->
                     <div class="p-2 flex items-center border-b border-gray-100 dark:border-gray-700">
                         <div class="relative">
                             <img src="${message.sender.profileImage}" alt="${message.sender.username}" class="w-6 h-6 rounded-full object-cover">
@@ -1051,10 +1568,12 @@ function createMessageHTML(message) {
                         </div>
                     </div>
                     
+                    <!-- Post media -->
                     <div class="aspect-square w-full bg-black overflow-hidden">
                         <img src="${message.sharedPostPreview.image}" alt="Post" class="w-full h-full object-cover">
                     </div>
                     
+                    <!-- Post caption (truncated) -->
                     <div class="px-2 py-2 text-xs text-gray-800 dark:text-gray-200">
                         <span class="font-semibold">${message.sharedPostPreview.title}</span> 
                         ${message.sharedPostPreview.content && message.sharedPostPreview.content.length > 50 ? 
@@ -1063,6 +1582,7 @@ function createMessageHTML(message) {
                     </div>
                 </div>
                 
+                <!-- Message Options Button - Show on hover -->
                 ${isSender ? `
                     <button onclick="showMyMessageOptions('${message._id}')" 
                             class="absolute -top-3 -right-3 bg-blue-500 dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center">
@@ -1075,6 +1595,7 @@ function createMessageHTML(message) {
                     </button>
                 `}
                 
+                <!-- Show Reaction if it exists -->
                 ${message.reaction ? `
                     <div class="absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble">
                         <span class="reaction">${message.reaction}</span>
@@ -1090,24 +1611,32 @@ function createMessageHTML(message) {
         messageHTML = `
             <div class="relative max-w-[70%] ${isSender ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700'} rounded-lg p-3 ${isSender ? 'shadow-blue-500/20 shadow-md' : ''}" data-message-id="${message._id}">
                 ${message.mediaType === 'image' ? `
-                    <img src="${message.mediaUrl}" alt="Shared image" class="max-w-full rounded-lg mb-2">
+                    <div class="relative max-w-[300px]">
+                        <img src="${message.mediaUrl}" alt="Shared image" class="w-full h-auto rounded-lg mb-2">
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 rounded-lg"></div>
+                    </div>
                 ` : message.mediaType === 'video' ? `
-                    <video src="${message.mediaUrl}" controls class="max-w-full rounded-lg mb-2"></video>
+                    <div class="relative max-w-[300px]">
+                        <video src="${message.mediaUrl}" controls class="w-full h-auto rounded-lg mb-2">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 rounded-lg"></div>
+                    </div>
                 ` : message.mediaType === 'audio' ? `
-                    <div class="audio-player w-full mb-2">
-                        <audio src="${message.mediaUrl}" class="hidden"></audio>
+                    <div class="audio-player w-full max-w-[300px] mb-2">
+                        <audio src="${message.mediaUrl}" class="hidden" preload="metadata"></audio>
                         <div class="flex items-center gap-3">
-                            <button class="play-btn text-${isSender ? 'white' : 'blue-500'} rounded-full bg-${isSender ? 'blue-700' : 'gray-200'} dark:bg-${isSender ? 'blue-800' : 'gray-700'} w-8 h-8 flex items-center justify-center">
+                            <button class="play-btn text-${isSender ? 'white' : 'blue-500'} rounded-full bg-${isSender ? 'blue-700' : 'gray-200'} dark:bg-${isSender ? 'blue-800' : 'gray-700'} w-8 h-8 flex items-center justify-center hover:scale-105 transition-transform">
                                 <i class="fas fa-play play-icon"></i>
                                 <i class="fas fa-pause pause-icon hidden"></i>
                             </button>
                             <div class="flex-1 relative">
-                                <div class="waveform h-8 bg-${isSender ? 'blue-400/30' : 'gray-300'} dark:bg-${isSender ? 'blue-600/30' : 'gray-600'} rounded-full overflow-hidden">
+                                <div class="waveform h-8 bg-${isSender ? 'blue-400/30' : 'gray-300'} dark:bg-${isSender ? 'blue-600/30' : 'gray-600'} rounded-full overflow-hidden cursor-pointer">
                                     <div class="progress-bar absolute top-0 left-0 h-full bg-${isSender ? 'blue-500' : 'gray-400'} dark:bg-${isSender ? 'blue-700' : 'gray-500'}" style="width: 0%;"></div>
                                 </div>
                                 <div class="flex justify-between text-xs text-${isSender ? 'white' : 'gray-600'} mt-1">
                                     <span class="current-time">0:00</span>
-                                    <span class="audio-duration">0:00</span>
+                                    <span class="audio-duration">${message.audioDuration ? formatTime(message.audioDuration) : '...'}</span>
                                 </div>
                             </div>
                         </div>
