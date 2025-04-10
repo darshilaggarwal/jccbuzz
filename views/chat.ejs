@@ -1,7 +1,7 @@
 <%- include('partials/header2') %>
 
-<!-- Add Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<!-- Add Font Awesome properly -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 <!-- Add Tailwind CSS properly -->
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -412,7 +412,7 @@ let selectedMedia = null;
 
 // Initialize socket connection
 const socketOptions = {
-    transports: ['websocket'],
+    transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
@@ -421,7 +421,12 @@ const socketOptions = {
     autoConnect: true,
     path: '/socket.io',
     auth: {
-        userId: userId
+        userId: userId,
+        token: '<%= user.token %>'
+    },
+    query: {
+        userId: userId,
+        chatId: chatId
     }
 };
 
@@ -432,6 +437,9 @@ const socket = io(window.location.origin, socketOptions);
 let isSocketConnected = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
+
+// Message options modal variables
+let currentMessageId = null;
 
 // Track existing messages to prevent duplicates
 const renderedMessageIds = new Set();
@@ -543,7 +551,7 @@ socket.emit('authenticate', userId);
 
 // Handle connection errors
 socket.on('connect_error', (error) => {
-    console.error('❌ Socket connection error:', error.message);
+    console.error('Socket connection error:', error);
     isSocketConnected = false;
     
     const statusEl = document.getElementById('connection-status');
@@ -552,15 +560,23 @@ socket.on('connect_error', (error) => {
         statusEl.classList.remove('hidden');
     }
     
-    // Attempt to reconnect
+    // Attempt to reconnect with exponential backoff
     if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
         setTimeout(() => {
+            console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
             socket.connect();
-        }, 1000 * reconnectAttempts);
+        }, delay);
     } else {
         showToast('Failed to connect to chat server. Please refresh the page.', 'error');
     }
+});
+
+// Handle authentication errors
+socket.on('error', (error) => {
+    console.error('Socket authentication error:', error);
+    showToast('Authentication error. Please refresh the page.', 'error');
 });
 
 // Handle disconnection
@@ -1165,6 +1181,264 @@ function createMessageHTML(message) {
     
     return messageHTML;
 }
+
+// Function to show message options modal for sender
+function showMyMessageOptions(messageId) {
+    currentMessageId = messageId;
+    const modal = document.getElementById('messageOptionsModal');
+    modal.classList.remove('hidden');
+}
+
+// Function to show reaction picker for a message
+function showReactionPickerForMessage(messageId) {
+    currentMessageId = messageId;
+    const modal = document.getElementById('reactionPickerModal');
+    modal.classList.remove('hidden');
+}
+
+// Function to close message options modal
+function closeMessageOptions() {
+    document.getElementById('messageOptionsModal').classList.add('hidden');
+    currentMessageId = null;
+}
+
+// Function to show reaction picker from options menu
+function showReactionPicker() {
+    // Close the options modal
+    document.getElementById('messageOptionsModal').classList.add('hidden');
+    // Show the reaction picker
+    const reactionModal = document.getElementById('reactionPickerModal');
+    reactionModal.classList.remove('hidden');
+}
+
+// Function to add reaction to a message
+async function addReaction(emoji) {
+    if (!currentMessageId) return;
+    
+    try {
+        const response = await fetch(`/message/${currentMessageId}/react`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reaction: emoji })
+        });
+        
+        if (response.ok) {
+            // Update UI to show reaction
+            const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
+            if (messageElement) {
+                // Check if there's already a reaction bubble
+                let reactionBubble = messageElement.querySelector('.reaction-bubble');
+                
+                if (!reactionBubble) {
+                    // Create new reaction bubble
+                    const isSender = messageElement.closest('.justify-end') !== null;
+                    reactionBubble = document.createElement('div');
+                    reactionBubble.className = `absolute -bottom-6 ${isSender ? 'right-2' : 'left-2'} reaction-bubble`;
+                    reactionBubble.innerHTML = `<span class="reaction">${emoji}</span>`;
+                    messageElement.appendChild(reactionBubble);
+                } else {
+                    // Update existing reaction
+                    reactionBubble.querySelector('.reaction').textContent = emoji;
+                }
+            }
+            
+            // Emit socket event if connected
+            if (isSocketConnected) {
+                socket.emit('messageReaction', {
+                    messageId: currentMessageId,
+                    reaction: emoji,
+                    chatId: chatId
+                });
+            }
+        } else {
+            showToast('Failed to add reaction', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding reaction:', error);
+        showToast('Error adding reaction', 'error');
+    }
+    
+    // Close the reaction picker
+    document.getElementById('reactionPickerModal').classList.add('hidden');
+    currentMessageId = null;
+}
+
+// Function to edit a message
+async function editMessage() {
+    if (!currentMessageId) {
+        console.error('No message ID available for editing');
+        showToast('Cannot edit message: Message ID is missing', 'error');
+        return;
+    }
+    
+    // Find the message text
+    const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
+    if (!messageElement) {
+        console.error('Message element not found for ID:', currentMessageId);
+        showToast('Cannot edit message: Message not found', 'error');
+        return;
+    }
+    
+    const messageContentEl = messageElement.querySelector('.message-content');
+    if (!messageContentEl) {
+        console.error('Message content element not found');
+        showToast('Cannot edit message: Content not found', 'error');
+        return;
+    }
+    
+    const currentContent = messageContentEl.textContent;
+    
+    // Create an input field to replace the message content
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.value = currentContent;
+    inputField.className = 'w-full px-2 py-1 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+    
+    // Replace the message content with the input field
+    messageContentEl.replaceWith(inputField);
+    inputField.focus();
+    
+    // Store the message ID in the input field for reference
+    inputField.dataset.messageId = currentMessageId;
+    
+    // Handle input field events
+    const handleEdit = async (e) => {
+        const messageId = inputField.dataset.messageId;
+        if (!messageId) {
+            console.error('Message ID lost during edit');
+            showToast('Error: Message ID lost', 'error');
+            inputField.replaceWith(messageContentEl);
+            return;
+        }
+        
+        if (e.key === 'Enter' || e.type === 'blur') {
+            const newContent = inputField.value.trim();
+            
+            // If content is empty or unchanged, revert
+            if (!newContent || newContent === currentContent) {
+                inputField.replaceWith(messageContentEl);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/message/${messageId}/edit`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: newContent })
+                });
+                
+                if (response.ok) {
+                    // Update message content
+                    messageContentEl.textContent = newContent;
+                    inputField.replaceWith(messageContentEl);
+                    
+                    // Add edited indicator if not present
+                    const messageTextEl = messageElement.querySelector('.message-text');
+                    if (messageTextEl && !messageTextEl.classList.contains('flex')) {
+                        messageTextEl.classList.add('flex', 'items-center', 'gap-1');
+                        
+                        let editedIndicator = messageTextEl.querySelector('.text-xs.opacity-75');
+                        if (!editedIndicator) {
+                            editedIndicator = document.createElement('span');
+                            editedIndicator.className = 'text-xs opacity-75';
+                            editedIndicator.textContent = '(edited)';
+                            messageTextEl.appendChild(editedIndicator);
+                        }
+                    }
+                    
+                    // Emit socket event if connected
+                    if (isSocketConnected) {
+                        socket.emit('messageEdited', {
+                            messageId: messageId,
+                            content: newContent,
+                            chatId: chatId
+                        });
+                    }
+                } else {
+                    const errorData = await response.json();
+                    showToast(errorData.error || 'Failed to edit message', 'error');
+                    inputField.replaceWith(messageContentEl);
+                }
+            } catch (error) {
+                console.error('Error editing message:', error);
+                showToast('Error editing message', 'error');
+                inputField.replaceWith(messageContentEl);
+            }
+        } else if (e.key === 'Escape') {
+            // Cancel edit on Escape
+            inputField.replaceWith(messageContentEl);
+        }
+    };
+    
+    inputField.addEventListener('keydown', handleEdit);
+    inputField.addEventListener('blur', handleEdit);
+    
+    closeMessageOptions();
+}
+
+// Function to delete a message
+async function deleteMessage() {
+    if (!currentMessageId) return;
+    
+    try {
+        const response = await fetch(`/message/${currentMessageId}/delete`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Remove message from UI
+            const messageElement = document.querySelector(`[data-message-id="${currentMessageId}"]`);
+            if (messageElement) {
+                const messageContainer = messageElement.closest('.flex');
+                if (messageContainer) {
+                    messageContainer.remove();
+                }
+            }
+            
+            // Emit socket event if connected
+            if (isSocketConnected) {
+                socket.emit('messageDeleted', {
+                    messageId: currentMessageId,
+                    chatId: chatId
+                });
+            }
+        } else {
+            showToast('Failed to delete message', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        showToast('Error deleting message', 'error');
+    }
+    
+    closeMessageOptions();
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', (e) => {
+    const messageOptionsModal = document.getElementById('messageOptionsModal');
+    const reactionPickerModal = document.getElementById('reactionPickerModal');
+    
+    // Check if click is outside message options modal
+    if (!e.target.closest('#messageOptionsModal') && 
+        !e.target.closest('[onclick*="showMyMessageOptions"]') &&
+        messageOptionsModal && 
+        !messageOptionsModal.classList.contains('hidden')) {
+        messageOptionsModal.classList.add('hidden');
+    }
+    
+    // Check if click is outside reaction picker modal
+    if (!e.target.closest('#reactionPickerModal') && 
+        !e.target.closest('[onclick*="showReactionPickerForMessage"]') &&
+        !e.target.closest('[onclick*="showReactionPicker"]') &&
+        reactionPickerModal && 
+        !reactionPickerModal.classList.contains('hidden')) {
+        reactionPickerModal.classList.add('hidden');
+    }
+});
 </script>
 
 <%- include('partials/footer') %> 
