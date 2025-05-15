@@ -219,7 +219,7 @@ const eventStorage = multer.diskStorage({
 });
 
 const uploadEventImage = multer({ 
-    storage: eventStorage,
+    storage: multer.memoryStorage(), // Changed to memory storage for Cloudinary
     limits: { fileSize: 1024 * 1024 * 10 }, // 10MB limit
     fileFilter: function (req, file, cb) {
         const allowedTypes = /jpeg|jpg|png|gif|webp/i;
@@ -4438,6 +4438,32 @@ app.post('/api/events', isLoggedIn, async (req, res) => {
                     return res.status(400).json({ error: 'Invalid user ID' });
                 }
 
+                // Upload image to Cloudinary if provided
+                let imageUrl = '/images/default-event.jpg';
+                if (req.file) {
+                    try {
+                        // Get cloudinary upload function
+                        const { uploadToCloudinary } = require('./config/cloudinary');
+                        
+                        // Process image with sharp first to optimize
+                        const processedBuffer = await sharp(req.file.buffer)
+                            .resize(1080, 720, { fit: 'inside' })
+                            .jpeg({ quality: 80 })
+                            .toBuffer();
+                        
+                        // Upload processed image to Cloudinary
+                        const result = await uploadToCloudinary(processedBuffer, {
+                            folder: 'jccbuzz/events'
+                        });
+                        
+                        console.log('Event image uploaded to Cloudinary:', result.secure_url);
+                        imageUrl = result.secure_url;
+                    } catch (uploadError) {
+                        console.error('Error uploading event image to Cloudinary:', uploadError);
+                        // Continue with default image if upload fails
+                    }
+                }
+
                 const eventData = {
                     title,
                     description,
@@ -4448,7 +4474,7 @@ app.post('/api/events', isLoggedIn, async (req, res) => {
                     organizer: req.user._id,
                     organizerName: req.user.fullName || req.user.username,
                     registrationLink: registrationLink || '',
-                    image: req.file ? `/uploads/events/${req.file.filename}` : '/images/default-event.jpg'
+                    image: imageUrl
                 };
                 
                 console.log('Event data to save:', eventData);

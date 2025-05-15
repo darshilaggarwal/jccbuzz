@@ -69,23 +69,38 @@ A social media platform for JCC college students.
 5. Add all environment variables from your `.env` file
 6. Deploy!
 
-## File Storage
+## Media Storage
 
 This application uses Cloudinary for persistent file storage, which ensures that all uploaded content (posts, profile pictures, stories) remains available even after redeploying the application.
 
-### How File Storage Works
+### Image Storage Details
 
 - **Posts**: Images uploaded with posts are resized, optimized, and stored on Cloudinary in the `jccbuzz/posts` folder.
-- **Profile Pictures**: User profile images are stored in the `jccbuzz/profiles` folder.
-- **Stories**: Story content is saved in the `jccbuzz/stories` folder.
+- **Profile Photos**: User profile pictures are stored in the `jccbuzz/profiles` folder.
+- **Chat Media**: Media shared in chat conversations are stored in the `jccbuzz/chat` folder.
+- **Events**: Event images are stored in the `jccbuzz/events` folder.
 
 Unlike local file storage which is lost when redeploying on services like Render, Cloudinary provides a permanent and reliable solution for storing user-generated content. The free tier includes:
 
 - 25GB of storage
-- 25GB monthly bandwidth
-- No expiration for uploaded media
+- 25GB of monthly bandwidth
+- Basic transformations
 
 If you hit the free tier limits, Cloudinary offers paid plans with higher capacity.
+
+### Migrating Local Event Images to Cloudinary
+
+If you have event images stored locally that need to be migrated to Cloudinary, run:
+
+```
+npm run migrate-event-images
+```
+
+This will:
+1. Find all events with local image paths
+2. Upload each image to Cloudinary
+3. Update the event records with the new Cloudinary URLs
+4. Log the migration results
 
 ## License
 

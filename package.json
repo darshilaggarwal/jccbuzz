@@ -8,7 +8,8 @@
     "start": "node index.js",
     "start-render": "node startForRender.js",
     "setup": "node setup.js",
-    "seed": "node scripts/seedStudents.js"
+    "seed": "node scripts/seedStudents.js",
+    "migrate-event-images": "node scripts/migrateEventImagesToCloudinary.js"
   },
   "keywords": [],
   "author": "",
